@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent-Folio</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0c0c0c;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #111111;
+      padding: 10px 24px;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: padding 0.3s ease;
+    }
+    header.chat-active { padding: 18px 24px; }
+    header a.back {
+      color: #36cfb4;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    header a.back:hover { background: #1a1a1a; }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    header h1 { font-size: 18px; font-weight: 600; color: #ffffff; }
+    header span.subtitle { font-size: 12px; color: #666; }
+    header .sdk-badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 10px;
+      background: rgba(54, 207, 180, 0.1); color: #36cfb4;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .header-center-logo {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+    }
+    .header-center-logo.visible { display: block; }
+    .header-center-logo .logo-text {
+      font-size: 20px; font-weight: 700; color: #36cfb4;
+      letter-spacing: 2px;
+    }
+    .header-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .header-actions button {
+      padding: 6px 14px; font-size: 12px; background: #1a1a1a;
+      border: 1px solid #2a2a2a; color: #e0e0e0; border-radius: 6px; cursor: pointer;
+    }
+    .header-actions button:hover { background: #252525; }
+    .status { font-size: 12px; color: #36cfb4; display: flex; align-items: center; gap: 6px; }
+    .status::before {
+      content: ''; width: 8px; height: 8px; background: #36cfb4;
+      border-radius: 50%; display: inline-block;
+    }
+    .status.disconnected { color: #f87171; }
+    .status.disconnected::before { background: #f87171; }
+    .main-content { display: flex; flex: 1; overflow: hidden; }
+
+    /* Sidebar */
+    #sidebar {
+      width: 280px; background: #111111; border-right: 1px solid #2a2a2a;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sidebar-header { padding: 14px 14px 10px; border-bottom: 1px solid #2a2a2a; }
+    .sidebar-header h3 {
+      font-size: 13px; color: #36cfb4; text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 10px; font-weight: 700;
+    }
+    .sidebar-search {
+      width: 100%; padding: 8px 12px; background: #0c0c0c;
+      border: 1px solid #2a2a2a; border-radius: 6px; color: #e0e0e0;
+      font-size: 13px; outline: none; font-family: inherit;
+    }
+    .sidebar-search:focus { border-color: #36cfb4; }
+    .sidebar-search::placeholder { color: #555; }
+    .category-tabs {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 10px 14px; border-bottom: 1px solid #2a2a2a;
+    }
+    .category-tab {
+      padding: 4px 10px; font-size: 12px; background: #1a1a1a;
+      border: 1px solid #2a2a2a; color: #999; border-radius: 12px;
+      cursor: pointer; text-transform: capitalize; transition: all 0.15s;
+    }
+    .category-tab:hover { border-color: #36cfb4; color: #36cfb4; }
+    .category-tab.active {
+      background: rgba(54, 207, 180, 0.15); border-color: #36cfb4; color: #36cfb4;
+    }
+    .conv-list-area { flex: 1; overflow-y: auto; }
+    .conv-item {
+      padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #1a1a1a;
+      font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .conv-item:hover { background: #1a1a1a; }
+    .conv-item.active { background: #1a2a2a; border-left: 3px solid #36cfb4; }
+    .conv-item .conv-date { font-size: 11px; color: #666; margin-top: 3px; }
+    .conv-item .conv-category {
+      display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 8px;
+      background: rgba(54, 207, 180, 0.1); color: #36cfb4; margin-left: 6px; text-transform: capitalize;
+    }
+    .conv-item .conv-delete { float: right; color: #666; font-size: 13px; padding: 2px 6px; border-radius: 4px; }
+    .conv-item .conv-delete:hover { background: #3b1111; color: #f87171; }
+    .conv-item.hidden { display: none; }
+
+    /* Agent Admin Toggle */
+    .admin-panel-toggle { margin-top: auto; padding: 12px 14px; border-top: 1px solid #2a2a2a; }
+    .admin-panel-toggle button {
+      width: 100%; padding: 12px 16px; font-size: 14px; font-weight: 600;
+      background: rgba(54, 207, 180, 0.06); border: 1px solid #36cfb4;
+      color: #36cfb4; border-radius: 8px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all 0.2s; box-shadow: 0 0 8px rgba(54, 207, 180, 0.1);
+    }
+    .admin-panel-toggle button:hover {
+      background: rgba(54, 207, 180, 0.12); box-shadow: 0 0 16px rgba(54, 207, 180, 0.2);
+    }
+    .admin-panel-toggle .admin-icon { font-size: 16px; }
+
+    /* Admin Modal */
+    .admin-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 1000; justify-content: center; align-items: center;
+    }
+    .admin-overlay.visible { display: flex; }
+    .admin-modal {
+      background: #151515; border: 1px solid #2a2a2a; border-radius: 12px;
+      width: 720px; max-width: 90vw; max-height: 80vh; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .admin-modal-header {
+      padding: 16px 20px; border-bottom: 1px solid #2a2a2a;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .admin-modal-header h2 {
+      font-size: 16px; font-weight: 600; color: #fff;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .admin-modal-header h2 .admin-badge {
+      font-size: 9px; background: rgba(54,207,180,0.15); color: #36cfb4;
+      padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .admin-modal-header .close-btn {
+      background: none; border: none; color: #666; font-size: 20px;
+      cursor: pointer; padding: 4px 8px; border-radius: 4px;
+    }
+    .admin-modal-header .close-btn:hover { background: #1a1a1a; color: #e0e0e0; }
+    .admin-tabs { display: flex; border-bottom: 1px solid #2a2a2a; padding: 0 20px; }
+    .admin-tab {
+      padding: 10px 16px; font-size: 12px; color: #666; cursor: pointer;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .admin-tab:hover { color: #e0e0e0; }
+    .admin-tab.active { color: #36cfb4; border-bottom-color: #36cfb4; }
+    .admin-modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .admin-section { margin-bottom: 20px; }
+    .admin-section h3 {
+      font-size: 13px; font-weight: 600; color: #36cfb4; margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .admin-card {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px;
+      padding: 14px; margin-bottom: 8px;
+    }
+    .admin-stat-row { display: flex; gap: 12px; margin-bottom: 12px; }
+    .admin-stat {
+      flex: 1; background: #1a1a1a; border: 1px solid #2a2a2a;
+      border-radius: 8px; padding: 14px; text-align: center;
+    }
+    .admin-stat .stat-value { font-size: 24px; font-weight: 700; color: #36cfb4; }
+    .admin-stat .stat-label { font-size: 10px; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .admin-placeholder {
+      color: #555; font-size: 12px; text-align: center; padding: 24px;
+      border: 1px dashed #2a2a2a; border-radius: 8px;
+    }
+    .admin-list-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid #1a1a1a; font-size: 12px;
+    }
+    .admin-list-item:last-child { border-bottom: none; }
+    .admin-list-item .label { color: #999; }
+    .admin-list-item .value { color: #e0e0e0; font-weight: 500; }
+    /* Admin toggle switches */
+    .admin-toggle-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid #222;
+    }
+    .admin-toggle-row:last-child { border-bottom: none; }
+    .admin-toggle-row .toggle-label { font-size: 13px; color: #ccc; }
+    .admin-toggle-row .toggle-desc { font-size: 11px; color: #666; margin-top: 2px; }
+    .toggle-switch {
+      position: relative; width: 40px; height: 22px; cursor: pointer;
+    }
+    .toggle-switch input { display: none; }
+    .toggle-switch .slider {
+      position: absolute; inset: 0; background: #333; border-radius: 11px; transition: 0.2s;
+    }
+    .toggle-switch .slider::before {
+      content: ''; position: absolute; width: 16px; height: 16px;
+      left: 3px; top: 3px; background: #888; border-radius: 50%; transition: 0.2s;
+    }
+    .toggle-switch input:checked + .slider { background: rgba(54, 207, 180, 0.3); }
+    .toggle-switch input:checked + .slider::before { transform: translateX(18px); background: #36cfb4; }
+    /* SDK/Provider admin styles */
+    .admin-select {
+      width: 100%; padding: 10px 12px; background: #0c0c0c; border: 1px solid #2a2a2a;
+      border-radius: 6px; color: #e0e0e0; font-size: 13px; font-family: inherit;
+      outline: none; appearance: none; cursor: pointer;
+    }
+    .admin-select:focus { border-color: #36cfb4; }
+    .admin-select option { background: #0c0c0c; color: #e0e0e0; }
+    .admin-input {
+      width: 100%; padding: 10px 12px; background: #0c0c0c; border: 1px solid #2a2a2a;
+      border-radius: 6px; color: #e0e0e0; font-size: 13px; font-family: inherit;
+      outline: none;
+    }
+    .admin-input:focus { border-color: #36cfb4; }
+    .admin-input::placeholder { color: #444; }
+    .admin-save-btn {
+      padding: 10px 24px; background: #1a3a35; border: 1px solid #2a5a4a;
+      color: #36cfb4; border-radius: 6px; font-size: 13px; cursor: pointer;
+      font-weight: 600; transition: all 0.2s;
+    }
+    .admin-save-btn:hover { background: #245a4a; }
+    .admin-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .sdk-option-desc { font-size: 11px; color: #666; margin-top: 4px; }
+    .sdk-active-indicator {
+      display: inline-block; width: 8px; height: 8px; background: #36cfb4;
+      border-radius: 50%; margin-right: 6px;
+    }
+    .settings-saved-msg {
+      display: none; font-size: 12px; color: #36cfb4; margin-top: 8px;
+    }
+    .settings-saved-msg.visible { display: block; }
+
+    /* Chat area */
+    #chat-area { flex: 1; display: flex; flex-direction: column; }
+    #chat {
+      flex: 1; overflow-y: auto; padding: 24px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .message {
+      max-width: 80%; padding: 12px 16px; border-radius: 12px;
+      line-height: 1.6; font-size: 14px;
+    }
+    .message.user {
+      align-self: flex-end; background: #1a3a35; border: 1px solid #2a5a4a;
+      border-bottom-right-radius: 4px; white-space: pre-wrap;
+    }
+    .message.assistant {
+      align-self: flex-start; background: #1a1a1a; border: 1px solid #2a2a2a;
+      border-bottom-left-radius: 4px;
+    }
+    .message.assistant .msg-content h1,
+    .message.assistant .msg-content h2,
+    .message.assistant .msg-content h3 {
+      color: #36cfb4; margin: 12px 0 6px; font-weight: 600;
+    }
+    .message.assistant .msg-content h1 { font-size: 18px; }
+    .message.assistant .msg-content h2 { font-size: 16px; }
+    .message.assistant .msg-content h3 { font-size: 14px; }
+    .message.assistant .msg-content p { margin: 6px 0; }
+    .message.assistant .msg-content ul,
+    .message.assistant .msg-content ol { margin: 6px 0; padding-left: 20px; }
+    .message.assistant .msg-content li { margin: 3px 0; }
+    .message.assistant .msg-content strong { color: #fff; }
+    .message.assistant .msg-content em { color: #aaa; }
+    .message.assistant .msg-content code {
+      background: #0a1a18; color: #36cfb4; padding: 1px 5px;
+      border-radius: 3px; font-size: 13px;
+    }
+    .message.assistant .msg-content pre {
+      background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 6px;
+      padding: 10px; overflow-x: auto; margin: 8px 0;
+    }
+    .message.assistant .msg-content pre code { background: none; padding: 0; }
+    .message.assistant .msg-content table {
+      border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px;
+    }
+    .message.assistant .msg-content th {
+      background: #0a1a18; color: #36cfb4; text-align: left;
+      padding: 8px 10px; border: 1px solid #2a2a2a; font-weight: 600;
+    }
+    .message.assistant .msg-content td {
+      padding: 6px 10px; border: 1px solid #222; color: #ccc;
+    }
+    .message.assistant .msg-content tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+    .message.assistant .msg-content blockquote {
+      border-left: 3px solid #36cfb4; padding: 6px 12px; margin: 8px 0;
+      background: rgba(54, 207, 180, 0.05); color: #aaa;
+    }
+    .message.assistant .msg-content hr {
+      border: none; border-top: 1px solid #2a2a2a; margin: 10px 0;
+    }
+    .message.assistant .msg-content.raw { white-space: pre-wrap; }
+    .message.assistant .tool-calls {
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid #333;
+      font-size: 11px; color: #888;
+    }
+    .message.assistant .tool-calls span {
+      background: #0a1a18; padding: 2px 8px; border-radius: 4px;
+      margin-right: 4px; font-family: monospace; color: #36cfb4;
+    }
+    .verification {
+      margin-top: 6px; padding-top: 6px; border-top: 1px solid #333; font-size: 11px;
+    }
+    .verification.pass { color: #36cfb4; }
+    .verification.fail { color: #f87171; }
+    .msg-feedback {
+      margin-top: 6px; padding-top: 6px; border-top: 1px solid #222;
+    }
+    .msg-feedback .fb-row {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .msg-feedback button.fb-btn {
+      background: none; border: 1px solid #333; color: #666;
+      padding: 2px 8px; border-radius: 4px; font-size: 12px;
+      cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 3px;
+    }
+    .msg-feedback button.fb-btn:hover { border-color: #555; color: #aaa; }
+    .msg-feedback button.fb-btn.liked { border-color: #36cfb4; color: #36cfb4; background: rgba(54,207,180,0.08); }
+    .msg-feedback button.fb-btn.disliked { border-color: #f87171; color: #f87171; background: rgba(248,113,113,0.08); }
+    .msg-feedback .fb-prompt {
+      font-size: 10px; color: #555; margin-top: 4px; font-style: italic;
+    }
+    .msg-feedback .fb-explain {
+      display: none; margin-top: 6px; align-items: center; gap: 6px;
+    }
+    .msg-feedback .fb-explain.visible { display: flex; }
+    .msg-feedback .fb-explain input {
+      flex: 1; padding: 5px 10px; font-size: 11px; background: #0c0c0c;
+      border: 1px solid #333; border-radius: 5px; color: #ccc; outline: none; font-family: inherit;
+    }
+    .msg-feedback .fb-explain input:focus { border-color: #36cfb4; }
+    .msg-feedback .fb-explain input::placeholder { color: #444; }
+    .msg-feedback .fb-explain button.fb-submit {
+      background: #1a3a35; border: 1px solid #2a5a4a; color: #36cfb4;
+      padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer;
+    }
+    .msg-feedback .fb-explain button.fb-submit:hover { background: #245a4a; }
+    .msg-feedback .fb-recorded {
+      display: none; font-size: 11px; color: #36cfb4; margin-top: 6px;
+    }
+    .msg-feedback .fb-recorded.visible { display: block; }
+    body.hide-tools .tool-calls { display: none !important; }
+    body.hide-verification .verification { display: none !important; }
+    body.hide-feedback .msg-feedback { display: none !important; }
+
+    .message.error {
+      align-self: center; background: #3b1111; color: #f87171; font-size: 12px;
+      white-space: pre-wrap;
+    }
+    .typing { align-self: flex-start; color: #36cfb4; font-size: 13px; padding: 8px 16px; }
+    .typing::after { content: '...'; animation: dots 1.5s infinite; }
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+    #input-area {
+      padding: 16px 24px; background: #111111; border-top: 1px solid #2a2a2a;
+      display: flex; gap: 12px;
+    }
+    #input {
+      flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid #2a2a2a;
+      background: #0c0c0c; color: #e0e0e0; font-size: 14px; outline: none; font-family: inherit;
+    }
+    #input:focus { border-color: #36cfb4; }
+    #input::placeholder { color: #555; }
+    button {
+      padding: 12px 24px; border-radius: 8px; border: none;
+      background: #1a3a35; color: #36cfb4; font-size: 14px;
+      cursor: pointer; font-family: inherit; font-weight: 500;
+    }
+    button:hover { background: #245a4a; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .welcome { text-align: center; color: #666; margin: auto; font-size: 14px; line-height: 2; }
+    .welcome h2 { color: #36cfb4; font-size: 18px; margin-bottom: 8px; }
+    .welcome .logo-large { font-size: 48px; font-weight: 800; color: #36cfb4; letter-spacing: 3px; margin-bottom: 16px; }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+    .suggestions button {
+      padding: 8px 14px; font-size: 12px; background: #1a1a1a;
+      border: 1px solid #2a2a2a; color: #e0e0e0;
+    }
+    .suggestions button:hover { background: #1a2a2a; border-color: #36cfb4; color: #36cfb4; }
+  </style>
+</head>
+<body>
+  <header id="header" style="position: relative;">
+    <a class="back" href="javascript:void(0)" id="ghostfolio-link">&#8592; Ghostfolio</a>
+    <div class="header-left">
+      <h1>Agent-Folio</h1>
+      <span class="subtitle">AI Financial Assistant</span>
+      <span class="sdk-badge" id="sdk-badge">LiteLLM</span>
+    </div>
+    <div class="header-center-logo" id="header-center-logo">
+      <span class="logo-text">AF</span>
+    </div>
+    <div class="header-actions">
+      <button onclick="newConversation()">+ New Chat</button>
+      <div class="status" id="status">Connected</div>
+    </div>
+  </header>
+
+  <div class="main-content">
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <h3>Conversations</h3>
+        <input class="sidebar-search" type="text" placeholder="Search conversations..." id="conv-search" oninput="filterConversations()" />
+      </div>
+      <div class="category-tabs" id="category-tabs">
+        <span class="category-tab active" data-category="all" onclick="filterByCategory('all')">All</span>
+        <span class="category-tab" data-category="portfolio" onclick="filterByCategory('portfolio')">Portfolio</span>
+        <span class="category-tab" data-category="tax" onclick="filterByCategory('tax')">Tax</span>
+        <span class="category-tab" data-category="risk" onclick="filterByCategory('risk')">Risk</span>
+        <span class="category-tab" data-category="forecast" onclick="filterByCategory('forecast')">Forecast</span>
+        <span class="category-tab" data-category="market" onclick="filterByCategory('market')">Market</span>
+      </div>
+      <div class="conv-list-area" id="conv-list"></div>
+      <div class="admin-panel-toggle">
+        <button onclick="toggleAdminPanel()">
+          <span class="admin-icon">&#9881;</span>
+          <span>Agent Admin</span>
+        </button>
+      </div>
+    </div>
+    <div id="chat-area">
+      <div id="chat">
+        <div class="welcome" id="welcome">
+          <div class="logo-large">AF</div>
+          <h2>Ask me about your portfolio</h2>
+          <div>I can analyze your holdings, look up market data, review transactions, assess risk, and estimate taxes.</div>
+          <div class="suggestions">
+            <button onclick="sendSuggestion(this.textContent)">What does my portfolio look like?</button>
+            <button onclick="sendSuggestion(this.textContent)">What have I bought recently?</button>
+            <button onclick="sendSuggestion(this.textContent)">How risky is my portfolio?</button>
+            <button onclick="sendSuggestion(this.textContent)">What are my unrealized gains?</button>
+            <button onclick="sendSuggestion(this.textContent)">Am I too heavy in tech stocks?</button>
+            <button onclick="sendSuggestion(this.textContent)">What's my estimated tax bill?</button>
+          </div>
+        </div>
+      </div>
+      <div id="input-area">
+        <input id="input" type="text" placeholder="Ask about your portfolio..." autofocus />
+        <button id="send" onclick="send()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent Admin Panel Modal -->
+  <div class="admin-overlay" id="admin-overlay" onclick="if(event.target===this)toggleAdminPanel()">
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <h2>&#9881; Agent Admin <span class="admin-badge">Sidecar</span></h2>
+        <button class="close-btn" onclick="toggleAdminPanel()">&times;</button>
+      </div>
+      <div class="admin-tabs">
+        <div class="admin-tab active" data-tab="sdk" onclick="switchAdminTab('sdk')">SDK / Provider</div>
+        <div class="admin-tab" data-tab="overview" onclick="switchAdminTab('overview')">Overview</div>
+        <div class="admin-tab" data-tab="display" onclick="switchAdminTab('display')">Display</div>
+        <div class="admin-tab" data-tab="evals" onclick="switchAdminTab('evals')">Evaluations</div>
+      </div>
+      <div class="admin-modal-body" id="admin-body">
+        <!-- SDK / Provider tab -->
+        <div id="admin-tab-sdk">
+          <div class="admin-section">
+            <h3>SDK Selection</h3>
+            <div class="admin-card">
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">Active SDK</label>
+                <select class="admin-select" id="admin-sdk-select" onchange="onSdkChange()">
+                </select>
+                <div class="sdk-option-desc" id="sdk-desc"></div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-section">
+            <h3>Model Selection</h3>
+            <div class="admin-card">
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">Active Model</label>
+                <select class="admin-select" id="admin-model-select">
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="admin-section">
+            <h3>API Keys</h3>
+            <div class="admin-card">
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">
+                  OpenAI API Key <span id="openai-key-status" style="font-size: 10px;"></span>
+                </label>
+                <input class="admin-input" type="password" id="admin-openai-key" placeholder="sk-..." />
+              </div>
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">
+                  Anthropic API Key <span id="anthropic-key-status" style="font-size: 10px;"></span>
+                </label>
+                <input class="admin-input" type="password" id="admin-anthropic-key" placeholder="sk-ant-..." />
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="admin-save-btn" id="admin-save-btn" onclick="saveAdminSettings()">Save Settings</button>
+            <div class="settings-saved-msg" id="settings-saved-msg">Settings saved successfully!</div>
+          </div>
+        </div>
+        <!-- Overview tab -->
+        <div id="admin-tab-overview" style="display:none;">
+          <div class="admin-stat-row">
+            <div class="admin-stat">
+              <div class="stat-value" id="stat-total-convos">--</div>
+              <div class="stat-label">Total Conversations</div>
+            </div>
+            <div class="admin-stat">
+              <div class="stat-value" id="stat-total-messages">--</div>
+              <div class="stat-label">Total Messages</div>
+            </div>
+            <div class="admin-stat">
+              <div class="stat-value" id="stat-tools-used">--</div>
+              <div class="stat-label">Tool Calls</div>
+            </div>
+          </div>
+          <div class="admin-section">
+            <h3>Architecture</h3>
+            <div class="admin-card">
+              <div class="admin-list-item"><span class="label">Approach</span><span class="value">Sidecar (standalone)</span></div>
+              <div class="admin-list-item"><span class="label">Backend</span><span class="value">FastAPI (Python)</span></div>
+              <div class="admin-list-item"><span class="label">Ghostfolio</span><span class="value">Public REST API</span></div>
+            </div>
+          </div>
+          <div class="admin-section">
+            <h3>Category Distribution</h3>
+            <div class="admin-card" id="admin-category-dist">
+              <div class="admin-placeholder">Category stats will populate as conversations are classified</div>
+            </div>
+          </div>
+        </div>
+        <!-- Display tab -->
+        <div id="admin-tab-display" style="display:none;">
+          <div class="admin-section">
+            <h3>Response Rendering</h3>
+            <div class="admin-card">
+              <div class="admin-toggle-row">
+                <div>
+                  <div class="toggle-label">Render Markdown</div>
+                  <div class="toggle-desc">Format agent responses with proper headings, tables, and lists</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-markdown" checked onchange="toggleSetting('markdown', this.checked)" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="admin-toggle-row">
+                <div>
+                  <div class="toggle-label">Show Tool Calls</div>
+                  <div class="toggle-desc">Display which agent tools were used for each response</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-tools" checked onchange="toggleSetting('tools', this.checked)" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="admin-toggle-row">
+                <div>
+                  <div class="toggle-label">Show Verification</div>
+                  <div class="toggle-desc">Display data verification checks on each response</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-verification" checked onchange="toggleSetting('verification', this.checked)" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="admin-toggle-row">
+                <div>
+                  <div class="toggle-label">Show Feedback Buttons</div>
+                  <div class="toggle-desc">Show thumbs up/down on each agent response</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-feedback" checked onchange="toggleSetting('feedback', this.checked)" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Evals tab -->
+        <div id="admin-tab-evals" style="display:none;">
+          <div class="admin-section">
+            <h3>Golden Set Evaluations</h3>
+            <div class="admin-placeholder">
+              Run evaluation suites against golden test sets to measure agent accuracy.<br><br>
+              Configure golden sets in <code style="color:#36cfb4;">eval/golden_data.yaml</code>
+            </div>
+          </div>
+          <div class="admin-section">
+            <h3>Latest Results</h3>
+            <div class="admin-card">
+              <div class="admin-list-item"><span class="label">Last Run</span><span class="value">--</span></div>
+              <div class="admin-list-item"><span class="label">Pass Rate</span><span class="value">--</span></div>
+              <div class="admin-list-item"><span class="label">Avg Latency</span><span class="value">--</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // API base — agent-folio's own API
+    const API_BASE = '/api/v1/agent';
+    const centerLogo = document.getElementById('header-center-logo');
+    const headerEl = document.getElementById('header');
+
+    // Settings (persisted to localStorage)
+    const defaultSettings = { markdown: true, tools: true, verification: true, feedback: true };
+    let settings = { ...defaultSettings };
+    try {
+      const saved = JSON.parse(localStorage.getItem('agent-settings'));
+      if (saved) settings = { ...defaultSettings, ...saved };
+    } catch {}
+
+    function applySettings() {
+      document.body.classList.toggle('hide-tools', !settings.tools);
+      document.body.classList.toggle('hide-verification', !settings.verification);
+      document.body.classList.toggle('hide-feedback', !settings.feedback);
+      const mt = document.getElementById('toggle-markdown');
+      const tt = document.getElementById('toggle-tools');
+      const vt = document.getElementById('toggle-verification');
+      const ft = document.getElementById('toggle-feedback');
+      if (mt) mt.checked = settings.markdown;
+      if (tt) tt.checked = settings.tools;
+      if (vt) vt.checked = settings.verification;
+      if (ft) ft.checked = settings.feedback;
+    }
+
+    function toggleSetting(key, value) {
+      settings[key] = value;
+      localStorage.setItem('agent-settings', JSON.stringify(settings));
+      applySettings();
+      if (key === 'markdown') rerenderMessages();
+    }
+
+    function rerenderMessages() {
+      document.querySelectorAll('.message.assistant .msg-content').forEach(el => {
+        const raw = el.getAttribute('data-raw');
+        if (raw) {
+          if (settings.markdown && typeof marked !== 'undefined') {
+            el.innerHTML = marked.parse(raw);
+            el.classList.remove('raw');
+          } else {
+            el.textContent = raw;
+            el.classList.add('raw');
+          }
+        }
+      });
+    }
+
+    applySettings();
+
+    function getToken() {
+      return sessionStorage.getItem('auth-token') || localStorage.getItem('auth-token') || '';
+    }
+
+    function setChatMode(active) {
+      if (active) {
+        centerLogo.classList.add('visible');
+        headerEl.classList.add('chat-active');
+      } else {
+        centerLogo.classList.remove('visible');
+        headerEl.classList.remove('chat-active');
+      }
+    }
+
+    let TOKEN = getToken();
+    let messages = [];
+    let currentConversationId = null;
+    let allConversations = [];
+    let activeCategory = 'all';
+    let isLoadingConversations = false;
+
+    const statusEl = document.getElementById('status');
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const convListEl = document.getElementById('conv-list');
+    const convSearchEl = document.getElementById('conv-search');
+
+    if (!TOKEN) {
+      statusEl.textContent = 'Not authenticated';
+      statusEl.className = 'status disconnected';
+      const t = prompt('No auth token found. Please sign into Ghostfolio first, then paste your JWT token here:');
+      if (t) {
+        TOKEN = t;
+        sessionStorage.setItem('auth-token', t);
+      }
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+
+    loadConversations();
+    loadSdkSettings();
+
+    function classifyConversation(title) {
+      if (!title) return 'general';
+      const t = title.toLowerCase();
+      if (t.includes('tax') || t.includes('capital gain') || t.includes('tax bill')) return 'tax';
+      if (t.includes('risk') || t.includes('risky') || t.includes('volatil') || t.includes('diversif')) return 'risk';
+      if (t.includes('forecast') || t.includes('predict') || t.includes('what if') || t.includes('scenario')) return 'forecast';
+      if (t.includes('market') || t.includes('sector') || t.includes('index') || t.includes('s&p')) return 'market';
+      if (t.includes('portfolio') || t.includes('holding') || t.includes('bought') || t.includes('allocation') || t.includes('position') || t.includes('stock') || t.includes('heavy') || t.includes('look like')) return 'portfolio';
+      return 'general';
+    }
+
+    function filterConversations() {
+      const query = convSearchEl.value.toLowerCase().trim();
+      const items = convListEl.querySelectorAll('.conv-item');
+      items.forEach(item => {
+        const title = (item.getAttribute('data-title') || '').toLowerCase();
+        const category = item.getAttribute('data-category') || '';
+        const matchesSearch = !query || title.includes(query);
+        const matchesCategory = activeCategory === 'all' || category === activeCategory;
+        item.classList.toggle('hidden', !(matchesSearch && matchesCategory));
+      });
+    }
+
+    function filterByCategory(cat) {
+      activeCategory = cat;
+      document.querySelectorAll('.category-tab').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-category') === cat);
+      });
+      filterConversations();
+    }
+
+    async function loadConversations() {
+      if (!TOKEN || isLoadingConversations) return;
+      isLoadingConversations = true;
+      try {
+        const res = await fetch(`${API_BASE}/conversations`, {
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        allConversations = data.conversations || [];
+        const seen = new Set();
+        allConversations = allConversations.filter(c => {
+          if (seen.has(c.id)) return false;
+          seen.add(c.id);
+          return true;
+        });
+        renderConversationList(allConversations);
+      } catch (e) {}
+      finally { isLoadingConversations = false; }
+    }
+
+    function renderConversationList(conversations) {
+      convListEl.innerHTML = '';
+      for (const conv of conversations) {
+        const category = classifyConversation(conv.title);
+        const div = document.createElement('div');
+        div.className = 'conv-item' + (conv.id === currentConversationId ? ' active' : '');
+        div.setAttribute('data-title', conv.title || '');
+        div.setAttribute('data-category', category);
+        div.setAttribute('data-id', conv.id);
+        const dateStr = new Date(conv.updatedAt).toLocaleDateString();
+        div.innerHTML = `
+          <span class="conv-delete" onclick="event.stopPropagation(); deleteConversation('${conv.id}')">&#10005;</span>
+          <div>${conv.title || 'Untitled'}<span class="conv-category">${category}</span></div>
+          <div class="conv-date">${dateStr} &middot; ${conv._count?.messages || 0} msgs</div>
+        `;
+        div.addEventListener('click', () => loadConversation(conv.id));
+        convListEl.appendChild(div);
+      }
+      filterConversations();
+    }
+
+    async function loadConversation(id) {
+      if (!TOKEN) return;
+      try {
+        const res = await fetch(`${API_BASE}/conversations/${id}`, {
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.conversation) return;
+        currentConversationId = id;
+        messages = [];
+        chat.innerHTML = '';
+        setChatMode(true);
+        for (const msg of data.conversation.messages) {
+          messages.push({ role: msg.role, content: msg.content });
+          addMessage(msg.content, msg.role, msg.toolCalls);
+        }
+        document.querySelectorAll('.conv-item').forEach(el => {
+          el.classList.toggle('active', el.getAttribute('data-id') === id);
+        });
+      } catch (e) {}
+    }
+
+    async function deleteConversation(id) {
+      if (!confirm('Delete this conversation?')) return;
+      try {
+        await fetch(`${API_BASE}/conversations/${id}`, {
+          method: 'DELETE', headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        if (id === currentConversationId) newConversation();
+        loadConversations();
+      } catch (e) {}
+    }
+
+    function newConversation() {
+      currentConversationId = null;
+      messages = [];
+      setChatMode(false);
+      chat.innerHTML = `
+        <div class="welcome" id="welcome">
+          <div class="logo-large">AF</div>
+          <h2>Ask me about your portfolio</h2>
+          <div>I can analyze your holdings, look up market data, review transactions, assess risk, and estimate taxes.</div>
+          <div class="suggestions">
+            <button onclick="sendSuggestion(this.textContent)">What does my portfolio look like?</button>
+            <button onclick="sendSuggestion(this.textContent)">What have I bought recently?</button>
+            <button onclick="sendSuggestion(this.textContent)">How risky is my portfolio?</button>
+            <button onclick="sendSuggestion(this.textContent)">What are my unrealized gains?</button>
+            <button onclick="sendSuggestion(this.textContent)">Am I too heavy in tech stocks?</button>
+            <button onclick="sendSuggestion(this.textContent)">What's my estimated tax bill?</button>
+          </div>
+        </div>
+      `;
+      document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+    }
+
+    function sendSuggestion(text) { input.value = text; send(); }
+
+    async function send() {
+      const text = input.value.trim();
+      if (!text) return;
+      if (!TOKEN) TOKEN = getToken();
+      if (!TOKEN) { addMessage('Please provide a JWT token to authenticate.', 'error'); return; }
+      const welcome = chat.querySelector('.welcome');
+      if (welcome) { welcome.remove(); setChatMode(true); }
+      addMessage(text, 'user');
+      messages.push({ role: 'user', content: text });
+      input.value = '';
+      sendBtn.disabled = true;
+      const typing = document.createElement('div');
+      typing.className = 'typing';
+      typing.textContent = 'Thinking';
+      chat.appendChild(typing);
+      chat.scrollTop = chat.scrollHeight;
+      try {
+        const res = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+          body: JSON.stringify({ messages, conversationId: currentConversationId })
+        });
+        typing.remove();
+        if (!res.ok) {
+          const err = await res.text();
+          addMessage(`Error ${res.status}: ${err}`, 'error');
+          sendBtn.disabled = false;
+          return;
+        }
+        const data = await res.json();
+        if (data.conversationId) {
+          currentConversationId = data.conversationId;
+          loadConversations();
+        }
+        messages.push({ role: 'assistant', content: data.message });
+        addMessage(data.message, 'assistant', data.toolCalls, data.verification);
+      } catch (err) {
+        typing.remove();
+        addMessage(`Network error: ${err.message}`, 'error');
+      }
+      sendBtn.disabled = false;
+      input.focus();
+    }
+
+    function addMessage(text, role, toolCalls, verification) {
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+
+      if (role === 'assistant') {
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'msg-content';
+        contentDiv.setAttribute('data-raw', text);
+        if (settings.markdown && typeof marked !== 'undefined') {
+          contentDiv.innerHTML = marked.parse(text);
+        } else {
+          contentDiv.textContent = text;
+          contentDiv.classList.add('raw');
+        }
+        div.appendChild(contentDiv);
+
+        if (toolCalls?.length) {
+          const tc = document.createElement('div');
+          tc.className = 'tool-calls';
+          tc.innerHTML = 'Tools used: ' + toolCalls.map(t => `<span>${t.tool}</span>`).join('');
+          div.appendChild(tc);
+        }
+
+        if (verification && verification.checks?.length > 0) {
+          const vDiv = document.createElement('div');
+          vDiv.className = `verification ${verification.verified ? 'pass' : 'fail'}`;
+          const icon = verification.verified ? '&#10003;' : '&#9888;';
+          vDiv.innerHTML = `${icon} Verified: ${verification.checks.map(c => `${c.passed ? '&#10003;' : '&#10007;'} ${c.check}`).join(', ')}`;
+          div.appendChild(vDiv);
+        }
+
+        const fb = document.createElement('div');
+        fb.className = 'msg-feedback';
+        const msgIdx = chat.querySelectorAll('.message.assistant').length;
+        fb.innerHTML = `
+          <div class="fb-row">
+            <button class="fb-btn" onclick="feedback(this, ${msgIdx}, 'up')" title="Helpful">&#128077;</button>
+            <button class="fb-btn" onclick="feedback(this, ${msgIdx}, 'down')" title="Not helpful">&#128078;</button>
+          </div>
+          <div class="fb-prompt">Are you happy with my response?</div>
+          <div class="fb-explain" id="fb-explain-${msgIdx}">
+            <input type="text" placeholder="Optional explanation..." onkeydown="if(event.key==='Enter')submitFeedback(${msgIdx})" />
+            <button class="fb-submit" onclick="submitFeedback(${msgIdx})">Submit</button>
+          </div>
+          <div class="fb-recorded" id="fb-recorded-${msgIdx}">Your response has been recorded.</div>
+        `;
+        div.appendChild(fb);
+      } else {
+        div.textContent = text;
+      }
+
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function feedback(btn, msgIdx, direction) {
+      const fbContainer = btn.closest('.msg-feedback');
+      fbContainer.querySelectorAll('.fb-btn').forEach(b => { b.classList.remove('liked', 'disliked'); });
+      if (direction === 'up') {
+        btn.classList.add('liked');
+        const explainEl = document.getElementById(`fb-explain-${msgIdx}`);
+        if (explainEl) explainEl.classList.remove('visible');
+        const recordedEl = document.getElementById(`fb-recorded-${msgIdx}`);
+        if (recordedEl) {
+          recordedEl.classList.add('visible');
+          setTimeout(() => recordedEl.classList.remove('visible'), 2000);
+        }
+      } else {
+        btn.classList.add('disliked');
+        const explainEl = document.getElementById(`fb-explain-${msgIdx}`);
+        if (explainEl) {
+          explainEl.classList.add('visible');
+          explainEl.querySelector('input').focus();
+        }
+      }
+      console.log(`Feedback: message ${msgIdx} = ${direction}`);
+    }
+
+    function submitFeedback(msgIdx) {
+      const explainEl = document.getElementById(`fb-explain-${msgIdx}`);
+      const explanation = explainEl ? explainEl.querySelector('input').value : '';
+      console.log(`Feedback explanation for message ${msgIdx}: ${explanation}`);
+      if (explainEl) explainEl.classList.remove('visible');
+      const recordedEl = document.getElementById(`fb-recorded-${msgIdx}`);
+      if (recordedEl) {
+        recordedEl.classList.add('visible');
+        setTimeout(() => recordedEl.classList.remove('visible'), 2000);
+      }
+    }
+
+    // Admin Panel
+    function toggleAdminPanel() {
+      const overlay = document.getElementById('admin-overlay');
+      overlay.classList.toggle('visible');
+      if (overlay.classList.contains('visible')) {
+        applySettings();
+        loadAdminStats();
+        loadSdkSettings();
+      }
+    }
+
+    function switchAdminTab(tab) {
+      document.querySelectorAll('.admin-tab').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-tab') === tab);
+      });
+      document.querySelectorAll('[id^="admin-tab-"]').forEach(el => {
+        el.style.display = el.id === `admin-tab-${tab}` ? 'block' : 'none';
+      });
+    }
+
+    function loadAdminStats() {
+      const totalConvos = allConversations.length;
+      const totalMsgs = allConversations.reduce((sum, c) => sum + (c._count?.messages || 0), 0);
+      document.getElementById('stat-total-convos').textContent = totalConvos;
+      document.getElementById('stat-total-messages').textContent = totalMsgs;
+      const catCounts = {};
+      allConversations.forEach(c => {
+        const cat = classifyConversation(c.title);
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
+      });
+      const catDist = document.getElementById('admin-category-dist');
+      if (Object.keys(catCounts).length > 0) {
+        catDist.innerHTML = Object.entries(catCounts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([cat, count]) =>
+            `<div class="admin-list-item">
+              <span class="label" style="text-transform:capitalize">${cat}</span>
+              <span class="value">${count} conversation${count !== 1 ? 's' : ''}</span>
+            </div>`
+          ).join('');
+      }
+    }
+
+    // SDK / Provider Settings
+    let sdkSettings = {};
+
+    async function loadSdkSettings() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/settings`);
+        if (!res.ok) return;
+        sdkSettings = await res.json();
+
+        // Populate SDK dropdown
+        const sdkSelect = document.getElementById('admin-sdk-select');
+        sdkSelect.innerHTML = '';
+        for (const opt of (sdkSettings.sdkOptions || [])) {
+          const option = document.createElement('option');
+          option.value = opt.id;
+          option.textContent = opt.name;
+          if (opt.id === sdkSettings.sdk) option.selected = true;
+          sdkSelect.appendChild(option);
+        }
+        onSdkChange();
+
+        // Populate model dropdown
+        const modelSelect = document.getElementById('admin-model-select');
+        modelSelect.innerHTML = '';
+        for (const opt of (sdkSettings.modelOptions || [])) {
+          const option = document.createElement('option');
+          option.value = opt.id;
+          option.textContent = `${opt.name} (${opt.provider})`;
+          if (opt.id === sdkSettings.model) option.selected = true;
+          modelSelect.appendChild(option);
+        }
+
+        // Update key status
+        document.getElementById('openai-key-status').textContent = sdkSettings.hasOpenaiKey ? '(configured)' : '(not set)';
+        document.getElementById('openai-key-status').style.color = sdkSettings.hasOpenaiKey ? '#36cfb4' : '#f87171';
+        document.getElementById('anthropic-key-status').textContent = sdkSettings.hasAnthropicKey ? '(configured)' : '(not set)';
+        document.getElementById('anthropic-key-status').style.color = sdkSettings.hasAnthropicKey ? '#36cfb4' : '#f87171';
+
+        // Update header badge
+        updateSdkBadge(sdkSettings.sdk);
+      } catch (e) {
+        console.log('Failed to load SDK settings:', e);
+      }
+    }
+
+    function onSdkChange() {
+      const sdkId = document.getElementById('admin-sdk-select').value;
+      const opt = (sdkSettings.sdkOptions || []).find(o => o.id === sdkId);
+      document.getElementById('sdk-desc').textContent = opt ? opt.description : '';
+    }
+
+    function updateSdkBadge(sdkId) {
+      const badge = document.getElementById('sdk-badge');
+      const opt = (sdkSettings.sdkOptions || []).find(o => o.id === sdkId);
+      badge.textContent = opt ? opt.name : sdkId;
+    }
+
+    async function saveAdminSettings() {
+      const btn = document.getElementById('admin-save-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      const body = {
+        sdk: document.getElementById('admin-sdk-select').value,
+        model: document.getElementById('admin-model-select').value,
+      };
+
+      const openaiKey = document.getElementById('admin-openai-key').value;
+      if (openaiKey) body.openai_api_key = openaiKey;
+
+      const anthropicKey = document.getElementById('admin-anthropic-key').value;
+      if (anthropicKey) body.anthropic_api_key = anthropicKey;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        if (res.ok) {
+          const msg = document.getElementById('settings-saved-msg');
+          msg.classList.add('visible');
+          setTimeout(() => msg.classList.remove('visible'), 3000);
+          updateSdkBadge(body.sdk);
+          // Clear key inputs
+          document.getElementById('admin-openai-key').value = '';
+          document.getElementById('admin-anthropic-key').value = '';
+          // Reload to update status
+          await loadSdkSettings();
+        }
+      } catch (e) {
+        alert('Failed to save settings: ' + e.message);
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Save Settings';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+agent_settings.json
+conversations/
+eval/eval-snapshots.json
+.venv/
+venv/
+*.egg-info/
+dist/
