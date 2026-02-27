@@ -44,7 +44,10 @@ async def root():
     """Serve the agent chat UI."""
     html_path = os.path.join(static_dir, "agent-chat.html")
     if os.path.exists(html_path):
-        return FileResponse(html_path)
+        return FileResponse(
+            html_path,
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
     return {"status": "ok", "service": "agent-folio"}
 
 
