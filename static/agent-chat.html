@@ -399,6 +399,84 @@
       border: 1px solid #2a2a2a; color: #e0e0e0;
     }
     .suggestions button:hover { background: #1a2a2a; border-color: #36cfb4; color: #36cfb4; }
+
+    /* Floating help button */
+    #help-fab {
+      position: absolute; bottom: 80px; right: 24px; z-index: 50;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: #0c0c0c; border: 1.5px solid #36cfb4;
+      color: #36cfb4; font-size: 18px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 12px rgba(54, 207, 180, 0.25);
+      transition: all 0.2s;
+    }
+    #help-fab:hover {
+      background: #1a3a35;
+      box-shadow: 0 0 20px rgba(54, 207, 180, 0.4);
+    }
+    #help-menu {
+      position: absolute; bottom: 128px; right: 24px; z-index: 51;
+      background: #161616; border: 1px solid #2a2a2a; border-radius: 8px;
+      display: none; min-width: 160px; overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    #help-menu.visible { display: block; }
+    #help-menu .help-item {
+      padding: 10px 16px; font-size: 13px; color: #ccc; cursor: pointer;
+      display: flex; align-items: center; gap: 8px; transition: background 0.15s;
+    }
+    #help-menu .help-item:hover { background: #1a2a2a; color: #36cfb4; }
+    #help-menu .help-item .help-icon { font-size: 14px; width: 18px; text-align: center; }
+
+    /* Changelog overlay */
+    .changelog-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); z-index: 200;
+      display: none; align-items: center; justify-content: center;
+    }
+    .changelog-overlay.visible { display: flex; }
+    .changelog-modal {
+      background: #141414; border: 1px solid #2a2a2a; border-radius: 12px;
+      width: 600px; max-width: 90vw; max-height: 80vh;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .changelog-header {
+      padding: 20px 24px 16px; border-bottom: 1px solid #2a2a2a;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .changelog-header h2 { font-size: 18px; color: #36cfb4; font-weight: 600; }
+    .changelog-close {
+      background: none; border: none; color: #666; font-size: 20px;
+      cursor: pointer; padding: 4px 8px; border-radius: 4px;
+    }
+    .changelog-close:hover { color: #e0e0e0; background: #1a1a1a; }
+    .changelog-body { padding: 16px 24px 24px; overflow-y: auto; flex: 1; }
+    .changelog-entry {
+      padding: 14px 0; border-bottom: 1px solid #1e1e1e;
+    }
+    .changelog-entry:last-child { border-bottom: none; }
+    .changelog-entry-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .changelog-entry-left { display: flex; align-items: center; gap: 10px; }
+    .changelog-date {
+      font-size: 11px; color: #555; font-family: monospace;
+    }
+    .changelog-title {
+      font-size: 14px; color: #e0e0e0; font-weight: 500;
+    }
+    .changelog-desc {
+      font-size: 12px; color: #888; line-height: 1.5; margin-top: 4px;
+    }
+    .changelog-link {
+      font-size: 11px; color: #36cfb4; text-decoration: none;
+      white-space: nowrap; padding: 3px 8px; border: 1px solid rgba(54,207,180,0.2);
+      border-radius: 4px; transition: all 0.15s;
+    }
+    .changelog-link:hover {
+      background: rgba(54,207,180,0.1); border-color: #36cfb4;
+    }
   </style>
 </head>
 <body>
@@ -440,7 +518,7 @@
         </button>
       </div>
     </div>
-    <div id="chat-area">
+    <div id="chat-area" style="position: relative;">
       <div id="chat">
         <div class="welcome" id="welcome">
           <div class="logo-large"><svg viewBox="0 0 512 512" width="64" height="64" fill="#36cfb4"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
@@ -460,6 +538,28 @@
         <input id="input" type="text" placeholder="Ask about your portfolio..." autofocus />
         <button id="send" onclick="send()">Send</button>
       </div>
+
+      <!-- Floating help button -->
+      <button id="help-fab" onclick="toggleHelpMenu()" title="Help & Info">?</button>
+      <div id="help-menu">
+        <div class="help-item" onclick="showChangelog()">
+          <span class="help-icon">&#9998;</span> Changelog
+        </div>
+        <div class="help-item" onclick="window.open('https://github.com/jpwilson/agent-folio','_blank')">
+          <span class="help-icon">&#128279;</span> GitHub
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Changelog Overlay -->
+  <div class="changelog-overlay" id="changelog-overlay" onclick="if(event.target===this)closeChangelog()">
+    <div class="changelog-modal">
+      <div class="changelog-header">
+        <h2>Changelog</h2>
+        <button class="changelog-close" onclick="closeChangelog()">&times;</button>
+      </div>
+      <div class="changelog-body" id="changelog-body"></div>
     </div>
   </div>
 
@@ -1798,6 +1898,66 @@
         errorEl.style.display = 'block';
         errorEl.innerHTML = `<p style="color:#ff4444;">Failed to load cost data: ${e.message}</p>`;
       }
+    }
+
+    // ---- Help Menu & Changelog ----
+    function toggleHelpMenu() {
+      document.getElementById('help-menu').classList.toggle('visible');
+    }
+    document.addEventListener('click', (e) => {
+      const fab = document.getElementById('help-fab');
+      const menu = document.getElementById('help-menu');
+      if (menu && fab && !fab.contains(e.target) && !menu.contains(e.target)) {
+        menu.classList.remove('visible');
+      }
+    });
+
+    const CHANGELOG_ENTRIES = [
+      {
+        date: '2026-02-26',
+        title: 'Persistent data storage',
+        desc: 'Migrated conversations, feedback, and settings from ephemeral file storage to Postgres. Data now survives container redeploys.',
+        commit: 'eeb82a7e43a7839cc7faba2fd656de4f0b3f8365'
+      },
+      {
+        date: '2026-02-26',
+        title: '10 tools, 55 eval cases, verification & analytics',
+        desc: 'Added 5 new tools (performance, dividends, X-Ray report, investment timeline, accounts). Expanded eval suite to 55 golden test cases. Added confidence scoring, user feedback, Langfuse analytics, and cost projections.',
+        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2'
+      },
+      {
+        date: '2026-02-26',
+        title: 'Docker networking fix',
+        desc: 'Fixed connectivity between Agent-Folio and Ghostfolio containers in local development using host.docker.internal.',
+        commit: 'ea95cec2b04080a571b91eef75678f2ebd826997'
+      },
+      {
+        date: '2026-02-26',
+        title: 'Initial release',
+        desc: 'Standalone FastAPI sidecar agent for Ghostfolio. Chat UI, 5 core tools (portfolio summary, market data, transactions, risk, tax), JWT auth, LLM-agnostic SDK system, guardrails, and deterministic verification.',
+        commit: 'e1f29078f5d57065497f251a7a353debc0e773c7'
+      }
+    ];
+
+    function showChangelog() {
+      document.getElementById('help-menu').classList.remove('visible');
+      const body = document.getElementById('changelog-body');
+      body.innerHTML = CHANGELOG_ENTRIES.map(e => `
+        <div class="changelog-entry">
+          <div class="changelog-entry-top">
+            <div class="changelog-entry-left">
+              <span class="changelog-date">${e.date}</span>
+              <span class="changelog-title">${e.title}</span>
+            </div>
+            <a class="changelog-link" href="https://github.com/jpwilson/agent-folio/commit/${e.commit}" target="_blank" rel="noopener">Code changes</a>
+          </div>
+          <div class="changelog-desc">${e.desc}</div>
+        </div>
+      `).join('');
+      document.getElementById('changelog-overlay').classList.add('visible');
+    }
+    function closeChangelog() {
+      document.getElementById('changelog-overlay').classList.remove('visible');
     }
   </script>
 </body>

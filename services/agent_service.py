@@ -5,7 +5,7 @@ from datetime import datetime
 
 from services import db
 from services.ghostfolio_client import GhostfolioClient
-from services.guardrails import pre_filter, post_filter
+from services.guardrails import pre_filter, post_filter, validate_message_roles
 from services.sdk_registry import get_sdk, get_current_model
 from services.verification import verify_response
 from tools import ALL_TOOLS, TOOL_DEFINITIONS
@@ -54,6 +54,9 @@ async def delete_conversation(conversation_id: str, user_id: str) -> dict:
 
 async def chat(messages: list[dict], user_id: str, token: str, conversation_id: str | None = None) -> dict:
     request_start = time.time()
+
+    # Validate message roles: strip injected 'system' roles, enforce limits
+    messages = validate_message_roles(messages)
 
     client = GhostfolioClient(token)
 

@@ -146,4 +146,51 @@ Response to User (with verification metadata)
 2. **LiteLLM as default SDK**: Unified interface to 100+ models; easy to switch providers without code changes
 3. **Deterministic verification**: No LLM-as-judge; checks are fast, reproducible, and free
 4. **Confidence scoring**: Weighted composite score gives users transparency into response reliability
-5. **File-based persistence**: Simple, no additional database needed for MVP
+5. **Postgres persistence**: Conversations, feedback, and settings stored in the shared Ghostfolio Postgres instance via asyncpg, surviving container redeploys
+
+## Security: Jailbreak Prevention
+
+Agent-Folio implements defense-in-depth against prompt injection and jailbreak attacks:
+
+### Pre-Filter (Input Guardrails)
+- **Input length limiting**: Messages capped at 2000 characters to prevent token-stuffing
+- **Message role validation**: Only `user` and `assistant` roles accepted from client; `system` role injected server-side only
+- **Encoding detection**: Base64, ROT13, and hex-encoded payloads are detected and decoded to check for hidden instructions
+- **Delimiter injection detection**: ChatML tokens (`<|im_start|>`, `[INST]`, `<<SYS>>`) and fake system message markers are blocked
+- **Unicode normalization**: Homoglyph attacks (Cyrillic/Greek lookalikes, fullwidth chars, zero-width chars) are normalized before pattern matching
+- **HTML/Markdown stripping**: HTML tags and potentially dangerous markup removed before processing
+- **Expanded manipulation patterns**: Detection of DAN, developer mode, persona overrides, "no restrictions" variants, instruction override attempts, hypothetical framing, payload splitting, emotional manipulation
+- **Multilingual injection detection**: Common "ignore instructions" phrases in French, Spanish, German, Italian, Chinese, and Japanese
+- **Financial keyword matching**: Off-topic messages redirected back to financial domain
+
+### Post-Filter (Output Guardrails)
+- **System prompt leakage detection**: Checks if the LLM reveals its own instructions
+- **Credential leakage detection**: Regex patterns catch API keys, JWTs, Bearer tokens in responses
+- **Harmful financial advice detection**: Blocks guaranteed returns, insider trading references, market manipulation language
+- **Tone/persona violation detection**: Catches pirate language, roleplay compliance, creative writing
+- **Off-topic content detection**: Catches recipes, sports, stories, SQL/code execution references
+- **Response length anomaly**: Flags responses exceeding 10,000 characters
+
+### Architectural Defenses
+- **Sandwich defense**: System prompt reinforcement appended after user messages as a reminder
+- **Output token limit**: `max_tokens=2000` prevents excessively long responses
+- **Tool call validation**: Only whitelisted tools can be executed; tool arguments are sanitized
+- **Deterministic verification**: Every response checked for data integrity (allocation sums, valid prices, no hallucinated symbols)
+- **Confidence scoring**: Weighted 0-100 score gives users transparency into response reliability
+
+### Eval Coverage
+55+ test cases including 10+ adversarial cases covering:
+- Prompt injection (basic + encoded + multilingual)
+- DAN/persona/developer mode variants
+- System prompt extraction attempts
+- Credential extraction attempts
+- Delimiter/token smuggling
+- Emotional manipulation
+- Payload splitting
+- HTML/code injection
+
+### Limitations
+- No defense is foolproof — prompt injection is a fundamental LLM architectural challenge
+- Multi-turn "crescendo" attacks (gradual topic drift) remain the hardest to defend against
+- Defense-in-depth approach makes attacks significantly harder, not impossible
+- Regular red-teaming and eval suite runs are essential after model/prompt changes
