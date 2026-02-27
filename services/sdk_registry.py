@@ -5,9 +5,9 @@ from sdks.openai_sdk import OpenAISDK
 from sdks.anthropic_sdk import AnthropicSDK
 from sdks.litellm_sdk import LiteLLMSDK
 from sdks.langchain_sdk import LangChainSDK
-from config import DEFAULT_SDK, DEFAULT_MODEL
+from config import DEFAULT_SDK, DEFAULT_MODEL, DATA_DIR
 
-SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "..", "agent_settings.json")
+SETTINGS_FILE = os.path.join(DATA_DIR, "agent_settings.json")
 
 _SDK_MAP = {
     "openai": OpenAISDK,

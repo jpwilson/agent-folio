@@ -4,6 +4,7 @@ import time
 import uuid
 from datetime import datetime
 
+from config import DATA_DIR
 from services.ghostfolio_client import GhostfolioClient
 from services.guardrails import pre_filter, post_filter
 from services.sdk_registry import get_sdk, get_current_model, load_settings
@@ -13,7 +14,7 @@ from tools import ALL_TOOLS, TOOL_DEFINITIONS
 # Langfuse tracing is handled automatically by LiteLLM's callback
 # (configured in sdks/litellm_sdk.py when LANGFUSE_SECRET_KEY is set)
 
-CONVERSATIONS_DIR = os.path.join(os.path.dirname(__file__), "..", "conversations")
+CONVERSATIONS_DIR = os.path.join(DATA_DIR, "conversations")
 
 SYSTEM_PROMPT = """You are a professional financial assistant for Ghostfolio, a portfolio management app.
 You help users understand their investments using these tools:

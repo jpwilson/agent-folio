@@ -8,11 +8,11 @@ from pydantic import BaseModel
 from models.schemas import ChatRequest
 from auth import get_user_id, get_raw_token
 from services import agent_service
-from config import GHOSTFOLIO_URL
+from config import GHOSTFOLIO_URL, DATA_DIR
 
 router = APIRouter(prefix="/api/v1/agent")
 
-FEEDBACK_DIR = os.path.join(os.path.dirname(__file__), "..", "feedback")
+FEEDBACK_DIR = os.path.join(DATA_DIR, "feedback")
 
 
 class LoginRequest(BaseModel):

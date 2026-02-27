@@ -25,7 +25,10 @@ import yaml
 EVAL_DIR = os.path.dirname(__file__)
 GOLDEN_PATH = os.path.join(EVAL_DIR, "golden_data.yaml")
 SNAPSHOT_PATH = os.path.join(EVAL_DIR, "eval-snapshots.json")
-HISTORY_DIR = os.path.join(EVAL_DIR, "history")
+
+# Use DATA_DIR env var for persistent history, fall back to eval/history for local dev
+_data_dir = os.environ.get("DATA_DIR", "")
+HISTORY_DIR = os.path.join(_data_dir, "eval_history") if _data_dir else os.path.join(EVAL_DIR, "history")
 
 
 def run_checks(golden: dict, snapshot: dict) -> dict:
