@@ -1,6 +1,7 @@
 from tools import (
     portfolio_summary,
     market_data,
+    stock_history,
     transaction_history,
     risk_assessment,
     tax_estimate,
@@ -14,6 +15,7 @@ from tools import (
 ALL_TOOLS = {
     "portfolio_summary": portfolio_summary,
     "market_data": market_data,
+    "stock_history": stock_history,
     "transaction_history": transaction_history,
     "risk_assessment": risk_assessment,
     "tax_estimate": tax_estimate,

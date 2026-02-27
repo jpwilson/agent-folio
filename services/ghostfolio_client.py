@@ -53,6 +53,17 @@ class GhostfolioClient:
             res.raise_for_status()
             return res.json()
 
+    async def get_symbol_history(self, data_source: str, symbol: str, days: int = 365) -> dict:
+        """GET /api/v1/symbol/{dataSource}/{symbol}?includeHistoricalData={days} — historical prices."""
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            res = await client.get(
+                f"{self.base_url}/api/v1/symbol/{data_source}/{symbol}",
+                params={"includeHistoricalData": days},
+                headers=self.headers,
+            )
+            res.raise_for_status()
+            return res.json()
+
     async def get_portfolio_performance(self, date_range: str = "max") -> dict:
         """GET /api/v2/portfolio/performance — performance with chart data."""
         async with httpx.AsyncClient(timeout=30.0) as client:
