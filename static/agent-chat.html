@@ -1876,7 +1876,8 @@
         if (toolCalls?.length) {
           const tc = document.createElement('div');
           tc.className = 'tool-calls';
-          tc.innerHTML = 'Tools used: ' + toolCalls.map(t => `<span>${t.tool}</span>`).join('');
+          const uniqueTools = [...new Set(toolCalls.map(t => t.tool))];
+          tc.innerHTML = 'Tools used: ' + uniqueTools.map(t => `<span>${t}</span>`).join('');
           div.appendChild(tc);
         }
 
@@ -2557,6 +2558,20 @@
     });
 
     const CHANGELOG_ENTRIES = [
+      {
+        date: '2026-02-27',
+        title: 'Historical stock price data',
+        desc: 'New stock_history tool lets the agent show price trends over time (1m, 3m, 6m, 1y, 3y, 5y, max). Returns sampled data points with summary stats (change %, high, low). Works for any stock, ETF, or crypto.',
+        commit: 'c87add9',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Deduplicated tool badges',
+        desc: 'Fixed "Tools used" display showing the same tool name multiple times when it was called repeatedly (e.g., market_data x3). Now shows each unique tool name once.',
+        commit: '',
+        repo: 'agent-folio'
+      },
       {
         date: '2026-02-27',
         title: 'Account indicator',
