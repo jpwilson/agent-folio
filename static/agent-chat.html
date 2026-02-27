@@ -72,6 +72,12 @@
     }
     .status.disconnected { color: #f87171; }
     .status.disconnected::before { background: #f87171; }
+    .account-badge {
+      font-size: 11px; padding: 3px 10px; border-radius: 12px;
+      background: rgba(54, 207, 180, 0.1); color: #36cfb4; border: 1px solid rgba(54, 207, 180, 0.2);
+      white-space: nowrap;
+    }
+    .account-badge.grader { background: rgba(250, 204, 21, 0.1); color: #facc15; border-color: rgba(250, 204, 21, 0.2); }
     .main-content { display: flex; flex: 1; overflow: hidden; }
 
     /* Sidebar */
@@ -620,6 +626,7 @@
     </div>
     <div class="header-actions">
       <button onclick="newConversation()">+ New Chat</button>
+      <span class="account-badge" id="account-badge" style="display:none;"></span>
       <div class="status" id="status">Connected</div>
     </div>
   </header>
@@ -1209,6 +1216,7 @@
     }
 
     let TOKEN = getToken();
+    let IS_GRADER = sessionStorage.getItem('is-grader') === 'true';
     let messages = [];
     let currentConversationId = null;
     let allConversations = [];
@@ -1266,7 +1274,9 @@
         }
         const data = await res.json();
         TOKEN = data.authToken;
+        IS_GRADER = false;
         sessionStorage.setItem('auth-token', TOKEN);
+        sessionStorage.setItem('is-grader', 'false');
         document.getElementById('login-overlay').style.display = 'none';
         onAuthenticated();
       } catch (err) {
@@ -1283,7 +1293,9 @@
       const t = prompt('Paste your JWT token:');
       if (t) {
         TOKEN = t;
+        IS_GRADER = false;
         sessionStorage.setItem('auth-token', TOKEN);
+        sessionStorage.setItem('is-grader', 'false');
         document.getElementById('login-overlay').style.display = 'none';
         onAuthenticated();
       }
@@ -1312,7 +1324,9 @@
         }
         const data = await res.json();
         TOKEN = data.authToken;
+        IS_GRADER = true;
         sessionStorage.setItem('auth-token', TOKEN);
+        sessionStorage.setItem('is-grader', 'true');
         document.getElementById('login-overlay').style.display = 'none';
         onAuthenticated();
       } catch (err) {
@@ -1327,9 +1341,30 @@
     function onAuthenticated() {
       statusEl.textContent = 'Connected';
       statusEl.className = 'status connected';
+      updateAccountBadge();
       loadConversations();
       loadSdkSettings();
       loadConfig();
+    }
+
+    function updateAccountBadge() {
+      const badge = document.getElementById('account-badge');
+      if (!badge || !TOKEN) return;
+      try {
+        const payload = JSON.parse(atob(TOKEN.split('.')[1]));
+        const userId = payload.id || payload.sub || '';
+        const shortId = userId.substring(0, 8);
+        if (IS_GRADER) {
+          badge.textContent = 'Demo (Grader)';
+          badge.className = 'account-badge grader';
+        } else {
+          badge.textContent = 'Account ' + shortId;
+          badge.className = 'account-badge';
+        }
+        badge.style.display = 'inline-block';
+      } catch {
+        badge.style.display = 'none';
+      }
     }
 
     async function loadConfig() {
@@ -2496,6 +2531,55 @@
     const CHANGELOG_ENTRIES = [
       {
         date: '2026-02-27',
+        title: 'Account indicator',
+        desc: 'Header now shows which account is signed in — "Demo (Grader)" badge for the demo account or "Account xxxxxxxx" with a short user ID for regular users. Persists across page refreshes.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Grader quick sign-in',
+        desc: 'One-click "Quick Sign-in for Grading" button on login page. Pre-seeded demo account with 5 years of diversified portfolio history across 15 symbols (90 transactions including buys and sells).',
+        commit: '02da6a0',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Test suite (256 tests)',
+        desc: 'Comprehensive test suite: 93 guardrail tests (injection, profanity, encoding, multilingual), 24 verification tests, 124 tool schema tests, 17 API integration tests. Ruff linting, pytest-cov coverage.',
+        commit: '82c9323',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Categorized welcome suggestions',
+        desc: 'Welcome screen suggestions organized into 7 tabs: All, Portfolio, Performance, Tax, Risk, Income, Accounts. First two in "All" are single-tool queries, next two are multi-tool for demonstrating agentic behavior.',
+        commit: '719f5a9',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Suggested follow-ups',
+        desc: 'After each assistant response, a bar of 2-3 contextual follow-up questions appears above the input. Suggestions are based on which tools were called (e.g., portfolio queries suggest risk and tax follow-ups).',
+        commit: '719f5a9',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Verification fix & confidence boost',
+        desc: 'Fixed performance_data_valid check that was looking for wrong keys in the tool response. Performance queries now correctly verify and show 95%+ confidence instead of failing at 68%.',
+        commit: '719f5a9',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Header cleanup',
+        desc: 'Removed redundant "AI Financial Assistant" subtitle and "LITELLM (UNIVERSAL)" SDK badge from header. Cleaner look — SDK info lives in the admin panel where it belongs.',
+        commit: '719f5a9',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
         title: 'Eval history persistence',
         desc: 'Eval results now saved to Postgres across deploys. Collapsible history table in admin Evaluations tab shows date, model, pass rates.',
         commit: 'ac982ac',
@@ -2689,12 +2773,16 @@
     // ---- Logout ----
     function doLogout() {
       sessionStorage.removeItem('auth-token');
+      sessionStorage.removeItem('is-grader');
       localStorage.removeItem('auth-token');
       TOKEN = '';
+      IS_GRADER = false;
       currentConversationId = null;
       messages = [];
       allConversations = [];
       convListEl.innerHTML = '';
+      const badge = document.getElementById('account-badge');
+      if (badge) badge.style.display = 'none';
       newConversation();
       showLoginOverlay();
     }
