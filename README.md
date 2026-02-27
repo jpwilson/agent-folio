@@ -34,6 +34,7 @@ Open http://localhost:8000 in your browser.
 - [ARCHITECTURE.md](ARCHITECTURE.md) — Full system design and component overview
 - [SECURITY.md](SECURITY.md) — Security hardening and jailbreak prevention
 - [EVAL_RESULTS.md](EVAL_RESULTS.md) — Evaluation results (75 test cases, 97.3% pass rate)
+- [TESTING.md](TESTING.md) — Test suite guide (256 tests: guardrails, verification, tools, API)
 
 ## Architecture
 
