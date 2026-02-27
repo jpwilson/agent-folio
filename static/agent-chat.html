@@ -254,7 +254,7 @@
     .settings-saved-msg.visible { display: block; }
 
     /* Chat area */
-    #chat-area { flex: 1; display: flex; flex-direction: column; position: relative; overflow: visible; }
+    #chat-area { flex: 1; display: flex; flex-direction: column; }
     #chat {
       flex: 1; overflow-y: auto; padding: 24px;
       display: flex; flex-direction: column; gap: 16px;
@@ -404,13 +404,16 @@
     }
     .suggestions button:hover { background: #1a2a2a; border-color: #36cfb4; color: #36cfb4; }
 
-    /* Floating help button */
+    /* Help button in sidebar */
+    .help-section {
+      padding: 8px 14px 0; display: flex; flex-direction: column; align-items: center;
+      position: relative;
+    }
     #help-fab {
-      position: absolute; bottom: 80px; right: 24px; z-index: 50;
-      width: 40px; height: 40px; min-width: 40px; min-height: 40px;
+      width: 36px; height: 36px; min-width: 36px; min-height: 36px;
       padding: 0; border-radius: 50%;
       background: #0c0c0c; border: 1.5px solid #36cfb4;
-      color: #36cfb4; font-size: 18px; font-weight: 700;
+      color: #36cfb4; font-size: 16px; font-weight: 700;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       box-shadow: 0 0 12px rgba(54, 207, 180, 0.25);
       transition: all 0.2s;
@@ -420,8 +423,8 @@
       box-shadow: 0 0 20px rgba(54, 207, 180, 0.4);
     }
     #help-menu {
-      position: absolute; bottom: 128px; right: 24px; z-index: 51;
-      background: #161616; border: 1px solid #2a2a2a; border-radius: 8px;
+      position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
+      z-index: 51; background: #161616; border: 1px solid #2a2a2a; border-radius: 8px;
       display: none; min-width: 160px; overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
@@ -516,6 +519,17 @@
         <span class="category-tab" data-category="market" onclick="filterByCategory('market')">Market</span>
       </div>
       <div class="conv-list-area" id="conv-list"></div>
+      <div class="help-section">
+        <button id="help-fab" onclick="toggleHelpMenu()" title="Help & Info">?</button>
+        <div id="help-menu">
+          <div class="help-item" onclick="showChangelog()">
+            <span class="help-icon">&#9998;</span> Changelog
+          </div>
+          <div class="help-item" onclick="window.open('https://github.com/jpwilson/agent-folio','_blank')">
+            <span class="help-icon">&#128279;</span> GitHub
+          </div>
+        </div>
+      </div>
       <div class="admin-panel-toggle">
         <button onclick="toggleAdminPanel()">
           <span class="admin-icon">&#9881;</span>
@@ -544,16 +558,6 @@
         <button id="send" onclick="send()">Send</button>
       </div>
 
-      <!-- Floating help button -->
-      <button id="help-fab" onclick="toggleHelpMenu()" title="Help & Info">?</button>
-      <div id="help-menu">
-        <div class="help-item" onclick="showChangelog()">
-          <span class="help-icon">&#9998;</span> Changelog
-        </div>
-        <div class="help-item" onclick="window.open('https://github.com/jpwilson/agent-folio','_blank')">
-          <span class="help-icon">&#128279;</span> GitHub
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1928,51 +1932,112 @@
     const CHANGELOG_ENTRIES = [
       {
         date: '2026-02-26',
-        title: 'Jailbreak defenses & changelog',
-        desc: 'Added comprehensive input/output guardrails against prompt injection, encoding attacks, delimiter injection, DAN/persona overrides, and multilingual attacks. 75 eval test cases. Floating help button with project changelog.',
-        commit: '59407146663f7e7efb42817840baf082674e19c4'
+        title: 'Changelog & help menu',
+        desc: 'Added a floating help button with project changelog showing all milestones from both the Ghostfolio integration and the standalone agent, with direct links to code changes.',
+        commit: '59407146663f7e7efb42817840baf082674e19c4',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-26',
+        title: 'Jailbreak & prompt injection defenses',
+        desc: 'Defense-in-depth guardrails: Unicode normalization, base64 payload scanning, ChatML/Llama delimiter detection, DAN/developer mode blocking, multilingual injection detection (6 languages), credential leak prevention, and harmful financial advice filtering.',
+        commit: '59407146663f7e7efb42817840baf082674e19c4',
+        repo: 'agent-folio'
       },
       {
         date: '2026-02-26',
         title: 'Persistent data storage',
-        desc: 'Migrated conversations, feedback, and settings from ephemeral file storage to Postgres. Data now survives container redeploys.',
-        commit: 'eeb82a7e43a7839cc7faba2fd656de4f0b3f8365'
+        desc: 'Migrated conversations, feedback, and settings from ephemeral file storage to Postgres using asyncpg with connection pooling. Data now survives container redeploys on Railway.',
+        commit: 'eeb82a7e43a7839cc7faba2fd656de4f0b3f8365',
+        repo: 'agent-folio'
       },
       {
         date: '2026-02-26',
-        title: '10 tools, 55 eval cases, verification & analytics',
-        desc: 'Added 5 new tools (performance, dividends, X-Ray report, investment timeline, accounts). Expanded eval suite to 55 golden test cases. Added confidence scoring, user feedback, Langfuse analytics, and cost projections.',
-        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2'
+        title: '10 portfolio analysis tools',
+        desc: 'Five new tools added: portfolio performance (returns over time), dividend history (income tracking), X-Ray report (portfolio health check), investment timeline (monthly/yearly amounts), and account overview (balances and platforms). Bringing total to 10 tools.',
+        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2',
+        repo: 'agent-folio'
       },
       {
         date: '2026-02-26',
-        title: 'Docker networking fix',
-        desc: 'Fixed connectivity between Agent-Folio and Ghostfolio containers in local development using host.docker.internal.',
-        commit: 'ea95cec2b04080a571b91eef75678f2ebd826997'
+        title: '55 golden evaluation test cases',
+        desc: 'Comprehensive eval suite: 22 happy path cases covering all 10 tools, 8 tool selection tests, 10 edge cases (empty portfolios, ambiguous queries), 10 adversarial cases (prompt injection, jailbreak attempts), and 5 multi-step reasoning tests.',
+        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2',
+        repo: 'agent-folio'
       },
       {
         date: '2026-02-26',
-        title: 'Initial release',
-        desc: 'Standalone FastAPI sidecar agent for Ghostfolio. Chat UI, 5 core tools (portfolio summary, market data, transactions, risk, tax), JWT auth, LLM-agnostic SDK system, guardrails, and deterministic verification.',
-        commit: 'e1f29078f5d57065497f251a7a353debc0e773c7'
+        title: 'Deterministic verification & confidence scoring',
+        desc: 'Every agent response runs through data integrity checks (allocation sums, valid prices, no hallucinated tickers) and gets a weighted 0-100 confidence score based on tool success rate, check pass rate, response quality, and data backing.',
+        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-26',
+        title: 'Langfuse analytics & cost projections',
+        desc: 'Full observability via Langfuse: latency tracking, token usage, cost-per-query metrics, daily trace charts, and production cost projections for 100 to 100k users. Admin panel with Analytics and Cost Analysis tabs.',
+        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-26',
+        title: 'Standalone sidecar agent',
+        desc: 'Extracted the AI agent from the Ghostfolio NestJS app into a standalone FastAPI Python service. Chat UI, JWT auth, 5 core tools (portfolio summary, market data, transactions, risk, tax), LLM-agnostic SDK system with 4 providers, and guardrails.',
+        commit: 'e1f29078f5d57065497f251a7a353debc0e773c7',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-24',
+        title: 'Agent UI enhancements & eval pipeline',
+        desc: 'Redesigned agent chat UI with Ghostfolio dark theme, conversation persistence, category filtering, admin panel with SDK switching, and CI workflow for automated evaluation.',
+        commit: '27f4eea1e0554b1ff50a5ac9fdc58b78c6ee633b',
+        repo: 'ghostfolio'
+      },
+      {
+        date: '2026-02-24',
+        title: 'Langfuse observability integration',
+        desc: 'Integrated Langfuse tracing into the embedded Ghostfolio agent for LLM call monitoring, latency tracking, and cost analysis during development.',
+        commit: '23338c3955aacbcdc4fe40f2517e859f01f4a9d4',
+        repo: 'ghostfolio'
+      },
+      {
+        date: '2026-02-24',
+        title: 'Agent MVP with 5 tools',
+        desc: 'First complete version: portfolio summary, market data lookup, transaction history, risk assessment, and tax estimation tools. Conversation persistence, deterministic verification, and golden set evaluation data.',
+        commit: '44bd8102b2d236178ada1121669de536b0670668',
+        repo: 'ghostfolio'
+      },
+      {
+        date: '2026-02-23',
+        title: 'Initial AI agent prototype',
+        desc: 'First AI agent endpoint added to Ghostfolio with basic chat UI, OpenAI integration, and portfolio summary tool. Proof of concept for the financial assistant concept.',
+        commit: 'e5584dbd5f82c36ddb3893b79cec966564195fb4',
+        repo: 'ghostfolio'
       }
     ];
+
+    const REPO_URLS = {
+      'agent-folio': 'https://github.com/jpwilson/agent-folio',
+      'ghostfolio': 'https://github.com/jpwilson/ghostfolioJPGauntlet',
+    };
 
     function showChangelog() {
       document.getElementById('help-menu').classList.remove('visible');
       const body = document.getElementById('changelog-body');
-      body.innerHTML = CHANGELOG_ENTRIES.map(e => `
+      body.innerHTML = CHANGELOG_ENTRIES.map(e => {
+        const repoUrl = REPO_URLS[e.repo] || REPO_URLS['agent-folio'];
+        return `
         <div class="changelog-entry">
           <div class="changelog-entry-top">
             <div class="changelog-entry-left">
               <span class="changelog-date">${e.date}</span>
               <span class="changelog-title">${e.title}</span>
             </div>
-            <a class="changelog-link" href="https://github.com/jpwilson/agent-folio/commit/${e.commit}" target="_blank" rel="noopener">Code changes</a>
+            <a class="changelog-link" href="${repoUrl}/commit/${e.commit}" target="_blank" rel="noopener">Code changes</a>
           </div>
           <div class="changelog-desc">${e.desc}</div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
       document.getElementById('changelog-overlay').classList.add('visible');
     }
     function closeChangelog() {
