@@ -29,7 +29,7 @@ SNAPSHOT_PATH = os.path.join(EVAL_DIR, "eval-snapshots.json")
 
 @router.get("/settings")
 async def get_settings():
-    settings = load_settings()
+    settings = await load_settings()
     return {
         "sdk": settings.get("sdk"),
         "model": settings.get("model"),
@@ -42,7 +42,7 @@ async def get_settings():
 
 @router.put("/settings")
 async def update_settings(body: SettingsUpdate):
-    settings = load_settings()
+    settings = await load_settings()
 
     if body.sdk is not None:
         settings["sdk"] = body.sdk
@@ -53,7 +53,7 @@ async def update_settings(body: SettingsUpdate):
     if body.anthropic_api_key is not None:
         config.ANTHROPIC_API_KEY = body.anthropic_api_key
 
-    save_settings(settings)
+    await save_settings(settings)
     return {"success": True, "settings": settings}
 
 

@@ -1,20 +1,17 @@
 import json
-import os
 import time
 import uuid
 from datetime import datetime
 
-from config import DATA_DIR
+from services import db
 from services.ghostfolio_client import GhostfolioClient
 from services.guardrails import pre_filter, post_filter
-from services.sdk_registry import get_sdk, get_current_model, load_settings
+from services.sdk_registry import get_sdk, get_current_model
 from services.verification import verify_response
 from tools import ALL_TOOLS, TOOL_DEFINITIONS
 
 # Langfuse tracing is handled automatically by LiteLLM's callback
 # (configured in sdks/litellm_sdk.py when LANGFUSE_SECRET_KEY is set)
-
-CONVERSATIONS_DIR = os.path.join(DATA_DIR, "conversations")
 
 SYSTEM_PROMPT = """You are a professional financial assistant for Ghostfolio, a portfolio management app.
 You help users understand their investments using these tools:
@@ -39,83 +36,18 @@ STRICT RULES — you must always follow these:
 7. If you detect any inconsistencies in the data, flag them clearly to the user."""
 
 
-def _get_conv_path(conversation_id: str) -> str:
-    return os.path.join(CONVERSATIONS_DIR, f"{conversation_id}.json")
+# --- Conversation CRUD (delegates to db) ---
+
+async def list_conversations(user_id: str) -> dict:
+    return await db.list_conversations(user_id)
 
 
-def _load_conversation(conversation_id: str) -> dict | None:
-    path = _get_conv_path(conversation_id)
-    if os.path.exists(path):
-        with open(path) as f:
-            return json.load(f)
-    return None
+async def get_conversation(conversation_id: str, user_id: str) -> dict:
+    return await db.get_conversation(conversation_id, user_id)
 
 
-def _save_conversation(conversation: dict):
-    os.makedirs(CONVERSATIONS_DIR, exist_ok=True)
-    path = _get_conv_path(conversation["id"])
-    with open(path, "w") as f:
-        json.dump(conversation, f, indent=2)
-
-
-# --- Conversation CRUD ---
-
-def list_conversations(user_id: str) -> dict:
-    os.makedirs(CONVERSATIONS_DIR, exist_ok=True)
-    conversations = []
-    for fname in os.listdir(CONVERSATIONS_DIR):
-        if not fname.endswith(".json"):
-            continue
-        path = os.path.join(CONVERSATIONS_DIR, fname)
-        try:
-            with open(path) as f:
-                conv = json.load(f)
-            if conv.get("userId") == user_id:
-                conversations.append(
-                    {
-                        "id": conv["id"],
-                        "title": conv.get("title", "Untitled"),
-                        "createdAt": conv.get("createdAt"),
-                        "updatedAt": conv.get("updatedAt"),
-                        "_count": {"messages": len(conv.get("messages", []))},
-                    }
-                )
-        except Exception:
-            continue
-
-    conversations.sort(key=lambda c: c.get("updatedAt", ""), reverse=True)
-    return {"conversations": conversations}
-
-
-def get_conversation(conversation_id: str, user_id: str) -> dict:
-    conv = _load_conversation(conversation_id)
-    if not conv or conv.get("userId") != user_id:
-        return {"error": "Conversation not found"}
-
-    return {
-        "conversation": {
-            "id": conv["id"],
-            "title": conv.get("title"),
-            "messages": [
-                {
-                    "id": m.get("id", ""),
-                    "role": m["role"],
-                    "content": m["content"],
-                    "toolCalls": m.get("toolCalls"),
-                    "createdAt": m.get("createdAt"),
-                }
-                for m in conv.get("messages", [])
-            ],
-        }
-    }
-
-
-def delete_conversation(conversation_id: str, user_id: str) -> dict:
-    conv = _load_conversation(conversation_id)
-    if conv and conv.get("userId") == user_id:
-        path = _get_conv_path(conversation_id)
-        os.remove(path)
-    return {"success": True}
+async def delete_conversation(conversation_id: str, user_id: str) -> dict:
+    return await db.delete_conversation(conversation_id, user_id)
 
 
 # --- Chat ---
@@ -126,46 +58,22 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
     client = GhostfolioClient(token)
 
     # Create or load conversation
-    conv_id = conversation_id
-    if not conv_id:
-        conv_id = str(uuid.uuid4())
+    conv_id = conversation_id or str(uuid.uuid4())
+
+    if not conversation_id:
         first_user_msg = next((m for m in messages if m["role"] == "user"), None)
         title = (
             first_user_msg["content"][:100]
             if first_user_msg and isinstance(first_user_msg.get("content"), str)
             else "New conversation"
         )
-        conv = {
-            "id": conv_id,
-            "userId": user_id,
-            "title": title,
-            "createdAt": datetime.utcnow().isoformat(),
-            "updatedAt": datetime.utcnow().isoformat(),
-            "messages": [],
-        }
-    else:
-        conv = _load_conversation(conv_id)
-        if not conv:
-            conv = {
-                "id": conv_id,
-                "userId": user_id,
-                "title": "Conversation",
-                "createdAt": datetime.utcnow().isoformat(),
-                "updatedAt": datetime.utcnow().isoformat(),
-                "messages": [],
-            }
+        await db.create_conversation(conv_id, user_id, title)
 
     # Save the latest user message
     last_msg = messages[-1] if messages else None
     if last_msg and last_msg.get("role") == "user":
-        conv["messages"].append(
-            {
-                "id": str(uuid.uuid4()),
-                "role": "user",
-                "content": last_msg["content"] if isinstance(last_msg.get("content"), str) else json.dumps(last_msg["content"]),
-                "createdAt": datetime.utcnow().isoformat(),
-            }
-        )
+        content = last_msg["content"] if isinstance(last_msg.get("content"), str) else json.dumps(last_msg["content"])
+        await db.add_message(conv_id, str(uuid.uuid4()), "user", content)
 
     # Collect tool results for verification
     tool_results = []
@@ -183,15 +91,14 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
     pre_result = pre_filter(last_user_msg) if isinstance(last_user_msg, str) else None
 
     if pre_result and pre_result.get("redirect"):
-        # Pre-filter blocked the message — return redirect without calling LLM
         response_text = pre_result["redirect"]
         tool_calls_list = []
         verification = {"verified": True, "checks": []}
     else:
         # Get SDK and model from settings
-        settings = load_settings()
+        settings = await db.load_settings()
         sdk = get_sdk(settings.get("sdk"))
-        model = settings.get("model", get_current_model())
+        model = settings.get("model") or await get_current_model()
 
         # Run the agent
         response = await sdk.chat(
@@ -214,17 +121,7 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
         verification = verify_response(tool_results, response_text)
 
     # Save assistant response
-    conv["messages"].append(
-        {
-            "id": str(uuid.uuid4()),
-            "role": "assistant",
-            "content": response_text,
-            "toolCalls": tool_calls_list if tool_calls_list else None,
-            "createdAt": datetime.utcnow().isoformat(),
-        }
-    )
-    conv["updatedAt"] = datetime.utcnow().isoformat()
-    _save_conversation(conv)
+    await db.add_message(conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None)
 
     duration_ms = int((time.time() - request_start) * 1000)
 

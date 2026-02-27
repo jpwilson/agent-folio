@@ -12,7 +12,4 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
-
-# Persistent data directory — mount a volume here in production
-# Defaults to project root for local dev
-DATA_DIR = os.getenv("DATA_DIR", os.path.join(os.path.dirname(__file__)))
+DATABASE_URL = os.getenv("DATABASE_URL", "")

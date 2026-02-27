@@ -1,13 +1,24 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from routers.agent import router as agent_router
 from routers.admin import router as admin_router
+from services.db import init_db, close_db
 from config import HOST, PORT, GHOSTFOLIO_PUBLIC_URL
 import os
 
-app = FastAPI(title="Agent-Folio", description="AI Financial Agent for Ghostfolio")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+    await close_db()
+
+
+app = FastAPI(title="Agent-Folio", description="AI Financial Agent for Ghostfolio", lifespan=lifespan)
 
 # CORS — allow Ghostfolio frontend and local dev
 app.add_middleware(

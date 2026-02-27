@@ -1,13 +1,10 @@
-import json
-import os
+from services import db
 from sdks.base import BaseSDK
 from sdks.openai_sdk import OpenAISDK
 from sdks.anthropic_sdk import AnthropicSDK
 from sdks.litellm_sdk import LiteLLMSDK
 from sdks.langchain_sdk import LangChainSDK
-from config import DEFAULT_SDK, DEFAULT_MODEL, DATA_DIR
-
-SETTINGS_FILE = os.path.join(DATA_DIR, "agent_settings.json")
+from config import DEFAULT_SDK, DEFAULT_MODEL
 
 _SDK_MAP = {
     "openai": OpenAISDK,
@@ -33,36 +30,26 @@ MODEL_OPTIONS = [
 ]
 
 
-def load_settings() -> dict:
-    """Load settings from JSON file, falling back to defaults."""
-    defaults = {"sdk": DEFAULT_SDK, "model": DEFAULT_MODEL}
-    if os.path.exists(SETTINGS_FILE):
-        try:
-            with open(SETTINGS_FILE) as f:
-                saved = json.load(f)
-            return {**defaults, **saved}
-        except Exception:
-            pass
-    return defaults
+async def load_settings() -> dict:
+    """Load settings from Postgres."""
+    return await db.load_settings()
 
 
-def save_settings(settings: dict):
-    """Persist settings to JSON file."""
-    with open(SETTINGS_FILE, "w") as f:
-        json.dump(settings, f, indent=2)
+async def save_settings(settings: dict):
+    """Persist settings to Postgres."""
+    await db.save_settings(settings)
 
 
 def get_sdk(sdk_name: str | None = None) -> BaseSDK:
     """Get an SDK adapter instance by name."""
-    settings = load_settings()
-    name = sdk_name or settings.get("sdk", DEFAULT_SDK)
+    name = sdk_name or DEFAULT_SDK
     cls = _SDK_MAP.get(name)
     if not cls:
         raise ValueError(f"Unknown SDK: {name}. Available: {list(_SDK_MAP.keys())}")
     return cls()
 
 
-def get_current_model() -> str:
+async def get_current_model() -> str:
     """Get the currently configured model."""
-    settings = load_settings()
+    settings = await db.load_settings()
     return settings.get("model", DEFAULT_MODEL)
