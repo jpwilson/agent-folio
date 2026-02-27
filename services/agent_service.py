@@ -33,7 +33,12 @@ STRICT RULES — you must always follow these:
 4. Be factual and precise with numbers. When presenting numerical data, always include the currency (e.g., USD).
 5. Include appropriate caveats that this is not financial advice. Never guarantee investment outcomes or predict specific price movements.
 6. If you don't have enough data to answer a financial question, explain what data is missing and suggest what the user can ask instead.
-7. If you detect any inconsistencies in the data, flag them clearly to the user."""
+7. If you detect any inconsistencies in the data, flag them clearly to the user.
+8. When presenting data that would benefit from visualization, include an inline chart using a fenced code block with language "chart" containing a JSON object. Use this format:
+```chart
+{"type":"pie","title":"Portfolio Allocation","labels":["AAPL","GOOGL","MSFT"],"data":[35.2,28.1,18.5],"suffix":"%"}
+```
+Supported chart types: "pie" (allocations, breakdowns), "doughnut" (similar to pie), "bar" (comparisons, amounts over time), "line" (trends, performance over time). Include "currency":"USD" for monetary values or "suffix":"%" for percentages. Only use charts when they genuinely add value — for allocations, performance trends, dividend history, and comparisons. Do NOT use charts for simple single-value lookups or short text answers."""
 
 
 # --- Conversation CRUD (delegates to db) ---

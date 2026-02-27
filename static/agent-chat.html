@@ -6,6 +6,7 @@
   <title>Agent-Folio</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%230d0d0d'/%3E%3Ctext x='50' y='72' font-family='Arial,sans-serif' font-size='72' font-weight='bold' fill='%2336cfb4' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -313,6 +314,15 @@
       border: none; border-top: 1px solid #2a2a2a; margin: 10px 0;
     }
     .message.assistant .msg-content.raw { white-space: pre-wrap; }
+    .chart-container {
+      margin: 12px 0; padding: 16px; background: #0f0f0f;
+      border: 1px solid #2a2a2a; border-radius: 8px; max-width: 480px;
+    }
+    .chart-container .chart-title {
+      font-size: 12px; color: #36cfb4; font-weight: 600;
+      margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .chart-container canvas { max-height: 280px; }
     .message.assistant .tool-calls {
       margin-top: 8px; padding-top: 8px; border-top: 1px solid #333;
       font-size: 11px; color: #888;
@@ -1120,6 +1130,7 @@
         if (raw) {
           if (settings.markdown && typeof marked !== 'undefined') {
             el.innerHTML = marked.parse(raw);
+            renderCharts(el);
             el.classList.remove('raw');
           } else {
             el.textContent = raw;
@@ -1424,6 +1435,105 @@
       input.focus();
     }
 
+    // ---- Inline Chart Rendering ----
+    let chartCounter = 0;
+    const CHART_COLORS = [
+      '#36cfb4', '#4ecdc4', '#45b7aa', '#2a9d8f', '#264653',
+      '#e76f51', '#f4a261', '#e9c46a', '#8ab17d', '#7209b7',
+      '#3a86ff', '#ff006e', '#fb5607', '#ffbe0b', '#8338ec',
+    ];
+
+    function renderCharts(container) {
+      if (typeof Chart === 'undefined') return;
+      // Find code blocks with language-chart class
+      const codeBlocks = container.querySelectorAll('code.language-chart');
+      codeBlocks.forEach(codeEl => {
+        try {
+          const config = JSON.parse(codeEl.textContent);
+          const preEl = codeEl.closest('pre');
+          if (!preEl) return;
+
+          const chartId = `chart-${++chartCounter}`;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'chart-container';
+          if (config.title) {
+            const titleEl = document.createElement('div');
+            titleEl.className = 'chart-title';
+            titleEl.textContent = config.title;
+            wrapper.appendChild(titleEl);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.id = chartId;
+          wrapper.appendChild(canvas);
+          preEl.replaceWith(wrapper);
+
+          const type = config.type || 'bar';
+          const labels = config.labels || [];
+          const data = config.data || [];
+          const colors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+
+          const chartConfig = {
+            type: type,
+            data: {
+              labels: labels,
+              datasets: [{
+                data: data,
+                backgroundColor: type === 'line' ? 'rgba(54, 207, 180, 0.1)' : colors,
+                borderColor: type === 'line' ? '#36cfb4' : colors.map(c => c),
+                borderWidth: type === 'line' ? 2 : 1,
+                fill: type === 'line',
+                tension: 0.3,
+                pointRadius: type === 'line' ? 3 : undefined,
+                pointBackgroundColor: type === 'line' ? '#36cfb4' : undefined,
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  display: type === 'pie' || type === 'doughnut',
+                  position: 'right',
+                  labels: { color: '#aaa', font: { size: 11 }, padding: 8 }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(ctx) {
+                      const val = ctx.parsed !== undefined ? (ctx.parsed.y !== undefined ? ctx.parsed.y : ctx.parsed) : ctx.raw;
+                      const suffix = config.suffix || (config.currency ? ` ${config.currency}` : '');
+                      return `${ctx.label}: ${typeof val === 'number' ? val.toLocaleString() : val}${suffix}`;
+                    }
+                  }
+                }
+              },
+              scales: (type === 'pie' || type === 'doughnut') ? {} : {
+                x: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: '#1a1a1a' } },
+                y: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: '#1a1a1a' } }
+              }
+            }
+          };
+
+          // Handle multiple datasets for line charts
+          if (config.datasets) {
+            chartConfig.data.datasets = config.datasets.map((ds, i) => ({
+              label: ds.label || `Series ${i+1}`,
+              data: ds.data || [],
+              backgroundColor: 'rgba(54, 207, 180, 0.1)',
+              borderColor: CHART_COLORS[i % CHART_COLORS.length],
+              borderWidth: 2,
+              fill: false,
+              tension: 0.3,
+              pointRadius: 3,
+            }));
+          }
+
+          new Chart(canvas, chartConfig);
+        } catch (e) {
+          console.warn('Chart render failed:', e);
+        }
+      });
+    }
+
     function addMessage(text, role, toolCalls, verification) {
       const div = document.createElement('div');
       div.className = `message ${role}`;
@@ -1434,6 +1544,7 @@
         contentDiv.setAttribute('data-raw', text);
         if (settings.markdown && typeof marked !== 'undefined') {
           contentDiv.innerHTML = marked.parse(text);
+          renderCharts(contentDiv);
         } else {
           contentDiv.textContent = text;
           contentDiv.classList.add('raw');
