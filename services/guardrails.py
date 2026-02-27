@@ -262,6 +262,39 @@ HARMFUL_FINANCIAL_ADVICE_PATTERNS = [
     r"\b100%\s+(safe|certain|guaranteed)\b",
 ]
 
+# ============================================
+# Constants: Profanity patterns
+# ============================================
+
+# Word-boundary matching to avoid Scunthorpe problem (e.g., "class", "assessment")
+PROFANITY_PATTERNS = [
+    r"\bf+u+c+k+\b",
+    r"\bf+u+c+k+i+n+g*\b",
+    r"\bs+h+i+t+\b",
+    r"\bs+h+i+t+t+y+\b",
+    r"\bb+i+t+c+h+\b",
+    r"\ba+s+s+h+o+l+e+\b",
+    r"\bd+a+m+n+\b",
+    r"\bb+u+l+l+s+h+i+t+\b",
+    r"\bp+i+s+s+\b",
+    r"\bc+r+a+p+\b",
+    r"\bw+t+f+\b",
+    r"\bstfu\b",
+    r"\bgtfo\b",
+    r"\blmfao\b",
+    # Leetspeak variants
+    r"\bf[u\*@]+ck?\b",
+    r"\bsh[i1!]+t\b",
+    r"\bb[i1!]+tch\b",
+    r"\ba[s\$]+hole\b",
+]
+
+_PROFANITY_REDIRECT = (
+    "I'd appreciate it if we keep our conversation professional. "
+    "I'm here to help with your portfolio analysis and financial questions. "
+    "What would you like to know about your investments?"
+)
+
 OFF_TOPIC_CONTENT_PATTERNS = [
     r"\brecipe\b",
     r"\bingredient\b",
@@ -450,6 +483,11 @@ def pre_filter(user_message: str) -> dict | None:
     for pattern in MULTILINGUAL_INJECTION_PATTERNS:
         if re.search(pattern, msg_sanitized, re.IGNORECASE):
             return {"redirect": _REDIRECT_MSG}
+
+    # --- Profanity check ---
+    for pattern in PROFANITY_PATTERNS:
+        if re.search(pattern, msg_sanitized, re.IGNORECASE):
+            return {"redirect": _PROFANITY_REDIRECT}
 
     # --- Existing checks below ---
 

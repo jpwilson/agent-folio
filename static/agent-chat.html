@@ -406,7 +406,7 @@
 
     /* Help button in sidebar */
     .help-section {
-      padding: 8px 14px 44px; display: flex; flex-direction: column; align-items: center;
+      padding: 8px 14px 8px; display: flex; flex-direction: column; align-items: center;
       position: relative;
     }
     #help-fab {
@@ -423,9 +423,9 @@
       box-shadow: 0 0 20px rgba(54, 207, 180, 0.4);
     }
     #help-menu {
-      position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
+      position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
       z-index: 51; background: #161616; border: 1px solid #2a2a2a; border-radius: 8px;
-      display: none; min-width: 160px; overflow: hidden;
+      display: none; min-width: 180px; overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     #help-menu.visible { display: block; }
@@ -485,6 +485,83 @@
     .changelog-link:hover {
       background: rgba(54,207,180,0.1); border-color: #36cfb4;
     }
+
+    /* Disclaimer & Features overlays (reuse changelog styles) */
+    .disclaimer-overlay, .features-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); z-index: 200;
+      display: none; align-items: center; justify-content: center;
+    }
+    .disclaimer-overlay.visible, .features-overlay.visible { display: flex; }
+    .disclaimer-modal, .features-modal {
+      background: #141414; border: 1px solid #2a2a2a; border-radius: 12px;
+      width: 600px; max-width: 90vw; max-height: 80vh;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .disclaimer-body, .features-body { padding: 16px 24px 24px; overflow-y: auto; flex: 1; }
+    .disclaimer-body p { color: #aaa; font-size: 13px; line-height: 1.7; margin-bottom: 12px; }
+    .disclaimer-body h3 { color: #36cfb4; font-size: 14px; margin: 16px 0 8px; }
+    .disclaimer-body strong { color: #e0e0e0; }
+
+    /* Features list */
+    .feature-item {
+      padding: 14px 16px; border-bottom: 1px solid #1e1e1e;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .feature-item:last-child { border-bottom: none; }
+    .feature-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+    .feature-info { flex: 1; }
+    .feature-title { font-size: 14px; color: #e0e0e0; font-weight: 500; margin-bottom: 4px; }
+    .feature-desc { font-size: 12px; color: #888; line-height: 1.5; }
+    .coming-soon-badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 10px;
+      background: rgba(248, 196, 113, 0.15); color: #f8c471;
+      text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
+      flex-shrink: 0; margin-top: 4px;
+    }
+
+    /* Logout button */
+    .logout-section { padding: 4px 14px; }
+    .logout-section button {
+      width: 100%; padding: 8px 16px; font-size: 13px;
+      background: transparent; border: 1px solid #333;
+      color: #999; border-radius: 8px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all 0.2s;
+    }
+    .logout-section button:hover {
+      border-color: #f87171; color: #f87171; background: rgba(248,113,113,0.06);
+    }
+
+    /* First-login disclaimer */
+    .first-login-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 300;
+      display: none; align-items: center; justify-content: center;
+    }
+    .first-login-overlay.visible { display: flex; }
+    .first-login-modal {
+      background: #141414; border: 1px solid #2a2a2a; border-radius: 12px;
+      width: 560px; max-width: 90vw; max-height: 85vh;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .first-login-body { padding: 16px 24px; overflow-y: auto; flex: 1; }
+    .first-login-body p { color: #aaa; font-size: 13px; line-height: 1.7; margin-bottom: 12px; }
+    .first-login-body strong { color: #e0e0e0; }
+    .first-login-footer {
+      padding: 16px 24px; border-top: 1px solid #2a2a2a;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .first-login-footer label { font-size: 13px; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .first-login-footer input[type="checkbox"] { accent-color: #36cfb4; width: 16px; height: 16px; }
+    .agree-btn {
+      margin-left: auto; padding: 10px 24px; background: #333; border: 1px solid #444;
+      color: #666; border-radius: 6px; font-size: 13px; font-weight: 600;
+      cursor: not-allowed; transition: all 0.2s;
+    }
+    .agree-btn.enabled {
+      background: #1a3a35; border-color: #36cfb4; color: #36cfb4; cursor: pointer;
+    }
+    .agree-btn.enabled:hover { background: #245a4a; }
   </style>
 </head>
 <body>
@@ -525,10 +602,21 @@
           <div class="help-item" onclick="showChangelog()">
             <span class="help-icon">&#9998;</span> Changelog
           </div>
+          <div class="help-item" onclick="showDisclaimer()">
+            <span class="help-icon">&#9888;</span> Disclaimer
+          </div>
+          <div class="help-item" onclick="showFeatures()">
+            <span class="help-icon">&#9733;</span> Discover Features
+          </div>
           <div class="help-item" onclick="window.open('https://github.com/jpwilson/agent-folio','_blank')">
             <span class="help-icon">&#128279;</span> GitHub
           </div>
         </div>
+      </div>
+      <div class="logout-section">
+        <button onclick="doLogout()">
+          <span>&#x2192;</span> Sign Out
+        </button>
       </div>
       <div class="admin-panel-toggle">
         <button onclick="toggleAdminPanel()">
@@ -569,6 +657,77 @@
         <button class="changelog-close" onclick="closeChangelog()">&times;</button>
       </div>
       <div class="changelog-body" id="changelog-body"></div>
+    </div>
+  </div>
+
+  <!-- Disclaimer Overlay -->
+  <div class="disclaimer-overlay" id="disclaimer-overlay" onclick="if(event.target===this)closeDisclaimer()">
+    <div class="disclaimer-modal">
+      <div class="changelog-header">
+        <h2>Financial Disclaimer</h2>
+        <button class="changelog-close" onclick="closeDisclaimer()">&times;</button>
+      </div>
+      <div class="disclaimer-body" id="disclaimer-body">
+        <p><strong>IMPORTANT: Please read this disclaimer carefully before using Agent-Folio.</strong></p>
+
+        <h3>Not Financial Advice</h3>
+        <p>Agent-Folio is an AI-powered informational tool that provides portfolio analysis and financial data summaries. <strong>Nothing provided by this application constitutes financial advice, investment advice, tax advice, legal advice, or any other form of professional advice.</strong></p>
+
+        <h3>No Investment Recommendations</h3>
+        <p>Agent-Folio does not recommend any specific investments, securities, or financial strategies. Any information about stocks, ETFs, bonds, or other financial instruments is provided for informational purposes only and should not be interpreted as a buy, sell, or hold recommendation.</p>
+
+        <h3>Not a Registered Investment Advisor</h3>
+        <p>Agent-Folio and its operators are <strong>not registered as investment advisors</strong> with the U.S. Securities and Exchange Commission (SEC), the Financial Industry Regulatory Authority (FINRA), or any state securities regulatory authority. This application does not operate under the Investment Advisers Act of 1940 or any equivalent regulation.</p>
+
+        <h3>Accuracy of Information</h3>
+        <p>While Agent-Folio strives to provide accurate portfolio analysis based on data from Ghostfolio, <strong>information may be incomplete, delayed, or inaccurate</strong>. AI-generated responses may contain errors or hallucinations. All data should be independently verified before making any financial decisions.</p>
+
+        <h3>Risk Acknowledgment</h3>
+        <p>All investments carry risk, including the potential loss of principal. Past performance is not indicative of future results. Tax estimates are approximations only and should not be used for tax filing purposes. Consult a qualified tax professional for tax advice.</p>
+
+        <h3>Consult a Professional</h3>
+        <p>Before making any investment decisions, you should consult with a qualified, licensed financial advisor, tax professional, or other appropriate professional who can consider your specific financial situation, goals, and risk tolerance.</p>
+
+        <p style="margin-top: 20px; color: #666; font-size: 11px;">
+          This application is provided "as is" without warranty of any kind. By using Agent-Folio, you acknowledge and accept the limitations described in this disclaimer.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Discover Features Overlay -->
+  <div class="features-overlay" id="features-overlay" onclick="if(event.target===this)closeFeatures()">
+    <div class="features-modal">
+      <div class="changelog-header">
+        <h2>Discover Ghostfolio Features</h2>
+        <button class="changelog-close" onclick="closeFeatures()">&times;</button>
+      </div>
+      <div class="features-body" id="features-body">
+        <p style="color:#888; font-size:12px; margin-bottom:16px;">These powerful Ghostfolio features are being integrated into the AI assistant. Stay tuned!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- First-Login Disclaimer -->
+  <div class="first-login-overlay" id="first-login-overlay">
+    <div class="first-login-modal">
+      <div class="changelog-header">
+        <h2>Welcome to Agent-Folio</h2>
+      </div>
+      <div class="first-login-body">
+        <p><strong>Before you begin, please review and accept our financial disclaimer.</strong></p>
+        <p>Agent-Folio is an AI-powered informational tool. <strong>It does not provide financial advice, investment recommendations, or tax guidance.</strong></p>
+        <p>All information is for educational and informational purposes only. AI-generated responses may contain errors. Always consult a qualified financial advisor before making investment decisions.</p>
+        <p>Agent-Folio is not registered with the SEC, FINRA, or any regulatory authority under the Investment Advisers Act of 1940.</p>
+        <p style="color:#666; font-size:11px;">You can review the full disclaimer at any time via the <strong>?</strong> menu.</p>
+      </div>
+      <div class="first-login-footer">
+        <label>
+          <input type="checkbox" id="disclaimer-agree-checkbox" onchange="onDisclaimerCheckbox(this.checked)" />
+          I understand and accept this disclaimer
+        </label>
+        <button class="agree-btn" id="disclaimer-agree-btn" onclick="acceptDisclaimer()" disabled>Continue</button>
+      </div>
     </div>
   </div>
 
@@ -2043,6 +2202,95 @@
     function closeChangelog() {
       document.getElementById('changelog-overlay').classList.remove('visible');
     }
+
+    // ---- Disclaimer ----
+    function showDisclaimer() {
+      document.getElementById('help-menu').classList.remove('visible');
+      document.getElementById('disclaimer-overlay').classList.add('visible');
+    }
+    function closeDisclaimer() {
+      document.getElementById('disclaimer-overlay').classList.remove('visible');
+    }
+
+    // ---- Discover Features ----
+    const UPCOMING_FEATURES = [
+      { icon: '&#128200;', title: 'FIRE Calculator', desc: 'Financial Independence / Retire Early calculator with safe withdrawal rates, retirement projections, and monthly withdrawal calculations.' },
+      { icon: '&#128176;', title: 'Dividend Tracking', desc: 'Dedicated dividend history analysis grouped by date and symbol, with income trend visualization.' },
+      { icon: '&#128202;', title: 'Benchmark Comparison', desc: 'Compare your portfolio performance against market indices like the S&P 500, NASDAQ, and more.' },
+      { icon: '&#128200;', title: 'Performance Over Time', desc: 'Detailed performance charts for Today, WTD, MTD, YTD, 1Y, 5Y, and Max periods with annualized returns.' },
+      { icon: '&#127760;', title: 'Allocations by Dimension', desc: 'View portfolio allocation breakdowns by account, asset class, currency, region, and sector.' },
+      { icon: '&#128269;', title: 'Watchlist', desc: 'Track symbols you don\'t own yet. Monitor potential investments and set price alerts.' },
+      { icon: '&#128197;', title: 'Investment History', desc: 'Investment timeline with savings rate streaks and monthly/yearly investment patterns.' },
+      { icon: '&#128300;', title: 'X-Ray Deep Analysis', desc: 'Comprehensive rules-based analysis engine checking diversification risk, fee ratios, liquidity, and currency concentration.' },
+      { icon: '&#127974;', title: 'Account Balance History', desc: 'Historical balance tracking per account with trend analysis over time.' },
+      { icon: '&#128279;', title: 'Public Portfolio Sharing', desc: 'Share read-only portfolio views with others for collaboration or transparency.' },
+    ];
+
+    function showFeatures() {
+      document.getElementById('help-menu').classList.remove('visible');
+      const body = document.getElementById('features-body');
+      body.innerHTML = '<p style="color:#888; font-size:12px; margin-bottom:16px;">These powerful Ghostfolio features are being integrated into the AI assistant. Stay tuned!</p>';
+      body.innerHTML += UPCOMING_FEATURES.map(f => `
+        <div class="feature-item">
+          <span class="feature-icon">${f.icon}</span>
+          <div class="feature-info">
+            <div class="feature-title">${f.title}</div>
+            <div class="feature-desc">${f.desc}</div>
+          </div>
+          <span class="coming-soon-badge">Coming Soon</span>
+        </div>
+      `).join('');
+      document.getElementById('features-overlay').classList.add('visible');
+    }
+    function closeFeatures() {
+      document.getElementById('features-overlay').classList.remove('visible');
+    }
+
+    // ---- Logout ----
+    function doLogout() {
+      sessionStorage.removeItem('auth-token');
+      localStorage.removeItem('auth-token');
+      TOKEN = '';
+      currentConversationId = null;
+      messages = [];
+      allConversations = [];
+      convListEl.innerHTML = '';
+      newConversation();
+      showLoginOverlay();
+    }
+
+    // ---- First-Login Disclaimer ----
+    function onDisclaimerCheckbox(checked) {
+      const btn = document.getElementById('disclaimer-agree-btn');
+      if (checked) {
+        btn.classList.add('enabled');
+        btn.disabled = false;
+      } else {
+        btn.classList.remove('enabled');
+        btn.disabled = true;
+      }
+    }
+
+    function acceptDisclaimer() {
+      if (!document.getElementById('disclaimer-agree-checkbox').checked) return;
+      localStorage.setItem('disclaimer-accepted', 'true');
+      document.getElementById('first-login-overlay').classList.remove('visible');
+    }
+
+    function checkFirstLoginDisclaimer() {
+      if (!localStorage.getItem('disclaimer-accepted')) {
+        document.getElementById('first-login-overlay').classList.add('visible');
+      }
+    }
+
+    // Show first-login disclaimer after authentication
+    const _origOnAuth = onAuthenticated;
+    onAuthenticated = function() {
+      _origOnAuth();
+      checkFirstLoginDisclaimer();
+    };
+    // Also check on initial load if already authenticated
+    if (TOKEN) checkFirstLoginDisclaimer();
   </script>
 </body>
 </html>

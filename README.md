@@ -6,9 +6,9 @@ AI-powered financial assistant for [Ghostfolio](https://ghostfol.io) — a stand
 
 - **10 financial tools**: Portfolio summary, market data, transactions, risk assessment, tax estimates, performance tracking, dividends, X-Ray health check, investment timeline, account overview
 - **Switchable LLM backends**: LiteLLM (default, 100+ models), OpenAI, Anthropic, LangChain
-- **Guardrails**: Pre/post filtering for topic enforcement, tone control, and prompt injection defense
+- **Guardrails**: Pre/post filtering for topic enforcement, tone control, and prompt injection defense ([security details](SECURITY.md))
 - **Verification**: Deterministic checks on every response (allocation sums, price validity, hallucination detection, confidence scoring)
-- **Eval system**: 55 golden test cases with regression detection
+- **Eval system**: 75 golden test cases with regression detection ([results](EVAL_RESULTS.md))
 - **Observability**: Langfuse integration for tracing, latency monitoring, and cost analysis
 - **User feedback**: Thumbs up/down with optional explanations
 
@@ -29,9 +29,13 @@ uvicorn main:app --reload --port 8000
 
 Open http://localhost:8000 in your browser.
 
-## Architecture
+## Documentation
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — Full system design and component overview
+- [SECURITY.md](SECURITY.md) — Security hardening and jailbreak prevention
+- [EVAL_RESULTS.md](EVAL_RESULTS.md) — Evaluation results (75 test cases, 97.3% pass rate)
+
+## Architecture
 
 ```
 Browser (Chat UI) --> Agent-Folio (FastAPI) --> Ghostfolio (NestJS) --> Postgres + Redis
@@ -51,6 +55,7 @@ Browser (Chat UI) --> Agent-Folio (FastAPI) --> Ghostfolio (NestJS) --> Postgres
 | `LANGFUSE_PUBLIC_KEY` | Langfuse public key | optional |
 | `LANGFUSE_SECRET_KEY` | Langfuse secret key | optional |
 | `LANGFUSE_HOST` | Langfuse host URL | optional |
+| `DATABASE_URL` | PostgreSQL connection string | required |
 
 ## Running Evals
 
@@ -62,7 +67,7 @@ AGENT_EVAL_TOKEN=<jwt> python eval/eval_snapshot.py
 python eval/eval_check.py
 ```
 
-55 test cases across 5 categories: happy path (22), tool selection (8), edge cases (10), adversarial (10), multi-step (5).
+75 test cases across 5 categories: happy path (22), tool selection (8), edge cases (10), adversarial (25), multi-step (10). See [EVAL_RESULTS.md](EVAL_RESULTS.md) for detailed results.
 
 ## Admin Panel
 
