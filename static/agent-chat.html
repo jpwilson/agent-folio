@@ -393,6 +393,38 @@
       40% { content: '..'; }
       60%, 100% { content: '...'; }
     }
+    .progress-bar {
+      align-self: flex-start;
+      padding: 8px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 400px;
+    }
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #888;
+      transition: color 0.3s;
+    }
+    .progress-step.active { color: #36cfb4; }
+    .progress-step.done { color: #555; }
+    .progress-step .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #333;
+      border-top-color: #36cfb4;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .progress-step.done .spinner {
+      border: none;
+      animation: none;
+    }
+    .progress-step.done .spinner::after { content: '\2713'; color: #36cfb4; font-size: 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     #input-area {
       padding: 16px 24px; background: #111111; border-top: 1px solid #2a2a2a;
       display: flex; gap: 12px;
@@ -1395,20 +1427,36 @@
       } catch {}
     }
 
+    let ghostfolioBaseUrl = '';
+
     async function loadConfig() {
       try {
         const res = await fetch(`${API_BASE}/config`);
         if (res.ok) {
           const data = await res.json();
+          if (data.ghostfolioUrl) {
+            ghostfolioBaseUrl = data.ghostfolioUrl.replace(/\/$/, '');
+          }
           const link = document.getElementById('ghostfolio-link');
-          if (data.ghostfolioUrl && link) {
-            let url = data.ghostfolioUrl;
-            if (!url.endsWith('/en/home')) url = url.replace(/\/$/, '') + '/en/home';
-            link.href = url;
-            link.target = '_blank';
+          if (link) {
+            link.onclick = function(e) {
+              e.preventDefault();
+              goToGhostfolio();
+            };
           }
         }
       } catch {}
+    }
+
+    function goToGhostfolio() {
+      if (!ghostfolioBaseUrl) return;
+      const jwt = sessionStorage.getItem('auth-token');
+      if (jwt) {
+        // Navigate to Ghostfolio with auth — logs in as the current user
+        window.location.href = `${ghostfolioBaseUrl}/en/auth/${jwt}`;
+      } else {
+        window.location.href = `${ghostfolioBaseUrl}/en/home`;
+      }
     }
 
     function classifyConversation(title) {
@@ -1539,6 +1587,42 @@
 
     function sendSuggestion(text) { input.value = text; send(); }
 
+    function addProgressStep(container, text, isActive) {
+      const step = document.createElement('div');
+      step.className = 'progress-step' + (isActive ? ' active' : '');
+      step.innerHTML = `<div class="spinner"></div><span>${text}</span>`;
+      container.appendChild(step);
+      chat.scrollTop = chat.scrollHeight;
+      return step;
+    }
+
+    function completeProgressStep(step) {
+      if (step) {
+        step.classList.remove('active');
+        step.classList.add('done');
+      }
+    }
+
+    function toolDisplayName(tool, args) {
+      const names = {
+        portfolio_summary: 'Fetching portfolio',
+        market_data: 'Looking up',
+        stock_history: 'Fetching price history for',
+        transaction_history: 'Loading transactions',
+        risk_assessment: 'Analyzing risk',
+        tax_estimate: 'Calculating taxes',
+        portfolio_performance: 'Loading performance',
+        dividend_history: 'Loading dividends',
+        portfolio_report: 'Running health check',
+        investment_timeline: 'Loading investments',
+        account_overview: 'Loading accounts',
+      };
+      let label = names[tool] || `Running ${tool}`;
+      if (args?.query) label += ` ${args.query}`;
+      if (args?.dateRange) label += ` (${args.dateRange})`;
+      return label;
+    }
+
     async function send() {
       const text = input.value.trim();
       if (!text) return;
@@ -1550,34 +1634,89 @@
       messages.push({ role: 'user', content: text });
       input.value = '';
       sendBtn.disabled = true;
-      const typing = document.createElement('div');
-      typing.className = 'typing';
-      typing.textContent = 'Thinking';
-      chat.appendChild(typing);
+
+      // Progressive disclosure container
+      const progress = document.createElement('div');
+      progress.className = 'progress-bar';
+      let currentStep = addProgressStep(progress, 'Analyzing your request...', true);
+      chat.appendChild(progress);
       chat.scrollTop = chat.scrollHeight;
+
       try {
-        const res = await fetch(`${API_BASE}/chat`, {
+        const res = await fetch(`${API_BASE}/chat/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
           body: JSON.stringify({ messages, conversationId: currentConversationId })
         });
-        typing.remove();
+
         if (!res.ok) {
+          progress.remove();
           const err = await res.text();
           addMessage(`Error ${res.status}: ${err}`, 'error');
           sendBtn.disabled = false;
           return;
         }
-        const data = await res.json();
-        if (data.conversationId) {
-          currentConversationId = data.conversationId;
-          loadConversations();
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let finalData = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          // Parse SSE events from buffer
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          let eventType = null;
+          let eventData = null;
+
+          for (const line of lines) {
+            if (line.startsWith('event: ')) {
+              eventType = line.slice(7).trim();
+            } else if (line.startsWith('data: ')) {
+              eventData = line.slice(6);
+              // Process the event
+              if (eventType && eventData) {
+                try {
+                  const parsed = JSON.parse(eventData);
+                  if (eventType === 'status') {
+                    completeProgressStep(currentStep);
+                    currentStep = addProgressStep(progress, parsed.text, true);
+                  } else if (eventType === 'tool_start') {
+                    completeProgressStep(currentStep);
+                    currentStep = addProgressStep(progress, toolDisplayName(parsed.tool, parsed.args), true);
+                  } else if (eventType === 'tool_done') {
+                    // Step already active, mark complete — next event will add new one
+                  } else if (eventType === 'complete') {
+                    finalData = parsed;
+                  }
+                } catch {}
+              }
+              eventType = null;
+              eventData = null;
+            }
+          }
         }
-        messages.push({ role: 'assistant', content: data.message });
-        addMessage(data.message, 'assistant', data.toolCalls, data.verification);
-        showFollowups(data.toolCalls);
+
+        progress.remove();
+
+        if (finalData) {
+          if (finalData.conversationId) {
+            currentConversationId = finalData.conversationId;
+            loadConversations();
+          }
+          messages.push({ role: 'assistant', content: finalData.message });
+          addMessage(finalData.message, 'assistant', finalData.toolCalls, finalData.verification);
+          showFollowups(finalData.toolCalls);
+        } else {
+          addMessage('No response received.', 'error');
+        }
       } catch (err) {
-        typing.remove();
+        progress.remove();
         addMessage(`Network error: ${err.message}`, 'error');
       }
       sendBtn.disabled = false;

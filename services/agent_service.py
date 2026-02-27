@@ -1,7 +1,9 @@
+import asyncio
 import json
 import time
 import uuid
 from datetime import datetime
+from typing import AsyncGenerator
 
 from services import db
 from services.ghostfolio_client import GhostfolioClient
@@ -141,3 +143,110 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
         "verification": verification,
         "durationMs": duration_ms,
     }
+
+
+async def chat_stream(
+    messages: list[dict], user_id: str, token: str, conversation_id: str | None = None
+) -> AsyncGenerator[str, None]:
+    """Streaming version of chat — yields SSE events for progressive disclosure."""
+    request_start = time.time()
+
+    def sse(event: str, data: dict | str) -> str:
+        payload = json.dumps(data) if isinstance(data, dict) else data
+        return f"event: {event}\ndata: {payload}\n\n"
+
+    messages = validate_message_roles(messages)
+    client = GhostfolioClient(token)
+    conv_id = conversation_id or str(uuid.uuid4())
+
+    if not conversation_id:
+        first_user_msg = next((m for m in messages if m["role"] == "user"), None)
+        title = (
+            first_user_msg["content"][:100]
+            if first_user_msg and isinstance(first_user_msg.get("content"), str)
+            else "New conversation"
+        )
+        await db.create_conversation(conv_id, user_id, title)
+
+    yield sse("status", {"text": "Analyzing your request..."})
+
+    last_msg = messages[-1] if messages else None
+    if last_msg and last_msg.get("role") == "user":
+        content = last_msg["content"] if isinstance(last_msg.get("content"), str) else json.dumps(last_msg["content"])
+        await db.add_message(conv_id, str(uuid.uuid4()), "user", content)
+
+    tool_results = []
+    # Queue for tool progress events to yield from the generator
+    progress_queue: asyncio.Queue = asyncio.Queue()
+
+    async def tool_executor(tool_name: str, args: dict) -> dict:
+        await progress_queue.put(sse("tool_start", {"tool": tool_name, "args": args}))
+        tool_module = ALL_TOOLS.get(tool_name)
+        if not tool_module:
+            result = {"success": False, "error": f"Unknown tool: {tool_name}"}
+        else:
+            result = await tool_module.execute(client, args)
+        tool_results.append({"tool": tool_name, "result": result})
+        await progress_queue.put(sse("tool_done", {"tool": tool_name}))
+        return result
+
+    last_user_msg = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+    pre_result = pre_filter(last_user_msg) if isinstance(last_user_msg, str) else None
+
+    if pre_result and pre_result.get("redirect"):
+        response_text = pre_result["redirect"]
+        tool_calls_list = []
+        verification = {"verified": True, "checks": []}
+    else:
+        settings = await db.load_settings()
+        sdk = get_sdk(settings.get("sdk"))
+        model = settings.get("model") or await get_current_model()
+
+        yield sse("status", {"text": "Calling AI model..."})
+
+        # Run the SDK chat in a task so we can drain progress events
+        async def run_chat():
+            return await sdk.chat(
+                messages=messages,
+                tools=TOOL_DEFINITIONS,
+                tool_executor=tool_executor,
+                system_prompt=SYSTEM_PROMPT,
+                model=model,
+            )
+
+        chat_task = asyncio.create_task(run_chat())
+
+        # Drain tool progress events while the chat task runs
+        while not chat_task.done():
+            try:
+                event = await asyncio.wait_for(progress_queue.get(), timeout=0.1)
+                yield event
+            except asyncio.TimeoutError:
+                pass
+
+        response = await chat_task
+
+        # Drain any remaining events
+        while not progress_queue.empty():
+            yield await progress_queue.get()
+
+        response_text = response.text
+        tool_calls_list = response.tool_calls
+
+        post_result = post_filter(response_text, last_user_msg)
+        if not post_result["passed"]:
+            response_text = post_result["corrected_response"]
+
+        verification = verify_response(tool_results, response_text)
+
+    await db.add_message(conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None)
+
+    duration_ms = int((time.time() - request_start) * 1000)
+
+    yield sse("complete", {
+        "conversationId": conv_id,
+        "message": response_text,
+        "toolCalls": tool_calls_list,
+        "verification": verification,
+        "durationMs": duration_ms,
+    })

@@ -1,5 +1,6 @@
 import httpx
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from models.schemas import ChatRequest
 from auth import get_user_id, get_raw_token
@@ -72,6 +73,22 @@ async def chat(request: Request, body: ChatRequest):
         conversation_id=body.conversationId,
     )
     return result
+
+
+@router.post("/chat/stream")
+async def chat_stream(request: Request, body: ChatRequest):
+    user_id = get_user_id(request)
+    token = get_raw_token(request)
+    return StreamingResponse(
+        agent_service.chat_stream(
+            messages=body.messages,
+            user_id=user_id,
+            token=token,
+            conversation_id=body.conversationId,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/conversations")

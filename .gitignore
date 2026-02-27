@@ -10,3 +10,4 @@ eval/history/
 venv/
 *.egg-info/
 dist/
+.coverage
