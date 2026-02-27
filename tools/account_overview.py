@@ -17,14 +17,16 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
 
         formatted = []
         for a in accounts:
-            formatted.append({
-                "name": a.get("name"),
-                "currency": a.get("currency"),
-                "balance": a.get("balance"),
-                "valueInBaseCurrency": a.get("valueInBaseCurrency"),
-                "platform": a.get("Platform", {}).get("name") if a.get("Platform") else None,
-                "isExcluded": a.get("isExcluded", False),
-            })
+            formatted.append(
+                {
+                    "name": a.get("name"),
+                    "currency": a.get("currency"),
+                    "balance": a.get("balance"),
+                    "valueInBaseCurrency": a.get("valueInBaseCurrency"),
+                    "platform": a.get("Platform", {}).get("name") if a.get("Platform") else None,
+                    "isExcluded": a.get("isExcluded", False),
+                }
+            )
 
         return {
             "success": True,

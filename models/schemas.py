@@ -1,10 +1,9 @@
 from pydantic import BaseModel
-from typing import Optional
 
 
 class ChatRequest(BaseModel):
     messages: list[dict]
-    conversationId: Optional[str] = None
+    conversationId: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -15,7 +14,7 @@ class ChatResponse(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
-    sdk: Optional[str] = None
-    model: Optional[str] = None
-    openai_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
+    sdk: str | None = None
+    model: str | None = None
+    openai_api_key: str | None = None
+    anthropic_api_key: str | None = None

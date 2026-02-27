@@ -121,37 +121,41 @@ def generate_orders(account_id: str) -> list[dict]:
             if order_date > now:
                 continue
 
-            orders.append({
-                "accountId": account_id,
-                "currency": "USD",
-                "dataSource": "YAHOO",
-                "date": order_date.strftime("%Y-%m-%dT00:00:00.000Z"),
-                "fee": fee,
-                "quantity": quantity,
-                "symbol": pick["symbol"],
-                "type": "BUY",
-                "unitPrice": unit_price,
-            })
+            orders.append(
+                {
+                    "accountId": account_id,
+                    "currency": "USD",
+                    "dataSource": "YAHOO",
+                    "date": order_date.strftime("%Y-%m-%dT00:00:00.000Z"),
+                    "fee": fee,
+                    "quantity": quantity,
+                    "symbol": pick["symbol"],
+                    "type": "BUY",
+                    "unitPrice": unit_price,
+                }
+            )
 
         current += timedelta(days=30)
 
     # Add a few SELL orders for realism (sell partial positions)
-    sell_candidates = random.sample(orders[:len(orders)//2], k=min(5, len(orders)//4))
+    sell_candidates = random.sample(orders[: len(orders) // 2], k=min(5, len(orders) // 4))
     for buy_order in sell_candidates:
         sell_date = datetime.strptime(buy_order["date"][:10], "%Y-%m-%d") + timedelta(days=random.randint(60, 365))
         if sell_date > now:
             continue
-        orders.append({
-            "accountId": account_id,
-            "currency": "USD",
-            "dataSource": "YAHOO",
-            "date": sell_date.strftime("%Y-%m-%dT00:00:00.000Z"),
-            "fee": round(random.uniform(0, 9.99), 2),
-            "quantity": round(buy_order["quantity"] * random.uniform(0.3, 0.7), 2),
-            "symbol": buy_order["symbol"],
-            "type": "SELL",
-            "unitPrice": round(buy_order["unitPrice"] * random.uniform(0.9, 1.5), 2),
-        })
+        orders.append(
+            {
+                "accountId": account_id,
+                "currency": "USD",
+                "dataSource": "YAHOO",
+                "date": sell_date.strftime("%Y-%m-%dT00:00:00.000Z"),
+                "fee": round(random.uniform(0, 9.99), 2),
+                "quantity": round(buy_order["quantity"] * random.uniform(0.3, 0.7), 2),
+                "symbol": buy_order["symbol"],
+                "type": "SELL",
+                "unitPrice": round(buy_order["unitPrice"] * random.uniform(0.9, 1.5), 2),
+            }
+        )
 
     orders.sort(key=lambda o: o["date"])
     return orders
@@ -170,9 +174,9 @@ def seed_orders(client: httpx.Client, auth_token: str, orders: list[dict]) -> in
         if res.status_code in (200, 201):
             success += 1
         else:
-            print(f"  Order {i+1} failed ({order['symbol']} {order['type']}): {res.status_code}")
+            print(f"  Order {i + 1} failed ({order['symbol']} {order['type']}): {res.status_code}")
         if (i + 1) % 10 == 0:
-            print(f"  Submitted {i+1}/{len(orders)} orders...")
+            print(f"  Submitted {i + 1}/{len(orders)} orders...")
     return success
 
 
@@ -224,7 +228,7 @@ def main():
     print(f"  Security Token: {security_token}")
     print(f"  Account ID:     {account_id}")
     print(f"  Orders:         {success}")
-    print(f"\nSet this in your environment:")
+    print("\nSet this in your environment:")
     print(f"  GRADER_TOKEN={security_token}")
 
 

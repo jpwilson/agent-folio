@@ -1,13 +1,76 @@
 import re
 
 COMMON_WORDS = {
-    "I", "A", "AN", "THE", "AND", "OR", "NOT", "IS", "IT", "IN", "ON", "TO",
-    "FOR", "OF", "AT", "BY", "AS", "IF", "SO", "DO", "BE", "HAS", "HAD",
-    "WAS", "ARE", "BUT", "ALL", "CAN", "HER", "HIS", "ITS", "MAY", "NEW",
-    "NOW", "OLD", "SEE", "WAY", "WHO", "DID", "GET", "LET", "SAY", "SHE",
-    "TOO", "USE", "USD", "ETF", "USA", "FAQ", "API", "CSV", "N", "S", "P",
-    "YOUR", "WITH", "THAT", "THIS", "FROM", "HAVE", "BEEN", "WILL", "EACH",
-    "THAN", "THEM", "SOME", "MOST", "VERY", "JUST", "OVER",
+    "I",
+    "A",
+    "AN",
+    "THE",
+    "AND",
+    "OR",
+    "NOT",
+    "IS",
+    "IT",
+    "IN",
+    "ON",
+    "TO",
+    "FOR",
+    "OF",
+    "AT",
+    "BY",
+    "AS",
+    "IF",
+    "SO",
+    "DO",
+    "BE",
+    "HAS",
+    "HAD",
+    "WAS",
+    "ARE",
+    "BUT",
+    "ALL",
+    "CAN",
+    "HER",
+    "HIS",
+    "ITS",
+    "MAY",
+    "NEW",
+    "NOW",
+    "OLD",
+    "SEE",
+    "WAY",
+    "WHO",
+    "DID",
+    "GET",
+    "LET",
+    "SAY",
+    "SHE",
+    "TOO",
+    "USE",
+    "USD",
+    "ETF",
+    "USA",
+    "FAQ",
+    "API",
+    "CSV",
+    "N",
+    "S",
+    "P",
+    "YOUR",
+    "WITH",
+    "THAT",
+    "THIS",
+    "FROM",
+    "HAVE",
+    "BEEN",
+    "WILL",
+    "EACH",
+    "THAN",
+    "THEM",
+    "SOME",
+    "MOST",
+    "VERY",
+    "JUST",
+    "OVER",
 }
 
 
@@ -20,36 +83,20 @@ def verify_response(tool_results: list[dict], response_text: str) -> dict:
     checks = []
 
     # Find tool results by type
-    portfolio_result = next(
-        (r for r in tool_results if r["tool"] == "portfolio_summary"), None
-    )
-    tax_result = next(
-        (r for r in tool_results if r["tool"] == "tax_estimate"), None
-    )
-    performance_result = next(
-        (r for r in tool_results if r["tool"] == "portfolio_performance"), None
-    )
-    dividend_result = next(
-        (r for r in tool_results if r["tool"] == "dividend_history"), None
-    )
-    report_result = next(
-        (r for r in tool_results if r["tool"] == "portfolio_report"), None
-    )
-    timeline_result = next(
-        (r for r in tool_results if r["tool"] == "investment_timeline"), None
-    )
-    account_result = next(
-        (r for r in tool_results if r["tool"] == "account_overview"), None
-    )
+    portfolio_result = next((r for r in tool_results if r["tool"] == "portfolio_summary"), None)
+    tax_result = next((r for r in tool_results if r["tool"] == "tax_estimate"), None)
+    performance_result = next((r for r in tool_results if r["tool"] == "portfolio_performance"), None)
+    dividend_result = next((r for r in tool_results if r["tool"] == "dividend_history"), None)
+    report_result = next((r for r in tool_results if r["tool"] == "portfolio_report"), None)
+    timeline_result = next((r for r in tool_results if r["tool"] == "investment_timeline"), None)
+    account_result = next((r for r in tool_results if r["tool"] == "account_overview"), None)
 
     # ---- Original 4 Checks ----
 
     # Check 1: Allocation percentages sum to ~100%
     if portfolio_result and portfolio_result["result"].get("success"):
         holdings = portfolio_result["result"].get("holdings", [])
-        total_alloc = sum(
-            float(h.get("allocationInPercentage", 0)) for h in holdings
-        )
+        total_alloc = sum(float(h.get("allocationInPercentage", 0)) for h in holdings)
         valid = 95 < total_alloc < 105
         checks.append(
             {
@@ -62,9 +109,7 @@ def verify_response(tool_results: list[dict], response_text: str) -> dict:
     # Check 2: All holdings have positive market prices
     if portfolio_result and portfolio_result["result"].get("success"):
         holdings = portfolio_result["result"].get("holdings", [])
-        invalid = [
-            h for h in holdings if not h.get("marketPrice") or h["marketPrice"] <= 0
-        ]
+        invalid = [h for h in holdings if not h.get("marketPrice") or h["marketPrice"] <= 0]
         checks.append(
             {
                 "check": "valid_market_prices",
@@ -72,7 +117,7 @@ def verify_response(tool_results: list[dict], response_text: str) -> dict:
                 "detail": (
                     "All holdings have valid market prices"
                     if len(invalid) == 0
-                    else f"{len(invalid)} holdings have invalid prices: {', '.join(h.get('symbol','?') for h in invalid)}"
+                    else f"{len(invalid)} holdings have invalid prices: {', '.join(h.get('symbol', '?') for h in invalid)}"
                 ),
             }
         )
@@ -126,9 +171,7 @@ def verify_response(tool_results: list[dict], response_text: str) -> dict:
                 "check": "performance_data_valid",
                 "passed": has_data,
                 "detail": (
-                    "Performance data contains valid metrics"
-                    if has_data
-                    else "Performance data missing metrics"
+                    "Performance data contains valid metrics" if has_data else "Performance data missing metrics"
                 ),
             }
         )
@@ -173,11 +216,7 @@ def verify_response(tool_results: list[dict], response_text: str) -> dict:
             {
                 "check": "account_data_valid",
                 "passed": has_accounts,
-                "detail": (
-                    f"Found {count} account(s)"
-                    if has_accounts
-                    else "No accounts found"
-                ),
+                "detail": (f"Found {count} account(s)" if has_accounts else "No accounts found"),
             }
         )
 
@@ -190,9 +229,7 @@ def verify_response(tool_results: list[dict], response_text: str) -> dict:
                 "check": "timeline_data_valid",
                 "passed": has_data,
                 "detail": (
-                    f"Investment timeline has {period_count} periods"
-                    if has_data
-                    else "Investment timeline is empty"
+                    f"Investment timeline has {period_count} periods" if has_data else "Investment timeline is empty"
                 ),
             }
         )
@@ -209,9 +246,7 @@ def verify_response(tool_results: list[dict], response_text: str) -> dict:
     }
 
 
-def _compute_confidence(
-    tool_results: list[dict], response_text: str, checks: list[dict]
-) -> dict:
+def _compute_confidence(tool_results: list[dict], response_text: str, checks: list[dict]) -> dict:
     """Compute a confidence score (0-100) for the response.
 
     Factors:

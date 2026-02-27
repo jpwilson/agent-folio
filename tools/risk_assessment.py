@@ -15,10 +15,7 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
         details = await client.get_portfolio_details()
         holdings_raw = details.get("holdings", {})
 
-        if isinstance(holdings_raw, dict):
-            holdings = list(holdings_raw.values())
-        else:
-            holdings = holdings_raw
+        holdings = list(holdings_raw.values()) if isinstance(holdings_raw, dict) else holdings_raw
 
         total_value = sum(h.get("valueInBaseCurrency", 0) or 0 for h in holdings)
 
@@ -34,8 +31,7 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
                     "symbol": h.get("symbol"),
                     "name": h.get("name"),
                     "value": h.get("valueInBaseCurrency", 0) or 0,
-                    "percentage": ((h.get("valueInBaseCurrency", 0) or 0) / total_value)
-                    * 100,
+                    "percentage": ((h.get("valueInBaseCurrency", 0) or 0) / total_value) * 100,
                 }
                 for h in holdings
             ],
@@ -49,9 +45,7 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
         asset_class_map: dict[str, float] = {}
         for h in holdings:
             cls = h.get("assetClass") or "UNKNOWN"
-            asset_class_map[cls] = asset_class_map.get(cls, 0) + (
-                h.get("valueInBaseCurrency", 0) or 0
-            )
+            asset_class_map[cls] = asset_class_map.get(cls, 0) + (h.get("valueInBaseCurrency", 0) or 0)
         asset_class_breakdown = [
             {
                 "assetClass": cls,
@@ -67,14 +61,9 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
             for s in h.get("sectors", []) or []:
                 name = s.get("name", "Unknown")
                 weight = s.get("weight", 0)
-                sector_map[name] = sector_map.get(name, 0) + (
-                    (h.get("valueInBaseCurrency", 0) or 0) * weight
-                )
+                sector_map[name] = sector_map.get(name, 0) + ((h.get("valueInBaseCurrency", 0) or 0) * weight)
         sector_breakdown = sorted(
-            [
-                {"sector": sec, "value": val, "percentage": (val / total_value) * 100}
-                for sec, val in sector_map.items()
-            ],
+            [{"sector": sec, "value": val, "percentage": (val / total_value) * 100} for sec, val in sector_map.items()],
             key=lambda s: s["percentage"],
             reverse=True,
         )[:10]
@@ -109,11 +98,7 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
                 "assetClassBreakdown": asset_class_breakdown,
                 "sectorBreakdown": sector_breakdown,
                 "riskFlags": risks,
-                "diversificationScore": (
-                    "Good"
-                    if len(risks) == 0
-                    else "Moderate" if len(risks) <= 2 else "Poor"
-                ),
+                "diversificationScore": ("Good" if len(risks) == 0 else "Moderate" if len(risks) <= 2 else "Poor"),
             },
         }
     except Exception as e:

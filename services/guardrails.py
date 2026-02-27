@@ -19,27 +19,127 @@ import unicodedata
 
 # Financial domain keywords — if a message contains ANY of these, it's likely on-topic
 FINANCIAL_KEYWORDS = {
-    "portfolio", "stock", "stocks", "share", "shares", "invest", "investment",
-    "investments", "investing", "holdings", "holding", "asset", "assets",
-    "market", "markets", "price", "prices", "ticker", "symbol",
-    "buy", "bought", "sell", "sold", "trade", "trading", "order", "orders",
-    "transaction", "transactions", "dividend", "dividends",
-    "gain", "gains", "loss", "losses", "return", "returns", "profit",
-    "tax", "taxes", "capital gains", "cost basis", "unrealized",
-    "risk", "risky", "diversif", "concentration", "allocation", "allocations",
-    "sector", "sectors", "etf", "bond", "bonds", "fund", "funds",
-    "aapl", "apple", "googl", "google", "alphabet", "msft", "microsoft",
-    "amzn", "amazon", "nvda", "nvidia", "tsla", "tesla", "vti", "vanguard",
-    "s&p", "nasdaq", "dow", "index",
-    "balance", "cash", "value", "worth", "performance", "growth",
-    "expense", "fee", "fees", "ratio", "yield", "volatility", "beta",
-    "portfolio summary", "market data", "risk assessment", "tax estimate",
-    "what do i own", "what have i", "how much", "how many",
-    "heavy", "overweight", "underweight", "rebalance",
-    "account", "accounts", "brokerage", "platform", "x-ray", "xray",
-    "health check", "financial health", "rule", "rules", "streak",
-    "savings", "income", "passive income", "timeline", "history",
-    "annual", "annualized", "monthly", "yearly", "net worth",
+    "portfolio",
+    "stock",
+    "stocks",
+    "share",
+    "shares",
+    "invest",
+    "investment",
+    "investments",
+    "investing",
+    "holdings",
+    "holding",
+    "asset",
+    "assets",
+    "market",
+    "markets",
+    "price",
+    "prices",
+    "ticker",
+    "symbol",
+    "buy",
+    "bought",
+    "sell",
+    "sold",
+    "trade",
+    "trading",
+    "order",
+    "orders",
+    "transaction",
+    "transactions",
+    "dividend",
+    "dividends",
+    "gain",
+    "gains",
+    "loss",
+    "losses",
+    "return",
+    "returns",
+    "profit",
+    "tax",
+    "taxes",
+    "capital gains",
+    "cost basis",
+    "unrealized",
+    "risk",
+    "risky",
+    "diversif",
+    "concentration",
+    "allocation",
+    "allocations",
+    "sector",
+    "sectors",
+    "etf",
+    "bond",
+    "bonds",
+    "fund",
+    "funds",
+    "aapl",
+    "apple",
+    "googl",
+    "google",
+    "alphabet",
+    "msft",
+    "microsoft",
+    "amzn",
+    "amazon",
+    "nvda",
+    "nvidia",
+    "tsla",
+    "tesla",
+    "vti",
+    "vanguard",
+    "s&p",
+    "nasdaq",
+    "dow",
+    "index",
+    "balance",
+    "cash",
+    "value",
+    "worth",
+    "performance",
+    "growth",
+    "expense",
+    "fee",
+    "fees",
+    "ratio",
+    "yield",
+    "volatility",
+    "beta",
+    "portfolio summary",
+    "market data",
+    "risk assessment",
+    "tax estimate",
+    "what do i own",
+    "what have i",
+    "how much",
+    "how many",
+    "heavy",
+    "overweight",
+    "underweight",
+    "rebalance",
+    "account",
+    "accounts",
+    "brokerage",
+    "platform",
+    "x-ray",
+    "xray",
+    "health check",
+    "financial health",
+    "rule",
+    "rules",
+    "streak",
+    "savings",
+    "income",
+    "passive income",
+    "timeline",
+    "history",
+    "annual",
+    "annualized",
+    "monthly",
+    "yearly",
+    "net worth",
 }
 
 # ============================================
@@ -48,9 +148,23 @@ FINANCIAL_KEYWORDS = {
 
 # Greetings and simple conversational patterns — these are OK, not off-topic
 GREETING_PATTERNS = {
-    "hello", "hi", "hey", "good morning", "good afternoon", "good evening",
-    "thanks", "thank you", "ok", "okay", "yes", "no", "sure", "got it",
-    "help", "what can you do", "how can you help",
+    "hello",
+    "hi",
+    "hey",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "thanks",
+    "thank you",
+    "ok",
+    "okay",
+    "yes",
+    "no",
+    "sure",
+    "got it",
+    "help",
+    "what can you do",
+    "how can you help",
 }
 
 # ============================================
@@ -237,15 +351,15 @@ SYSTEM_PROMPT_LEAK_PATTERNS = [
 ]
 
 CREDENTIAL_LEAK_PATTERNS = [
-    r"\bsk-[a-zA-Z0-9]{20,}\b",                     # OpenAI API key
-    r"\bghp_[a-zA-Z0-9]{36,}\b",                     # GitHub personal access token
+    r"\bsk-[a-zA-Z0-9]{20,}\b",  # OpenAI API key
+    r"\bghp_[a-zA-Z0-9]{36,}\b",  # GitHub personal access token
     r"\beyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}",  # JWT token
-    r"\bBearer\s+[a-zA-Z0-9_\-.]{20,}\b",            # Bearer token
-    r"\bpassword\s*:\s*\S+",                          # password: value
-    r"\bsecret\s*:\s*\S+",                            # secret: value
-    r"\bapi[_-]?key\s*:\s*\S+",                       # api_key: value
-    r"\btoken\s*:\s*[a-zA-Z0-9_\-.]{20,}\b",         # token: long_value
-    r"(?:key|token|secret|password)\s*=\s*\S{8,}",   # key=value patterns
+    r"\bBearer\s+[a-zA-Z0-9_\-.]{20,}\b",  # Bearer token
+    r"\bpassword\s*:\s*\S+",  # password: value
+    r"\bsecret\s*:\s*\S+",  # secret: value
+    r"\bapi[_-]?key\s*:\s*\S+",  # api_key: value
+    r"\btoken\s*:\s*[a-zA-Z0-9_\-.]{20,}\b",  # token: long_value
+    r"(?:key|token|secret|password)\s*=\s*\S{8,}",  # key=value patterns
 ]
 
 HARMFUL_FINANCIAL_ADVICE_PATTERNS = [
@@ -352,9 +466,20 @@ def normalize_unicode(text: str) -> str:
 _BASE64_PATTERN = re.compile(r"[A-Za-z0-9+/]{20,}={0,2}")
 
 _INJECTION_KEYWORDS_IN_DECODED = [
-    "ignore", "instructions", "system", "prompt", "override",
-    "unrestricted", "jailbreak", "bypass", "disable", "forget",
-    "previous", "rules", "you are now", "do anything",
+    "ignore",
+    "instructions",
+    "system",
+    "prompt",
+    "override",
+    "unrestricted",
+    "jailbreak",
+    "bypass",
+    "disable",
+    "forget",
+    "previous",
+    "rules",
+    "you are now",
+    "do anything",
 ]
 
 
@@ -441,6 +566,7 @@ _REDIRECT_MSG = (
 # Pre-filter
 # ============================================
 
+
 def pre_filter(user_message: str) -> dict | None:
     """Check user message before sending to LLM.
 
@@ -493,7 +619,11 @@ def pre_filter(user_message: str) -> dict | None:
 
     # Allow greetings and simple conversational messages
     for pattern in GREETING_PATTERNS:
-        if msg_sanitized == pattern or msg_sanitized.startswith(pattern + " ") or msg_sanitized.startswith(pattern + ","):
+        if (
+            msg_sanitized == pattern
+            or msg_sanitized.startswith(pattern + " ")
+            or msg_sanitized.startswith(pattern + ",")
+        ):
             return None
 
     # Check for tone manipulation attempts
@@ -504,7 +634,7 @@ def pre_filter(user_message: str) -> dict | None:
             return None  # Let it through to LLM, system prompt handles it
 
     # Check if message is on-topic (has financial keywords)
-    words = set(re.findall(r'[a-z&]+', msg_sanitized))
+    words = set(re.findall(r"[a-z&]+", msg_sanitized))
     if words & FINANCIAL_KEYWORDS:
         return None  # On-topic
 
@@ -527,6 +657,7 @@ def pre_filter(user_message: str) -> dict | None:
 # ============================================
 # Post-filter
 # ============================================
+
 
 def post_filter(response_text: str, user_message: str) -> dict:
     """Check agent response for tone/topic violations.
@@ -574,15 +705,26 @@ def post_filter(response_text: str, user_message: str) -> dict:
     # --- Existing checks below ---
 
     # Check for pirate/role-play tone leakage
-    pirate_indicators = ["ahoy", "matey", "ye ", "yer ", "arr!", "arrr", "shiver me timbers",
-                         "avast", "plunder", "booty", "landlubber", "yo ho"]
+    pirate_indicators = [
+        "ahoy",
+        "matey",
+        "ye ",
+        "yer ",
+        "arr!",
+        "arrr",
+        "shiver me timbers",
+        "avast",
+        "plunder",
+        "booty",
+        "landlubber",
+        "yo ho",
+    ]
     for indicator in pirate_indicators:
         if indicator in resp_lower:
             issues.append(f"Tone violation: pirate language detected ('{indicator}')")
 
     # Check for other persona leakage
-    persona_indicators = ["*adjusts", "*tips hat", "*bows", "uwu", "nya",
-                          "beep boop", "as an ai language model"]
+    persona_indicators = ["*adjusts", "*tips hat", "*bows", "uwu", "nya", "beep boop", "as an ai language model"]
     for indicator in persona_indicators:
         if indicator in resp_lower:
             issues.append(f"Persona violation: '{indicator}' detected")
@@ -597,8 +739,12 @@ def post_filter(response_text: str, user_message: str) -> dict:
                 issues.append(f"Off-topic compliance: creative writing detected ('{indicator}')")
 
     # Check for INSUFFICIENT_DATA or similar unhelpful errors
-    unhelpful_patterns = ["insufficient_data", "insufficient data", "i cannot access",
-                          "i don't have access to real-time"]
+    unhelpful_patterns = [
+        "insufficient_data",
+        "insufficient data",
+        "i cannot access",
+        "i don't have access to real-time",
+    ]
     for pattern in unhelpful_patterns:
         if pattern in resp_lower:
             # Only flag if the question was clearly off-topic (not a legit data gap)

@@ -6,16 +6,16 @@ import httpx
 import yaml
 from fastapi import APIRouter, Request
 
+import config
+from config import ANTHROPIC_API_KEY, OPENAI_API_KEY
 from models.schemas import SettingsUpdate
+from services import db
 from services.sdk_registry import (
+    MODEL_OPTIONS,
+    SDK_OPTIONS,
     load_settings,
     save_settings,
-    SDK_OPTIONS,
-    MODEL_OPTIONS,
 )
-from config import OPENAI_API_KEY, ANTHROPIC_API_KEY
-from services import db
-import config
 
 router = APIRouter(prefix="/api/v1/agent/admin")
 
@@ -59,6 +59,7 @@ async def update_settings(body: SettingsUpdate):
 
 
 # ---- Eval endpoints ----
+
 
 @router.get("/eval/golden")
 async def get_golden_cases():
@@ -110,16 +111,18 @@ async def run_snapshot(request: Request):
                     continue
 
                 data = res.json()
-                snapshots.append({
-                    "id": gc["id"],
-                    "query": gc["query"],
-                    "category": gc["category"],
-                    "response": data.get("message", ""),
-                    "toolCalls": [tc["tool"] for tc in (data.get("toolCalls") or [])],
-                    "verified": data.get("verification", {}).get("verified"),
-                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                    "durationMs": duration_ms,
-                })
+                snapshots.append(
+                    {
+                        "id": gc["id"],
+                        "query": gc["query"],
+                        "category": gc["category"],
+                        "response": data.get("message", ""),
+                        "toolCalls": [tc["tool"] for tc in (data.get("toolCalls") or [])],
+                        "verified": data.get("verification", {}).get("verified"),
+                        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                        "durationMs": duration_ms,
+                    }
+                )
             except Exception as e:
                 errors.append({"id": gc["id"], "error": str(e)})
 
@@ -165,13 +168,15 @@ async def run_check():
     for golden in golden_cases:
         snapshot = snapshot_map.get(golden["id"])
         if not snapshot:
-            results.append({
-                "id": golden["id"],
-                "query": golden["query"],
-                "category": golden["category"],
-                "passed": False,
-                "checks": [{"type": "missing", "passed": False, "detail": "No snapshot found"}],
-            })
+            results.append(
+                {
+                    "id": golden["id"],
+                    "query": golden["query"],
+                    "category": golden["category"],
+                    "passed": False,
+                    "checks": [{"type": "missing", "passed": False, "detail": "No snapshot found"}],
+                }
+            )
             continue
 
         checks = []
@@ -180,71 +185,81 @@ async def run_check():
         if golden.get("expected_tools"):
             for expected_tool in golden["expected_tools"]:
                 found = expected_tool in snapshot.get("toolCalls", [])
-                checks.append({
-                    "type": "tool_selection",
-                    "passed": found,
-                    "detail": (
-                        f"Tool '{expected_tool}' was correctly called"
-                        if found
-                        else f"Expected tool '{expected_tool}' not called. Got: [{', '.join(snapshot.get('toolCalls', []))}]"
-                    ),
-                })
+                checks.append(
+                    {
+                        "type": "tool_selection",
+                        "passed": found,
+                        "detail": (
+                            f"Tool '{expected_tool}' was correctly called"
+                            if found
+                            else f"Expected tool '{expected_tool}' not called. Got: [{', '.join(snapshot.get('toolCalls', []))}]"
+                        ),
+                    }
+                )
 
         # Content validation
         if golden.get("must_contain"):
             response_lower = snapshot.get("response", "").lower()
             for required in golden["must_contain"]:
                 found = required.lower() in response_lower
-                checks.append({
-                    "type": "content_validation",
-                    "passed": found,
-                    "detail": (
-                        f"Response contains '{required}'"
-                        if found
-                        else f"Response missing required content '{required}'"
-                    ),
-                })
+                checks.append(
+                    {
+                        "type": "content_validation",
+                        "passed": found,
+                        "detail": (
+                            f"Response contains '{required}'"
+                            if found
+                            else f"Response missing required content '{required}'"
+                        ),
+                    }
+                )
 
         # Negative validation
         if golden.get("must_not_contain"):
             response_lower = snapshot.get("response", "").lower()
             for forbidden in golden["must_not_contain"]:
                 found = forbidden.lower() in response_lower
-                checks.append({
-                    "type": "negative_validation",
-                    "passed": not found,
-                    "detail": (
-                        f"Response correctly excludes '{forbidden}'"
-                        if not found
-                        else f"Response contains forbidden content '{forbidden}'"
-                    ),
-                })
+                checks.append(
+                    {
+                        "type": "negative_validation",
+                        "passed": not found,
+                        "detail": (
+                            f"Response correctly excludes '{forbidden}'"
+                            if not found
+                            else f"Response contains forbidden content '{forbidden}'"
+                        ),
+                    }
+                )
 
         # Verification
         if golden.get("expect_verified") is not None:
             match = snapshot.get("verified") == golden["expect_verified"]
-            checks.append({
-                "type": "verification",
-                "passed": match,
-                "detail": (
-                    f"Verification status matches ({golden['expect_verified']})"
-                    if match
-                    else f"Expected verified={golden['expect_verified']}, got {snapshot.get('verified')}"
-                ),
-            })
+            checks.append(
+                {
+                    "type": "verification",
+                    "passed": match,
+                    "detail": (
+                        f"Verification status matches ({golden['expect_verified']})"
+                        if match
+                        else f"Expected verified={golden['expect_verified']}, got {snapshot.get('verified')}"
+                    ),
+                }
+            )
 
         for c in checks:
             total_checks += 1
             if c["passed"]:
                 passed_checks += 1
 
-        results.append({
-            "id": golden["id"],
-            "query": golden["query"],
-            "category": golden["category"],
-            "passed": all(c["passed"] for c in checks),
-            "checks": checks,
-        })
+        results.append(
+            {
+                "id": golden["id"],
+                "query": golden["query"],
+                "category": golden["category"],
+                "passed": all(c["passed"] for c in checks),
+                "checks": checks,
+            }
+        )
 
     passed_cases = sum(1 for r in results if r["passed"])
 
@@ -282,6 +297,7 @@ async def get_eval_history():
 
 
 # ---- Analytics / Cost Analysis endpoint ----
+
 
 @router.get("/analytics")
 async def get_analytics():
@@ -400,6 +416,7 @@ async def get_analytics():
 
 # ---- Traces / Analytics endpoint ----
 
+
 @router.get("/traces")
 async def get_traces():
     """Fetch tracing analytics from Langfuse: daily metrics, recent traces, latency data."""
@@ -422,14 +439,16 @@ async def get_traces():
     recent_traces = []
     if traces_res and traces_res.status_code == 200:
         for t in traces_res.json().get("data", [])[:20]:
-            recent_traces.append({
-                "id": t.get("id", "")[:12],
-                "name": t.get("name", ""),
-                "timestamp": t.get("timestamp", ""),
-                "latency": t.get("latency"),
-                "cost": t.get("totalCost"),
-                "observations": len(t.get("observations", [])),
-            })
+            recent_traces.append(
+                {
+                    "id": t.get("id", "")[:12],
+                    "name": t.get("name", ""),
+                    "timestamp": t.get("timestamp", ""),
+                    "latency": t.get("latency"),
+                    "cost": t.get("totalCost"),
+                    "observations": len(t.get("observations", [])),
+                }
+            )
 
     # Parse generations for latency distribution and error rates
     latencies = []
@@ -476,13 +495,15 @@ async def get_traces():
     # Daily chart data
     daily_chart = []
     for d in sorted(daily_data, key=lambda x: x.get("date", "")):
-        daily_chart.append({
-            "date": d.get("date", ""),
-            "traces": d.get("countTraces", 0),
-            "observations": d.get("countObservations", 0),
-            "cost": d.get("totalCost", 0),
-            "models": d.get("usage", []),
-        })
+        daily_chart.append(
+            {
+                "date": d.get("date", ""),
+                "traces": d.get("countTraces", 0),
+                "observations": d.get("countObservations", 0),
+                "cost": d.get("totalCost", 0),
+                "models": d.get("usage", []),
+            }
+        )
 
     return {
         "dailyChart": daily_chart,
@@ -499,7 +520,9 @@ async def get_traces():
             "success": success_count,
             "errors": error_count,
             "total": success_count + error_count,
-            "rate": round(success_count / (success_count + error_count) * 100, 1) if (success_count + error_count) > 0 else 0,
+            "rate": round(success_count / (success_count + error_count) * 100, 1)
+            if (success_count + error_count) > 0
+            else 0,
         },
     }
 
@@ -507,6 +530,7 @@ async def get_traces():
 async def _fetch_parallel(client, langfuse_api, auth):
     """Fetch daily metrics, traces, and generations in parallel."""
     import asyncio
+
     async def _get(url, params):
         try:
             return await client.get(url, params=params, auth=auth)

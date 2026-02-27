@@ -126,9 +126,7 @@ def check_regression(current: dict) -> list[str]:
     if not os.path.exists(HISTORY_DIR):
         return []
 
-    history_files = sorted(
-        [f for f in os.listdir(HISTORY_DIR) if f.startswith("eval_") and f.endswith(".json")]
-    )
+    history_files = sorted([f for f in os.listdir(HISTORY_DIR) if f.startswith("eval_") and f.endswith(".json")])
     if not history_files:
         return []
 
@@ -142,18 +140,14 @@ def check_regression(current: dict) -> list[str]:
     prev_rate = previous.get("passRate", 0)
     curr_rate = current.get("passRate", 0)
     if curr_rate < prev_rate:
-        warnings.append(
-            f"Overall pass rate dropped: {prev_rate:.0f}% -> {curr_rate:.0f}%"
-        )
+        warnings.append(f"Overall pass rate dropped: {prev_rate:.0f}% -> {curr_rate:.0f}%")
 
     # Compare per-case results
     prev_cases = {r["id"]: r["passed"] for r in previous.get("results", [])}
     for result in current.get("results", []):
         case_id = result["id"]
         if case_id in prev_cases and prev_cases[case_id] and not result["passed"]:
-            warnings.append(
-                f"Regression: {case_id} was passing, now failing"
-            )
+            warnings.append(f"Regression: {case_id} was passing, now failing")
 
     # Compare by category
     prev_cats = previous.get("byCategory", {})
@@ -163,9 +157,7 @@ def check_regression(current: dict) -> list[str]:
             prev_pct = prev_cats[cat]["passed"] / max(prev_cats[cat]["total"], 1) * 100
             curr_pct = stats["passed"] / max(stats["total"], 1) * 100
             if curr_pct < prev_pct:
-                warnings.append(
-                    f"Category '{cat}' regressed: {prev_pct:.0f}% -> {curr_pct:.0f}%"
-                )
+                warnings.append(f"Category '{cat}' regressed: {prev_pct:.0f}% -> {curr_pct:.0f}%")
 
     return warnings
 
@@ -174,9 +166,7 @@ def main():
     if not os.path.exists(SNAPSHOT_PATH):
         print(f"\n  ERROR: No snapshot file found at {SNAPSHOT_PATH}")
         print("  Run the snapshot generator first:")
-        print(
-            "    AGENT_EVAL_TOKEN=<jwt> python eval/eval_snapshot.py\n"
-        )
+        print("    AGENT_EVAL_TOKEN=<jwt> python eval/eval_snapshot.py\n")
         sys.exit(2)
 
     with open(GOLDEN_PATH) as f:
@@ -275,7 +265,7 @@ def main():
     # Regression detection
     regressions = check_regression(run_result)
     if regressions:
-        print(f"\n  \033[33mREGRESSIONS DETECTED:\033[0m")
+        print("\n  \033[33mREGRESSIONS DETECTED:\033[0m")
         for warn in regressions:
             print(f"    \033[33m! {warn}\033[0m")
 

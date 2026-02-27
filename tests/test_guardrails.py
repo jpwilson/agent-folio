@@ -16,6 +16,7 @@ from services.guardrails import (
 # pre_filter: Allow financial questions
 # ============================================================
 
+
 class TestPreFilterAllowsFinancial:
     """pre_filter should return None (allow) for on-topic financial queries."""
 
@@ -51,6 +52,7 @@ class TestPreFilterAllowsFinancial:
 # pre_filter: Allow greetings
 # ============================================================
 
+
 class TestPreFilterAllowsGreetings:
     """Greetings and simple conversational messages should pass."""
 
@@ -85,6 +87,7 @@ class TestPreFilterAllowsGreetings:
 # ============================================================
 # pre_filter: Block prompt injection attempts
 # ============================================================
+
 
 class TestPreFilterBlocksPromptInjection:
     """Prompt injection / jailbreak attempts should be redirected."""
@@ -144,6 +147,7 @@ class TestPreFilterBlocksPromptInjection:
 # pre_filter: Block encoded payloads
 # ============================================================
 
+
 class TestPreFilterBlocksEncodedPayloads:
     """Encoded payloads (base64, hex patterns) should be blocked."""
 
@@ -178,6 +182,7 @@ class TestPreFilterBlocksEncodedPayloads:
 # ============================================================
 # pre_filter: Block delimiter injection
 # ============================================================
+
 
 class TestPreFilterBlocksDelimiterInjection:
     """Chat-ML and delimiter injection patterns should be blocked."""
@@ -217,6 +222,7 @@ class TestPreFilterBlocksDelimiterInjection:
 # pre_filter: Block profanity
 # ============================================================
 
+
 class TestPreFilterBlocksProfanity:
     """Profanity should return a redirect with a professional tone message."""
 
@@ -251,6 +257,7 @@ class TestPreFilterBlocksProfanity:
 # ============================================================
 # pre_filter: Block multilingual injection
 # ============================================================
+
 
 class TestPreFilterBlocksMultilingualInjection:
     """Injection attempts in other languages should be blocked."""
@@ -290,14 +297,12 @@ class TestPreFilterBlocksMultilingualInjection:
 # post_filter: Clean responses pass
 # ============================================================
 
+
 class TestPostFilterPassesCleanResponses:
     """Clean, on-topic responses should pass the post-filter."""
 
     def test_portfolio_analysis(self):
-        response = (
-            "Your portfolio is worth $8,323.40 USD. "
-            "AAPL makes up 30% of your allocation."
-        )
+        response = "Your portfolio is worth $8,323.40 USD. AAPL makes up 30% of your allocation."
         result = post_filter(response, "what is my portfolio worth?")
         assert result["passed"] is True
         assert result["issues"] == []
@@ -323,6 +328,7 @@ class TestPostFilterPassesCleanResponses:
 # ============================================================
 # post_filter: Detect pirate language
 # ============================================================
+
 
 class TestPostFilterCatchesPirateLanguage:
     """Pirate language in responses indicates persona hijacking."""
@@ -351,6 +357,7 @@ class TestPostFilterCatchesPirateLanguage:
 # ============================================================
 # post_filter: System prompt leakage
 # ============================================================
+
 
 class TestPostFilterCatchesSystemPromptLeakage:
     """Responses that reveal the system prompt should be flagged."""
@@ -389,6 +396,7 @@ class TestPostFilterCatchesSystemPromptLeakage:
 # post_filter: Credential leakage
 # ============================================================
 
+
 class TestPostFilterCatchesCredentialLeakage:
     """Responses containing API keys or tokens should be flagged."""
 
@@ -425,6 +433,7 @@ class TestPostFilterCatchesCredentialLeakage:
 # ============================================================
 # validate_message_roles
 # ============================================================
+
 
 class TestValidateMessageRoles:
     """validate_message_roles strips system roles and enforces limits."""
@@ -482,6 +491,7 @@ class TestValidateMessageRoles:
 # normalize_unicode
 # ============================================================
 
+
 class TestNormalizeUnicode:
     """normalize_unicode strips zero-width characters and normalizes."""
 
@@ -515,6 +525,7 @@ class TestNormalizeUnicode:
 # ============================================================
 # sanitize_input
 # ============================================================
+
 
 class TestSanitizeInput:
     """sanitize_input strips HTML tags, markdown images, and excess whitespace."""

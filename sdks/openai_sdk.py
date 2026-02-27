@@ -1,7 +1,9 @@
 import json
+
 from openai import AsyncOpenAI
-from sdks.base import BaseSDK, AgentResponse
+
 from config import OPENAI_API_KEY
+from sdks.base import AgentResponse, BaseSDK
 
 
 class OpenAISDK(BaseSDK):
@@ -43,9 +45,7 @@ class OpenAISDK(BaseSDK):
                     )
             else:
                 # No more tool calls — final response
-                return AgentResponse(
-                    text=msg.content or "", tool_calls=all_tool_calls
-                )
+                return AgentResponse(text=msg.content or "", tool_calls=all_tool_calls)
 
         # If we hit max steps, return whatever we have
         return AgentResponse(

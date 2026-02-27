@@ -27,10 +27,7 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
         orders_data = await client.get_orders()
 
         holdings_raw = details.get("holdings", {})
-        if isinstance(holdings_raw, dict):
-            holdings = list(holdings_raw.values())
-        else:
-            holdings = holdings_raw
+        holdings = list(holdings_raw.values()) if isinstance(holdings_raw, dict) else holdings_raw
 
         activities = orders_data.get("activities", [])
 
@@ -73,11 +70,7 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
                     "costBasis": f"{cost_basis:.2f}",
                     "currentValue": f"{current_value:.2f}",
                     "unrealizedGain": f"{unrealized_gain:.2f}",
-                    "gainPercentage": (
-                        f"{(unrealized_gain / cost_basis) * 100:.2f}"
-                        if cost_basis > 0
-                        else "N/A"
-                    ),
+                    "gainPercentage": (f"{(unrealized_gain / cost_basis) * 100:.2f}" if cost_basis > 0 else "N/A"),
                     "estimatedTax": f"{estimated_tax:.2f}",
                 }
             )
@@ -97,11 +90,7 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
                     "currentValue": f"{total_value:.2f}",
                     "totalUnrealizedGain": f"{total_gain:.2f}",
                     "totalEstimatedTax": f"{total_tax:.2f}",
-                    "gainPercentage": (
-                        f"{(total_gain / total_cost) * 100:.2f}"
-                        if total_cost > 0
-                        else "N/A"
-                    ),
+                    "gainPercentage": (f"{(total_gain / total_cost) * 100:.2f}" if total_cost > 0 else "N/A"),
                 },
                 "disclaimer": "This is a rough estimate for informational purposes only. Actual tax liability depends on holding period, tax brackets, state taxes, and other factors. Consult a tax professional.",
             },

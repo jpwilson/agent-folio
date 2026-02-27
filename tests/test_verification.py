@@ -6,6 +6,7 @@ from services.verification import verify_response
 # Valid portfolio data (allocations sum to ~100%)
 # ============================================================
 
+
 class TestVerifyValidPortfolio:
     """verify_response should pass when allocations sum to ~100%."""
 
@@ -16,9 +17,7 @@ class TestVerifyValidPortfolio:
         )
         assert result["verified"] is True
         # allocation_sum check should pass
-        alloc_check = next(
-            (c for c in result["checks"] if c["check"] == "allocation_sum"), None
-        )
+        alloc_check = next((c for c in result["checks"] if c["check"] == "allocation_sum"), None)
         assert alloc_check is not None
         assert alloc_check["passed"] is True
 
@@ -26,6 +25,7 @@ class TestVerifyValidPortfolio:
 # ============================================================
 # Bad allocation sums
 # ============================================================
+
 
 class TestVerifyCatchesBadAllocations:
     """verify_response should flag allocations that do not sum to ~100%."""
@@ -44,9 +44,7 @@ class TestVerifyCatchesBadAllocations:
             }
         ]
         result = verify_response(tool_results, "AAPL is 60%, MSFT is 55%.")
-        alloc_check = next(
-            (c for c in result["checks"] if c["check"] == "allocation_sum"), None
-        )
+        alloc_check = next((c for c in result["checks"] if c["check"] == "allocation_sum"), None)
         assert alloc_check is not None
         assert alloc_check["passed"] is False
 
@@ -64,9 +62,7 @@ class TestVerifyCatchesBadAllocations:
             }
         ]
         result = verify_response(tool_results, "Your portfolio is tiny.")
-        alloc_check = next(
-            (c for c in result["checks"] if c["check"] == "allocation_sum"), None
-        )
+        alloc_check = next((c for c in result["checks"] if c["check"] == "allocation_sum"), None)
         assert alloc_check is not None
         assert alloc_check["passed"] is False
 
@@ -74,6 +70,7 @@ class TestVerifyCatchesBadAllocations:
 # ============================================================
 # Invalid market prices
 # ============================================================
+
 
 class TestVerifyCatchesInvalidMarketPrices:
     """verify_response should flag holdings with missing or zero market prices."""
@@ -92,9 +89,7 @@ class TestVerifyCatchesInvalidMarketPrices:
             }
         ]
         result = verify_response(tool_results, "Here is your portfolio.")
-        price_check = next(
-            (c for c in result["checks"] if c["check"] == "valid_market_prices"), None
-        )
+        price_check = next((c for c in result["checks"] if c["check"] == "valid_market_prices"), None)
         assert price_check is not None
         assert price_check["passed"] is False
         assert "AAPL" in price_check["detail"]
@@ -112,9 +107,7 @@ class TestVerifyCatchesInvalidMarketPrices:
             }
         ]
         result = verify_response(tool_results, "Here is your portfolio.")
-        price_check = next(
-            (c for c in result["checks"] if c["check"] == "valid_market_prices"), None
-        )
+        price_check = next((c for c in result["checks"] if c["check"] == "valid_market_prices"), None)
         assert price_check is not None
         assert price_check["passed"] is False
 
@@ -131,9 +124,7 @@ class TestVerifyCatchesInvalidMarketPrices:
             }
         ]
         result = verify_response(tool_results, "Here is your portfolio.")
-        price_check = next(
-            (c for c in result["checks"] if c["check"] == "valid_market_prices"), None
-        )
+        price_check = next((c for c in result["checks"] if c["check"] == "valid_market_prices"), None)
         assert price_check is not None
         assert price_check["passed"] is False
 
@@ -142,9 +133,7 @@ class TestVerifyCatchesInvalidMarketPrices:
             [sample_portfolio_result],
             "AAPL MSFT GOOGL NVDA VTI all have valid prices.",
         )
-        price_check = next(
-            (c for c in result["checks"] if c["check"] == "valid_market_prices"), None
-        )
+        price_check = next((c for c in result["checks"] if c["check"] == "valid_market_prices"), None)
         assert price_check is not None
         assert price_check["passed"] is True
 
@@ -153,14 +142,13 @@ class TestVerifyCatchesInvalidMarketPrices:
 # Tax data consistency
 # ============================================================
 
+
 class TestVerifyTaxData:
     """verify_response should check tax data consistency."""
 
     def test_valid_tax_data(self, sample_tax_result):
         result = verify_response([sample_tax_result], "Your tax estimate is ready.")
-        tax_check = next(
-            (c for c in result["checks"] if c["check"] == "tax_data_consistency"), None
-        )
+        tax_check = next((c for c in result["checks"] if c["check"] == "tax_data_consistency"), None)
         assert tax_check is not None
         assert tax_check["passed"] is True
 
@@ -180,9 +168,7 @@ class TestVerifyTaxData:
             }
         ]
         result = verify_response(tool_results, "Tax estimate.")
-        tax_check = next(
-            (c for c in result["checks"] if c["check"] == "tax_data_consistency"), None
-        )
+        tax_check = next((c for c in result["checks"] if c["check"] == "tax_data_consistency"), None)
         assert tax_check is not None
         assert tax_check["passed"] is False
 
@@ -202,9 +188,7 @@ class TestVerifyTaxData:
             }
         ]
         result = verify_response(tool_results, "Tax estimate.")
-        tax_check = next(
-            (c for c in result["checks"] if c["check"] == "tax_data_consistency"), None
-        )
+        tax_check = next((c for c in result["checks"] if c["check"] == "tax_data_consistency"), None)
         assert tax_check is not None
         assert tax_check["passed"] is False
 
@@ -213,14 +197,13 @@ class TestVerifyTaxData:
 # Performance data
 # ============================================================
 
+
 class TestVerifyPerformanceData:
     """verify_response should validate performance data fields."""
 
     def test_valid_performance_with_net_performance(self, sample_performance_result):
         result = verify_response([sample_performance_result], "Your portfolio returned 21%.")
-        perf_check = next(
-            (c for c in result["checks"] if c["check"] == "performance_data_valid"), None
-        )
+        perf_check = next((c for c in result["checks"] if c["check"] == "performance_data_valid"), None)
         assert perf_check is not None
         assert perf_check["passed"] is True
 
@@ -236,9 +219,7 @@ class TestVerifyPerformanceData:
             }
         ]
         result = verify_response(tool_results, "Performance data loaded.")
-        perf_check = next(
-            (c for c in result["checks"] if c["check"] == "performance_data_valid"), None
-        )
+        perf_check = next((c for c in result["checks"] if c["check"] == "performance_data_valid"), None)
         assert perf_check is not None
         assert perf_check["passed"] is True
 
@@ -254,9 +235,7 @@ class TestVerifyPerformanceData:
             }
         ]
         result = verify_response(tool_results, "Your net worth is $10,000.")
-        perf_check = next(
-            (c for c in result["checks"] if c["check"] == "performance_data_valid"), None
-        )
+        perf_check = next((c for c in result["checks"] if c["check"] == "performance_data_valid"), None)
         assert perf_check is not None
         assert perf_check["passed"] is True
 
@@ -272,9 +251,7 @@ class TestVerifyPerformanceData:
             }
         ]
         result = verify_response(tool_results, "Performance data loaded.")
-        perf_check = next(
-            (c for c in result["checks"] if c["check"] == "performance_data_valid"), None
-        )
+        perf_check = next((c for c in result["checks"] if c["check"] == "performance_data_valid"), None)
         assert perf_check is not None
         assert perf_check["passed"] is False
 
@@ -282,6 +259,7 @@ class TestVerifyPerformanceData:
 # ============================================================
 # No tool results
 # ============================================================
+
 
 class TestVerifyNoToolResults:
     """verify_response with no tool results should return verified=True with empty checks."""
@@ -309,6 +287,7 @@ class TestVerifyNoToolResults:
 # ============================================================
 # Confidence scoring
 # ============================================================
+
 
 class TestConfidenceScoring:
     """Confidence scores should be in range 0-100."""
@@ -361,6 +340,7 @@ class TestConfidenceScoring:
 # Hallucinated symbol detection
 # ============================================================
 
+
 class TestHallucinatedSymbolDetection:
     """verify_response should detect symbols not in the portfolio."""
 
@@ -369,9 +349,7 @@ class TestHallucinatedSymbolDetection:
             [sample_portfolio_result],
             "Your AAPL position is 30% of the portfolio. MSFT is at 25%.",
         )
-        sym_check = next(
-            (c for c in result["checks"] if c["check"] == "no_hallucinated_symbols"), None
-        )
+        sym_check = next((c for c in result["checks"] if c["check"] == "no_hallucinated_symbols"), None)
         assert sym_check is not None
         assert sym_check["passed"] is True
 
@@ -380,9 +358,7 @@ class TestHallucinatedSymbolDetection:
             [sample_portfolio_result],
             "You should consider adding RIVN and PLTR to your portfolio alongside AAPL.",
         )
-        sym_check = next(
-            (c for c in result["checks"] if c["check"] == "no_hallucinated_symbols"), None
-        )
+        sym_check = next((c for c in result["checks"] if c["check"] == "no_hallucinated_symbols"), None)
         assert sym_check is not None
         assert sym_check["passed"] is False
         assert "RIVN" in sym_check["detail"] or "PLTR" in sym_check["detail"]
@@ -393,8 +369,6 @@ class TestHallucinatedSymbolDetection:
             [sample_portfolio_result],
             "Your AAPL and MSFT holdings are both in USD. The ETF VTI is diversified.",
         )
-        sym_check = next(
-            (c for c in result["checks"] if c["check"] == "no_hallucinated_symbols"), None
-        )
+        sym_check = next((c for c in result["checks"] if c["check"] == "no_hallucinated_symbols"), None)
         assert sym_check is not None
         assert sym_check["passed"] is True

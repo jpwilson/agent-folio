@@ -1,6 +1,5 @@
 """Integration tests for API endpoints using httpx AsyncClient."""
 
-
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -10,6 +9,7 @@ from main import app
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 @pytest_asyncio.fixture()
 async def client():
@@ -22,6 +22,7 @@ async def client():
 # ---------------------------------------------------------------------------
 # GET /api/v1/agent/config
 # ---------------------------------------------------------------------------
+
 
 class TestGetConfig:
     """The config endpoint is public (no auth required)."""
@@ -42,6 +43,7 @@ class TestGetConfig:
 # GET /health
 # ---------------------------------------------------------------------------
 
+
 class TestHealth:
     """Health check endpoint."""
 
@@ -60,6 +62,7 @@ class TestHealth:
 # ---------------------------------------------------------------------------
 # POST /api/v1/agent/chat without auth
 # ---------------------------------------------------------------------------
+
 
 class TestChatAuth:
     """The chat endpoint requires a Bearer token."""
@@ -94,6 +97,7 @@ class TestChatAuth:
 # ---------------------------------------------------------------------------
 # GET /api/v1/agent/admin/settings
 # ---------------------------------------------------------------------------
+
 
 class TestAdminSettings:
     """The admin settings endpoint returns SDK and model options."""
@@ -152,6 +156,7 @@ class TestAdminSettings:
 # GET /api/v1/agent/conversations (requires auth)
 # ---------------------------------------------------------------------------
 
+
 class TestConversationsAuth:
     """Conversations endpoint requires authentication."""
 
@@ -164,6 +169,7 @@ class TestConversationsAuth:
 # ---------------------------------------------------------------------------
 # POST /api/v1/agent/auth/login (proxied to Ghostfolio)
 # ---------------------------------------------------------------------------
+
 
 class TestLoginEndpoint:
     """Login endpoint proxies to Ghostfolio."""

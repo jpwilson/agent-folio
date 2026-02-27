@@ -16,10 +16,7 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
         holdings_raw = details.get("holdings", {})
 
         # holdings can be a dict (keyed by symbol) or a list
-        if isinstance(holdings_raw, dict):
-            holdings_list = list(holdings_raw.values())
-        else:
-            holdings_list = holdings_raw
+        holdings_list = list(holdings_raw.values()) if isinstance(holdings_raw, dict) else holdings_raw
 
         holdings = []
         for h in holdings_list:

@@ -7,7 +7,7 @@ lives here. Tables are auto-created on startup.
 import json
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import asyncpg
 
@@ -101,16 +101,20 @@ def _get_pool() -> asyncpg.Pool:
 
 # ---- Conversations ----
 
+
 async def list_conversations(user_id: str) -> dict:
     pool = _get_pool()
     async with pool.acquire() as conn:
-        rows = await conn.fetch("""
+        rows = await conn.fetch(
+            """
             SELECT c.id, c.title, c.created_at, c.updated_at,
                    (SELECT COUNT(*) FROM agent_messages m WHERE m.conversation_id = c.id) as msg_count
             FROM agent_conversations c
             WHERE c.user_id = $1
             ORDER BY c.updated_at DESC
-        """, uuid.UUID(user_id))
+        """,
+            uuid.UUID(user_id),
+        )
     return {
         "conversations": [
             {
@@ -128,17 +132,24 @@ async def list_conversations(user_id: str) -> dict:
 async def get_conversation(conversation_id: str, user_id: str) -> dict:
     pool = _get_pool()
     async with pool.acquire() as conn:
-        conv = await conn.fetchrow("""
+        conv = await conn.fetchrow(
+            """
             SELECT id, title FROM agent_conversations
             WHERE id = $1 AND user_id = $2
-        """, uuid.UUID(conversation_id), uuid.UUID(user_id))
+        """,
+            uuid.UUID(conversation_id),
+            uuid.UUID(user_id),
+        )
         if not conv:
             return {"error": "Conversation not found"}
-        messages = await conn.fetch("""
+        messages = await conn.fetch(
+            """
             SELECT id, role, content, tool_calls, created_at
             FROM agent_messages WHERE conversation_id = $1
             ORDER BY created_at ASC
-        """, uuid.UUID(conversation_id))
+        """,
+            uuid.UUID(conversation_id),
+        )
     return {
         "conversation": {
             "id": str(conv["id"]),
@@ -159,55 +170,90 @@ async def get_conversation(conversation_id: str, user_id: str) -> dict:
 
 async def create_conversation(conv_id: str, user_id: str, title: str) -> None:
     pool = _get_pool()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     async with pool.acquire() as conn:
-        await conn.execute("""
+        await conn.execute(
+            """
             INSERT INTO agent_conversations (id, user_id, title, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5)
-        """, uuid.UUID(conv_id), uuid.UUID(user_id), title, now, now)
+        """,
+            uuid.UUID(conv_id),
+            uuid.UUID(user_id),
+            title,
+            now,
+            now,
+        )
 
 
 async def add_message(
-    conversation_id: str, msg_id: str, role: str, content: str,
+    conversation_id: str,
+    msg_id: str,
+    role: str,
+    content: str,
     tool_calls: list | None = None,
 ) -> None:
     pool = _get_pool()
     tc = json.dumps(tool_calls) if tool_calls else None
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     async with pool.acquire() as conn:
-        await conn.execute("""
+        await conn.execute(
+            """
             INSERT INTO agent_messages (id, conversation_id, role, content, tool_calls, created_at)
             VALUES ($1, $2, $3, $4, $5::jsonb, $6)
-        """, uuid.UUID(msg_id), uuid.UUID(conversation_id), role, content, tc, now)
-        await conn.execute("""
+        """,
+            uuid.UUID(msg_id),
+            uuid.UUID(conversation_id),
+            role,
+            content,
+            tc,
+            now,
+        )
+        await conn.execute(
+            """
             UPDATE agent_conversations SET updated_at = $1 WHERE id = $2
-        """, now, uuid.UUID(conversation_id))
+        """,
+            now,
+            uuid.UUID(conversation_id),
+        )
 
 
 async def delete_conversation(conversation_id: str, user_id: str) -> dict:
     pool = _get_pool()
     async with pool.acquire() as conn:
-        await conn.execute("""
+        await conn.execute(
+            """
             DELETE FROM agent_conversations WHERE id = $1 AND user_id = $2
-        """, uuid.UUID(conversation_id), uuid.UUID(user_id))
+        """,
+            uuid.UUID(conversation_id),
+            uuid.UUID(user_id),
+        )
     return {"success": True}
 
 
 # ---- Feedback ----
 
+
 async def add_feedback(
-    user_id: str, conversation_id: str | None, message_index: int,
-    direction: str, explanation: str | None, message_content: str | None,
+    user_id: str,
+    conversation_id: str | None,
+    message_index: int,
+    direction: str,
+    explanation: str | None,
+    message_content: str | None,
 ) -> dict:
     pool = _get_pool()
     async with pool.acquire() as conn:
-        await conn.execute("""
+        await conn.execute(
+            """
             INSERT INTO agent_feedback (user_id, conversation_id, message_index, direction, explanation, message_content)
             VALUES ($1, $2, $3, $4, $5, $6)
         """,
             uuid.UUID(user_id),
             uuid.UUID(conversation_id) if conversation_id else None,
-            message_index, direction, explanation, message_content,
+            message_index,
+            direction,
+            explanation,
+            message_content,
         )
     return {"success": True}
 
@@ -245,6 +291,7 @@ async def get_feedback_summary() -> dict:
 
 # ---- User Profiles ----
 
+
 async def get_username(user_id: str) -> str | None:
     pool = _get_pool()
     async with pool.acquire() as conn:
@@ -258,13 +305,18 @@ async def get_username(user_id: str) -> str | None:
 async def set_username(user_id: str, username: str) -> None:
     pool = _get_pool()
     async with pool.acquire() as conn:
-        await conn.execute("""
+        await conn.execute(
+            """
             INSERT INTO agent_user_profiles (user_id, username) VALUES ($1, $2)
             ON CONFLICT (user_id) DO UPDATE SET username = $2
-        """, uuid.UUID(user_id), username.strip()[:50])
+        """,
+            uuid.UUID(user_id),
+            username.strip()[:50],
+        )
 
 
 # ---- Settings ----
+
 
 async def load_settings() -> dict:
     pool = _get_pool()
@@ -278,41 +330,64 @@ async def load_settings() -> dict:
 async def save_settings(settings: dict) -> None:
     pool = _get_pool()
     async with pool.acquire() as conn:
-        await conn.execute("""
+        await conn.execute(
+            """
             INSERT INTO agent_settings (id, sdk, model) VALUES (1, $1, $2)
             ON CONFLICT (id) DO UPDATE SET sdk = $1, model = $2
-        """, settings.get("sdk", "litellm"), settings.get("model", "gpt-4o-mini"))
+        """,
+            settings.get("sdk", "litellm"),
+            settings.get("model", "gpt-4o-mini"),
+        )
 
 
 # ---- Eval Runs ----
 
+
 async def save_eval_run(
-    model: str, cases_passed: int, cases_total: int,
-    checks_passed: int, checks_total: int,
-    duration_s: float | None, snapshot_at: str | None,
+    model: str,
+    cases_passed: int,
+    cases_total: int,
+    checks_passed: int,
+    checks_total: int,
+    duration_s: float | None,
+    snapshot_at: str | None,
     results: list | None,
 ) -> str:
     pool = _get_pool()
     run_id = str(uuid.uuid4())
     results_json = json.dumps(results) if results else None
     async with pool.acquire() as conn:
-        await conn.execute("""
+        await conn.execute(
+            """
             INSERT INTO agent_eval_runs (id, model, cases_passed, cases_total, checks_passed, checks_total, duration_s, snapshot_at, results)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
-        """, uuid.UUID(run_id), model, cases_passed, cases_total, checks_passed, checks_total, duration_s, snapshot_at, results_json)
+        """,
+            uuid.UUID(run_id),
+            model,
+            cases_passed,
+            cases_total,
+            checks_passed,
+            checks_total,
+            duration_s,
+            snapshot_at,
+            results_json,
+        )
     return run_id
 
 
 async def list_eval_runs(limit: int = 20) -> list:
     pool = _get_pool()
     async with pool.acquire() as conn:
-        rows = await conn.fetch("""
+        rows = await conn.fetch(
+            """
             SELECT id, model, cases_passed, cases_total, checks_passed, checks_total,
                    duration_s, snapshot_at, created_at
             FROM agent_eval_runs
             ORDER BY created_at DESC
             LIMIT $1
-        """, limit)
+        """,
+            limit,
+        )
     return [
         {
             "id": str(r["id"]),

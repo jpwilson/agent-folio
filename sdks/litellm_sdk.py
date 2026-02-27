@@ -1,8 +1,10 @@
 import json
 import os
+
 import litellm
-from sdks.base import BaseSDK, AgentResponse
-from config import OPENAI_API_KEY, ANTHROPIC_API_KEY
+
+from config import ANTHROPIC_API_KEY, OPENAI_API_KEY
+from sdks.base import AgentResponse, BaseSDK
 
 # Enable Langfuse callback if keys are present
 if os.getenv("LANGFUSE_SECRET_KEY"):
@@ -72,9 +74,7 @@ class LiteLLMSDK(BaseSDK):
                         }
                     )
             else:
-                return AgentResponse(
-                    text=msg.content or "", tool_calls=all_tool_calls
-                )
+                return AgentResponse(text=msg.content or "", tool_calls=all_tool_calls)
 
         return AgentResponse(
             text=msg.content or "I reached the maximum number of steps.",

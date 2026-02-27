@@ -1,8 +1,10 @@
 import json
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
+
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import StructuredTool
-from sdks.base import BaseSDK, AgentResponse
-from config import OPENAI_API_KEY, ANTHROPIC_API_KEY
+
+from config import ANTHROPIC_API_KEY, OPENAI_API_KEY
+from sdks.base import AgentResponse, BaseSDK
 
 
 def _get_langchain_model(model: str):
@@ -31,12 +33,12 @@ class LangChainSDK(BaseSDK):
             fn = t.get("function", {})
             name = fn.get("name", "")
             desc = fn.get("description", "")
-            params = fn.get("parameters", {})
 
             # Create a dummy tool for binding to the model
             def _make_fn(tool_name):
                 async def _fn(**kwargs):
                     return await tool_executor(tool_name, kwargs)
+
                 _fn.__name__ = tool_name
                 return _fn
 
@@ -71,13 +73,9 @@ class LangChainSDK(BaseSDK):
                     all_tool_calls.append({"tool": fn_name, "args": fn_args})
 
                     result = await tool_executor(fn_name, fn_args)
-                    lc_messages.append(
-                        ToolMessage(content=json.dumps(result), tool_call_id=tc["id"])
-                    )
+                    lc_messages.append(ToolMessage(content=json.dumps(result), tool_call_id=tc["id"]))
             else:
-                return AgentResponse(
-                    text=response.content or "", tool_calls=all_tool_calls
-                )
+                return AgentResponse(text=response.content or "", tool_calls=all_tool_calls)
 
         return AgentResponse(
             text="I reached the maximum number of steps.",

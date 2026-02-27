@@ -17,7 +17,7 @@ def get_user_id(request: Request) -> str:
             raise HTTPException(status_code=401, detail="Invalid token: no user ID")
         return user_id
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token") from None
 
 
 def get_raw_token(request: Request) -> str:

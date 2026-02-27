@@ -1,3 +1,5 @@
+import contextlib
+
 from services.ghostfolio_client import GhostfolioClient
 
 TOOL_DEFINITION = {
@@ -34,10 +36,8 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
         sym = best.get("symbol")
         details = None
         if ds and sym:
-            try:
+            with contextlib.suppress(Exception):
                 details = await client.get_symbol_details(ds, sym)
-            except Exception:
-                pass
 
         price_info = {}
         if details:

@@ -2,13 +2,12 @@ import asyncio
 import json
 import time
 import uuid
-from datetime import datetime
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from services import db
 from services.ghostfolio_client import GhostfolioClient
-from services.guardrails import pre_filter, post_filter, validate_message_roles
-from services.sdk_registry import get_sdk, get_current_model
+from services.guardrails import post_filter, pre_filter, validate_message_roles
+from services.sdk_registry import get_current_model, get_sdk
 from services.verification import verify_response
 from tools import ALL_TOOLS, TOOL_DEFINITIONS
 
@@ -46,6 +45,7 @@ Supported chart types: "pie" (allocations, breakdowns), "doughnut" (similar to p
 
 # --- Conversation CRUD (delegates to db) ---
 
+
 async def list_conversations(user_id: str) -> dict:
     return await db.list_conversations(user_id)
 
@@ -59,6 +59,7 @@ async def delete_conversation(conversation_id: str, user_id: str) -> dict:
 
 
 # --- Chat ---
+
 
 async def chat(messages: list[dict], user_id: str, token: str, conversation_id: str | None = None) -> dict:
     request_start = time.time()
@@ -132,7 +133,9 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
         verification = verify_response(tool_results, response_text)
 
     # Save assistant response
-    await db.add_message(conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None)
+    await db.add_message(
+        conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None
+    )
 
     duration_ms = int((time.time() - request_start) * 1000)
 
@@ -221,7 +224,7 @@ async def chat_stream(
             try:
                 event = await asyncio.wait_for(progress_queue.get(), timeout=0.1)
                 yield event
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
 
         response = await chat_task
@@ -239,14 +242,19 @@ async def chat_stream(
 
         verification = verify_response(tool_results, response_text)
 
-    await db.add_message(conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None)
+    await db.add_message(
+        conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None
+    )
 
     duration_ms = int((time.time() - request_start) * 1000)
 
-    yield sse("complete", {
-        "conversationId": conv_id,
-        "message": response_text,
-        "toolCalls": tool_calls_list,
-        "verification": verification,
-        "durationMs": duration_ms,
-    })
+    yield sse(
+        "complete",
+        {
+            "conversationId": conv_id,
+            "message": response_text,
+            "toolCalls": tool_calls_list,
+            "verification": verification,
+            "durationMs": duration_ms,
+        },
+    )

@@ -20,15 +20,19 @@ async def execute(client: GhostfolioClient, args: dict) -> dict:
             rules = []
             for rule in cat.get("rules", []):
                 if rule.get("isActive"):
-                    rules.append({
-                        "name": rule.get("name"),
-                        "passed": rule.get("value"),
-                        "evaluation": rule.get("evaluation"),
-                    })
-            categories.append({
-                "category": cat.get("name"),
-                "rules": rules,
-            })
+                    rules.append(
+                        {
+                            "name": rule.get("name"),
+                            "passed": rule.get("value"),
+                            "evaluation": rule.get("evaluation"),
+                        }
+                    )
+            categories.append(
+                {
+                    "category": cat.get("name"),
+                    "rules": rules,
+                }
+            )
 
         stats = x_ray.get("statistics", {})
 

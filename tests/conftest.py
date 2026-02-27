@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 # the entire services.db module with an in-memory stub during tests.
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def _mock_db(monkeypatch):
     """Replace every async db function with a no-op AsyncMock.
@@ -35,7 +36,8 @@ def _mock_db(monkeypatch):
     monkeypatch.setattr(db, "add_feedback", AsyncMock(return_value={"success": True}))
     monkeypatch.setattr(db, "get_feedback_summary", AsyncMock(return_value={"total": 0}))
     monkeypatch.setattr(
-        db, "load_settings",
+        db,
+        "load_settings",
         AsyncMock(return_value={"sdk": "litellm", "model": "gpt-4o-mini"}),
     )
     monkeypatch.setattr(db, "save_settings", AsyncMock())

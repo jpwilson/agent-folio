@@ -1,14 +1,15 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from routers.agent import router as agent_router
+from fastapi.staticfiles import StaticFiles
+
+from config import GHOSTFOLIO_PUBLIC_URL, HOST, PORT
 from routers.admin import router as admin_router
-from services.db import init_db, close_db
-from config import HOST, PORT, GHOSTFOLIO_PUBLIC_URL
-import os
+from routers.agent import router as agent_router
+from services.db import close_db, init_db
 
 
 @asynccontextmanager
@@ -64,4 +65,5 @@ async def get_config():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host=HOST, port=PORT, reload=True)

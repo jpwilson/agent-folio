@@ -2,10 +2,11 @@ import httpx
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from models.schemas import ChatRequest
-from auth import get_user_id, get_raw_token
-from services import agent_service, db
+
+from auth import get_raw_token, get_user_id
 from config import GHOSTFOLIO_URL, GRADER_TOKEN
+from models.schemas import ChatRequest
+from services import agent_service, db
 
 router = APIRouter(prefix="/api/v1/agent")
 
@@ -29,9 +30,9 @@ async def login(body: LoginRequest):
             data = res.json()
             return {"authToken": data.get("authToken")}
     except httpx.HTTPStatusError:
-        raise HTTPException(status_code=401, detail="Authentication failed")
+        raise HTTPException(status_code=401, detail="Authentication failed") from None
     except httpx.ConnectError:
-        raise HTTPException(status_code=502, detail="Cannot reach Ghostfolio")
+        raise HTTPException(status_code=502, detail="Cannot reach Ghostfolio") from None
 
 
 @router.get("/auth/grader-available")
@@ -57,9 +58,9 @@ async def grader_login():
             data = res.json()
             return {"authToken": data.get("authToken")}
     except httpx.HTTPStatusError:
-        raise HTTPException(status_code=401, detail="Grader authentication failed")
+        raise HTTPException(status_code=401, detail="Grader authentication failed") from None
     except httpx.ConnectError:
-        raise HTTPException(status_code=502, detail="Cannot reach Ghostfolio")
+        raise HTTPException(status_code=502, detail="Cannot reach Ghostfolio") from None
 
 
 @router.post("/chat")
@@ -121,8 +122,12 @@ class FeedbackRequest(BaseModel):
 async def submit_feedback(request: Request, body: FeedbackRequest):
     user_id = get_user_id(request)
     return await db.add_feedback(
-        user_id, body.conversationId, body.messageIndex,
-        body.direction, body.explanation, body.messageContent,
+        user_id,
+        body.conversationId,
+        body.messageIndex,
+        body.direction,
+        body.explanation,
+        body.messageContent,
     )
 
 

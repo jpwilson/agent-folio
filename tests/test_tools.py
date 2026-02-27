@@ -34,21 +34,18 @@ ALL_TOOL_MODULES = _load_all_tool_modules()
 # All tools have valid TOOL_DEFINITION dicts
 # ============================================================
 
+
 class TestToolDefinitionsExist:
     """Every tool module should export a TOOL_DEFINITION dict."""
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_has_tool_definition(self, module):
-        assert hasattr(module, "TOOL_DEFINITION"), (
-            f"{module.__name__} is missing TOOL_DEFINITION"
-        )
+        assert hasattr(module, "TOOL_DEFINITION"), f"{module.__name__} is missing TOOL_DEFINITION"
         assert isinstance(module.TOOL_DEFINITION, dict)
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_has_execute_function(self, module):
-        assert hasattr(module, "execute"), (
-            f"{module.__name__} is missing execute() function"
-        )
+        assert hasattr(module, "execute"), f"{module.__name__} is missing execute() function"
         assert callable(module.execute)
 
 
@@ -56,22 +53,19 @@ class TestToolDefinitionsExist:
 # Each DEFINITION has name, description, parameters
 # ============================================================
 
+
 class TestToolDefinitionStructure:
     """Each TOOL_DEFINITION should have the correct top-level and nested keys."""
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_has_type_function(self, module):
         defn = module.TOOL_DEFINITION
-        assert defn.get("type") == "function", (
-            f"{module.__name__}: TOOL_DEFINITION.type should be 'function'"
-        )
+        assert defn.get("type") == "function", f"{module.__name__}: TOOL_DEFINITION.type should be 'function'"
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_has_function_key(self, module):
         defn = module.TOOL_DEFINITION
-        assert "function" in defn, (
-            f"{module.__name__}: TOOL_DEFINITION must have 'function' key"
-        )
+        assert "function" in defn, f"{module.__name__}: TOOL_DEFINITION must have 'function' key"
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_function_has_name(self, module):
@@ -98,47 +92,38 @@ class TestToolDefinitionStructure:
 # Parameter schemas are valid JSON schema
 # ============================================================
 
+
 class TestToolParameterSchemas:
     """Parameter schemas should follow JSON Schema conventions."""
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_parameters_has_type_object(self, module):
         params = module.TOOL_DEFINITION["function"]["parameters"]
-        assert params.get("type") == "object", (
-            f"{module.__name__}: parameters.type should be 'object'"
-        )
+        assert params.get("type") == "object", f"{module.__name__}: parameters.type should be 'object'"
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_parameters_has_properties(self, module):
         params = module.TOOL_DEFINITION["function"]["parameters"]
-        assert "properties" in params, (
-            f"{module.__name__}: parameters must have 'properties'"
-        )
+        assert "properties" in params, f"{module.__name__}: parameters must have 'properties'"
         assert isinstance(params["properties"], dict)
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_required_is_list(self, module):
         params = module.TOOL_DEFINITION["function"]["parameters"]
         if "required" in params:
-            assert isinstance(params["required"], list), (
-                f"{module.__name__}: 'required' should be a list"
-            )
+            assert isinstance(params["required"], list), f"{module.__name__}: 'required' should be a list"
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_property_values_are_dicts(self, module):
         props = module.TOOL_DEFINITION["function"]["parameters"]["properties"]
         for prop_name, prop_schema in props.items():
-            assert isinstance(prop_schema, dict), (
-                f"{module.__name__}: property '{prop_name}' value should be a dict"
-            )
+            assert isinstance(prop_schema, dict), f"{module.__name__}: property '{prop_name}' value should be a dict"
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_properties_have_type(self, module):
         props = module.TOOL_DEFINITION["function"]["parameters"]["properties"]
         for prop_name, prop_schema in props.items():
-            assert "type" in prop_schema, (
-                f"{module.__name__}: property '{prop_name}' should have a 'type' key"
-            )
+            assert "type" in prop_schema, f"{module.__name__}: property '{prop_name}' should have a 'type' key"
 
     @pytest.mark.parametrize("module", ALL_TOOL_MODULES, ids=TOOL_MODULE_PATHS)
     def test_properties_have_description(self, module):
@@ -153,28 +138,32 @@ class TestToolParameterSchemas:
 # Tool names match the ALL_TOOLS registry
 # ============================================================
 
+
 class TestToolNamesMatchRegistry:
     """The name inside TOOL_DEFINITION should match the ALL_TOOLS key."""
 
     def test_all_tools_registered(self):
         from tools import ALL_TOOLS
-        assert len(ALL_TOOLS) == 10, f"Expected 10 tools, got {len(ALL_TOOLS)}"
+
+        assert len(ALL_TOOLS) == 11, f"Expected 11 tools, got {len(ALL_TOOLS)}"
 
     def test_tool_definitions_list(self):
         from tools import TOOL_DEFINITIONS
-        assert len(TOOL_DEFINITIONS) == 10, f"Expected 10 definitions, got {len(TOOL_DEFINITIONS)}"
+
+        assert len(TOOL_DEFINITIONS) == 11, f"Expected 11 definitions, got {len(TOOL_DEFINITIONS)}"
 
     def test_names_are_unique(self):
         from tools import TOOL_DEFINITIONS
+
         names = [d["function"]["name"] for d in TOOL_DEFINITIONS]
         assert len(names) == len(set(names)), f"Duplicate tool names: {names}"
 
     def test_all_names_present_in_registry(self):
         from tools import ALL_TOOLS, TOOL_DEFINITIONS
+
         definition_names = {d["function"]["name"] for d in TOOL_DEFINITIONS}
         registry_keys = set(ALL_TOOLS.keys())
         # Every definition name should be a registry key
         assert definition_names == registry_keys, (
-            f"Mismatch between TOOL_DEFINITIONS names {definition_names} "
-            f"and ALL_TOOLS keys {registry_keys}"
+            f"Mismatch between TOOL_DEFINITIONS names {definition_names} and ALL_TOOLS keys {registry_keys}"
         )
