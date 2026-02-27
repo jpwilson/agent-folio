@@ -2243,6 +2243,41 @@
 
     const CHANGELOG_ENTRIES = [
       {
+        date: '2026-02-27',
+        title: 'Eval history persistence',
+        desc: 'Eval results now saved to Postgres across deploys. Collapsible history table in admin Evaluations tab shows date, model, pass rates.',
+        commit: 'ac982ac',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Inline charting',
+        desc: 'Chart.js integration renders pie, bar, line, and doughnut charts inline in chat messages. The agent automatically suggests charts when data benefits from visualization.',
+        commit: '0c9e006',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Financial disclaimer & first-login agreement',
+        desc: 'Full US-focused financial disclaimer citing SEC, FINRA, and IAA 1940. First-time users must accept before using the app. Accessible anytime via the help menu.',
+        commit: 'd7e7f60',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Discover Features & sign out',
+        desc: 'New help menu options: Discover Features shows 10 upcoming Ghostfolio integrations (FIRE calculator, benchmarks, watchlist, etc.) with Coming Soon badges. Sign out button added to sidebar.',
+        commit: 'd7e7f60',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Profanity filter & security docs',
+        desc: 'Profanity detection with leetspeak variant handling added to guardrails. SECURITY.md and EVAL_RESULTS.md published with links from README.',
+        commit: 'd7e7f60',
+        repo: 'agent-folio'
+      },
+      {
         date: '2026-02-26',
         title: 'Changelog & help menu',
         desc: 'Added a floating help button with project changelog showing all milestones from both the Ghostfolio integration and the standalone agent, with direct links to code changes.',
