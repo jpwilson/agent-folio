@@ -113,3 +113,21 @@ async def submit_feedback(request: Request, body: FeedbackRequest):
 async def get_feedback_summary(request: Request):
     get_user_id(request)  # Auth check
     return await db.get_feedback_summary()
+
+
+class UsernameRequest(BaseModel):
+    username: str
+
+
+@router.get("/profile")
+async def get_profile(request: Request):
+    user_id = get_user_id(request)
+    username = await db.get_username(user_id)
+    return {"userId": user_id, "username": username}
+
+
+@router.put("/profile/username")
+async def set_username(request: Request, body: UsernameRequest):
+    user_id = get_user_id(request)
+    await db.set_username(user_id, body.username)
+    return {"success": True, "username": body.username.strip()[:50]}

@@ -1347,7 +1347,7 @@
       loadConfig();
     }
 
-    function updateAccountBadge() {
+    async function updateAccountBadge() {
       const badge = document.getElementById('account-badge');
       if (!badge || !TOKEN) return;
       try {
@@ -1355,16 +1355,44 @@
         const userId = payload.id || payload.sub || '';
         const shortId = userId.substring(0, 8);
         if (IS_GRADER) {
-          badge.textContent = 'Demo (Grader)';
+          badge.textContent = 'Grader';
           badge.className = 'account-badge grader';
+          badge.title = 'Demo grader account';
+          badge.style.cursor = 'default';
+          badge.onclick = null;
         } else {
-          badge.textContent = 'Account ' + shortId;
+          let username = null;
+          try {
+            const res = await fetch(`${API_BASE}/profile`, {
+              headers: { 'Authorization': `Bearer ${TOKEN}` }
+            });
+            if (res.ok) username = (await res.json()).username;
+          } catch {}
+          badge.textContent = username || ('Account ' + shortId);
           badge.className = 'account-badge';
+          badge.title = 'Click to set display name';
+          badge.style.cursor = 'pointer';
+          badge.onclick = () => promptUsername(badge, shortId);
         }
         badge.style.display = 'inline-block';
       } catch {
         badge.style.display = 'none';
       }
+    }
+
+    async function promptUsername(badge, shortId) {
+      const current = badge.textContent;
+      const name = prompt('Set your display name:', current.startsWith('Account ') ? '' : current);
+      if (name === null) return;
+      const trimmed = name.trim().substring(0, 50);
+      try {
+        await fetch(`${API_BASE}/profile/username`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+          body: JSON.stringify({ username: trimmed })
+        });
+        badge.textContent = trimmed || ('Account ' + shortId);
+      } catch {}
     }
 
     async function loadConfig() {

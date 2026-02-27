@@ -52,6 +52,12 @@ CREATE TABLE IF NOT EXISTS agent_settings (
 INSERT INTO agent_settings (id, sdk, model) VALUES (1, 'litellm', 'gpt-4o-mini')
 ON CONFLICT (id) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS agent_user_profiles (
+    user_id UUID PRIMARY KEY,
+    username TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS agent_eval_runs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     model TEXT,
@@ -235,6 +241,27 @@ async def get_feedback_summary() -> dict:
             for r in recent
         ],
     }
+
+
+# ---- User Profiles ----
+
+async def get_username(user_id: str) -> str | None:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT username FROM agent_user_profiles WHERE user_id = $1",
+            uuid.UUID(user_id),
+        )
+    return row["username"] if row else None
+
+
+async def set_username(user_id: str, username: str) -> None:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("""
+            INSERT INTO agent_user_profiles (user_id, username) VALUES ($1, $2)
+            ON CONFLICT (user_id) DO UPDATE SET username = $2
+        """, uuid.UUID(user_id), username.strip()[:50])
 
 
 # ---- Settings ----
