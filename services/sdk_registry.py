@@ -21,12 +21,19 @@ SDK_OPTIONS = [
 ]
 
 MODEL_OPTIONS = [
-    {"id": "gpt-4o-mini", "name": "GPT-4o Mini", "provider": "openai"},
-    {"id": "gpt-4o", "name": "GPT-4o", "provider": "openai"},
-    {"id": "gpt-4.1-mini", "name": "GPT-4.1 Mini", "provider": "openai"},
-    {"id": "gpt-4.1", "name": "GPT-4.1", "provider": "openai"},
-    {"id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet", "provider": "anthropic"},
-    {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "anthropic"},
+    # Ordered cheapest to most expensive
+    {"id": "gpt-4o-mini", "name": "GPT-4o Mini", "provider": "openai",
+     "description": "Fastest and cheapest OpenAI model. Great for simple queries. ~$0.15/$0.60 per 1M tokens."},
+    {"id": "gpt-4.1-mini", "name": "GPT-4.1 Mini", "provider": "openai",
+     "description": "Latest small OpenAI model with improved instruction following. ~$0.40/$1.60 per 1M tokens."},
+    {"id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet", "provider": "anthropic",
+     "description": "Strong reasoning at mid-range cost. Good balance of quality and speed. ~$3/$15 per 1M tokens."},
+    {"id": "gpt-4o", "name": "GPT-4o", "provider": "openai",
+     "description": "OpenAI's flagship model. High quality, multimodal. ~$2.50/$10 per 1M tokens."},
+    {"id": "gpt-4.1", "name": "GPT-4.1", "provider": "openai",
+     "description": "Latest full-size OpenAI model. Best for complex analysis. ~$2/$8 per 1M tokens."},
+    {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "anthropic",
+     "description": "Anthropic's latest model. Excellent reasoning and tool use. ~$3/$15 per 1M tokens."},
 ]
 
 

@@ -219,12 +219,16 @@
     .toggle-switch input:checked + .slider::before { transform: translateX(18px); background: #36cfb4; }
     /* SDK/Provider admin styles */
     .admin-select {
-      width: 100%; padding: 10px 12px; background: #0c0c0c; border: 1px solid #2a2a2a;
+      width: 100%; padding: 10px 36px 10px 12px; background: #0c0c0c; border: 1px solid #2a2a2a;
       border-radius: 6px; color: #e0e0e0; font-size: 13px; font-family: inherit;
       outline: none; appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
     }
     .admin-select:focus { border-color: #36cfb4; }
     .admin-select option { background: #0c0c0c; color: #e0e0e0; }
+    .model-desc { font-size: 11px; color: #666; margin-top: 4px; line-height: 1.4; }
     .admin-input {
       width: 100%; padding: 10px 12px; background: #0c0c0c; border: 1px solid #2a2a2a;
       border-radius: 6px; color: #e0e0e0; font-size: 13px; font-family: inherit;
@@ -250,7 +254,7 @@
     .settings-saved-msg.visible { display: block; }
 
     /* Chat area */
-    #chat-area { flex: 1; display: flex; flex-direction: column; }
+    #chat-area { flex: 1; display: flex; flex-direction: column; position: relative; overflow: visible; }
     #chat {
       flex: 1; overflow-y: auto; padding: 24px;
       display: flex; flex-direction: column; gap: 16px;
@@ -403,7 +407,8 @@
     /* Floating help button */
     #help-fab {
       position: absolute; bottom: 80px; right: 24px; z-index: 50;
-      width: 40px; height: 40px; border-radius: 50%;
+      width: 40px; height: 40px; min-width: 40px; min-height: 40px;
+      padding: 0; border-radius: 50%;
       background: #0c0c0c; border: 1.5px solid #36cfb4;
       color: #36cfb4; font-size: 18px; font-weight: 700;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -518,7 +523,7 @@
         </button>
       </div>
     </div>
-    <div id="chat-area" style="position: relative;">
+    <div id="chat-area">
       <div id="chat">
         <div class="welcome" id="welcome">
           <div class="logo-large"><svg viewBox="0 0 512 512" width="64" height="64" fill="#36cfb4"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
@@ -624,8 +629,9 @@
             <div class="admin-card">
               <div style="margin-bottom: 12px;">
                 <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">Active Model</label>
-                <select class="admin-select" id="admin-model-select">
+                <select class="admin-select" id="admin-model-select" onchange="onModelChange()">
                 </select>
+                <div class="model-desc" id="model-desc"></div>
               </div>
             </div>
           </div>
@@ -1444,6 +1450,7 @@
           if (opt.id === sdkSettings.model) option.selected = true;
           modelSelect.appendChild(option);
         }
+        onModelChange();
 
         // Update key status
         document.getElementById('openai-key-status').textContent = sdkSettings.hasOpenaiKey ? '(configured)' : '(not set)';
@@ -1462,6 +1469,12 @@
       const sdkId = document.getElementById('admin-sdk-select').value;
       const opt = (sdkSettings.sdkOptions || []).find(o => o.id === sdkId);
       document.getElementById('sdk-desc').textContent = opt ? opt.description : '';
+    }
+
+    function onModelChange() {
+      const modelId = document.getElementById('admin-model-select').value;
+      const opt = (sdkSettings.modelOptions || []).find(o => o.id === modelId);
+      document.getElementById('model-desc').textContent = opt && opt.description ? opt.description : '';
     }
 
     function updateSdkBadge(sdkId) {
