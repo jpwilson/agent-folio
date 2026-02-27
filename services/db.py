@@ -51,6 +51,20 @@ CREATE TABLE IF NOT EXISTS agent_settings (
 );
 INSERT INTO agent_settings (id, sdk, model) VALUES (1, 'litellm', 'gpt-4o-mini')
 ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS agent_eval_runs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    model TEXT,
+    cases_passed INT NOT NULL,
+    cases_total INT NOT NULL,
+    checks_passed INT NOT NULL,
+    checks_total INT NOT NULL,
+    duration_s REAL,
+    snapshot_at TEXT,
+    results JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_agent_eval_created ON agent_eval_runs(created_at DESC);
 """
 
 
@@ -241,3 +255,48 @@ async def save_settings(settings: dict) -> None:
             INSERT INTO agent_settings (id, sdk, model) VALUES (1, $1, $2)
             ON CONFLICT (id) DO UPDATE SET sdk = $1, model = $2
         """, settings.get("sdk", "litellm"), settings.get("model", "gpt-4o-mini"))
+
+
+# ---- Eval Runs ----
+
+async def save_eval_run(
+    model: str, cases_passed: int, cases_total: int,
+    checks_passed: int, checks_total: int,
+    duration_s: float | None, snapshot_at: str | None,
+    results: list | None,
+) -> str:
+    pool = _get_pool()
+    run_id = str(uuid.uuid4())
+    results_json = json.dumps(results) if results else None
+    async with pool.acquire() as conn:
+        await conn.execute("""
+            INSERT INTO agent_eval_runs (id, model, cases_passed, cases_total, checks_passed, checks_total, duration_s, snapshot_at, results)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+        """, uuid.UUID(run_id), model, cases_passed, cases_total, checks_passed, checks_total, duration_s, snapshot_at, results_json)
+    return run_id
+
+
+async def list_eval_runs(limit: int = 20) -> list:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("""
+            SELECT id, model, cases_passed, cases_total, checks_passed, checks_total,
+                   duration_s, snapshot_at, created_at
+            FROM agent_eval_runs
+            ORDER BY created_at DESC
+            LIMIT $1
+        """, limit)
+    return [
+        {
+            "id": str(r["id"]),
+            "model": r["model"],
+            "casesPassed": r["cases_passed"],
+            "casesTotal": r["cases_total"],
+            "checksPassed": r["checks_passed"],
+            "checksTotal": r["checks_total"],
+            "durationS": r["duration_s"],
+            "snapshotAt": r["snapshot_at"],
+            "createdAt": r["created_at"].isoformat(),
+        }
+        for r in rows
+    ]

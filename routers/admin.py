@@ -14,6 +14,7 @@ from services.sdk_registry import (
     MODEL_OPTIONS,
 )
 from config import OPENAI_API_KEY, ANTHROPIC_API_KEY
+from services import db
 import config
 
 router = APIRouter(prefix="/api/v1/agent/admin")
@@ -247,6 +248,23 @@ async def run_check():
 
     passed_cases = sum(1 for r in results if r["passed"])
 
+    # Persist eval run to Postgres
+    try:
+        current_settings = await load_settings()
+        model = current_settings.get("model", "unknown")
+        await db.save_eval_run(
+            model=model,
+            cases_passed=passed_cases,
+            cases_total=len(results),
+            checks_passed=passed_checks,
+            checks_total=total_checks,
+            duration_s=None,
+            snapshot_at=snapshot_file.get("generatedAt"),
+            results=results,
+        )
+    except Exception:
+        pass  # Don't fail the eval if persistence fails
+
     return {
         "phase": "check",
         "generatedAt": snapshot_file.get("generatedAt"),
@@ -254,6 +272,13 @@ async def run_check():
         "checks": {"passed": passed_checks, "total": total_checks},
         "results": results,
     }
+
+
+@router.get("/eval/history")
+async def get_eval_history():
+    """Return past eval runs from Postgres."""
+    runs = await db.list_eval_runs(limit=20)
+    return {"runs": runs}
 
 
 # ---- Analytics / Cost Analysis endpoint ----

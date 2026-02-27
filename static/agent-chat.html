@@ -946,6 +946,14 @@
             </div>
             <div id="eval-results-table"></div>
           </div>
+          <!-- Eval History -->
+          <div class="admin-section" style="margin-top:16px;">
+            <h3>Eval History</h3>
+            <button onclick="loadEvalHistory()" style="padding:6px 14px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:12px; margin-bottom:12px;">
+              Load History
+            </button>
+            <div id="eval-history-content" style="display:none;"></div>
+          </div>
           <!-- User Feedback Summary -->
           <div class="admin-section" style="margin-top:16px;">
             <h3>User Feedback</h3>
@@ -1996,6 +2004,40 @@
 
       html += '</table>';
       tableEl.innerHTML = html;
+    }
+
+    // ---- Eval History ----
+    async function loadEvalHistory() {
+      const container = document.getElementById('eval-history-content');
+      container.style.display = 'block';
+      container.innerHTML = '<div style="color:#888; font-size:12px;">Loading...</div>';
+      try {
+        const res = await fetch(`${API_BASE}/admin/eval/history`);
+        const data = await res.json();
+        const runs = data.runs || [];
+        if (runs.length === 0) {
+          container.innerHTML = '<div class="admin-placeholder">No eval runs recorded yet. Run an eval to see history.</div>';
+          return;
+        }
+        let html = '<table style="width:100%; font-size:12px; border-collapse:collapse;">';
+        html += '<tr style="color:#888; text-align:left; border-bottom:1px solid #333;"><th style="padding:6px;">Date</th><th style="padding:6px;">Model</th><th style="padding:6px;">Cases</th><th style="padding:6px;">Checks</th><th style="padding:6px;">Rate</th></tr>';
+        for (const r of runs) {
+          const date = new Date(r.createdAt).toLocaleString('en-US', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+          const rate = r.casesTotal > 0 ? (r.casesPassed / r.casesTotal * 100).toFixed(0) : 0;
+          const color = rate == 100 ? '#4CAF50' : rate >= 80 ? '#FFC107' : '#ff4444';
+          html += `<tr style="border-bottom:1px solid #1a1a1a;">`;
+          html += `<td style="padding:6px; color:#999;">${date}</td>`;
+          html += `<td style="padding:6px; color:#ccc;">${r.model || '--'}</td>`;
+          html += `<td style="padding:6px; color:#e0e0e0;">${r.casesPassed}/${r.casesTotal}</td>`;
+          html += `<td style="padding:6px; color:#e0e0e0;">${r.checksPassed}/${r.checksTotal}</td>`;
+          html += `<td style="padding:6px; color:${color}; font-weight:600;">${rate}%</td>`;
+          html += `</tr>`;
+        }
+        html += '</table>';
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = `<div style="color:#ff4444; font-size:12px;">Error: ${err.message}</div>`;
+      }
     }
 
     // ---- User Feedback Summary ----
