@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from models.schemas import ChatRequest
 from auth import get_user_id, get_raw_token
 from services import agent_service, db
-from config import GHOSTFOLIO_URL
+from config import GHOSTFOLIO_URL, GRADER_TOKEN
 
 router = APIRouter(prefix="/api/v1/agent")
 
@@ -29,6 +29,34 @@ async def login(body: LoginRequest):
             return {"authToken": data.get("authToken")}
     except httpx.HTTPStatusError:
         raise HTTPException(status_code=401, detail="Authentication failed")
+    except httpx.ConnectError:
+        raise HTTPException(status_code=502, detail="Cannot reach Ghostfolio")
+
+
+@router.get("/auth/grader-available")
+async def grader_available():
+    """Check if a grader demo account is configured."""
+    return {"available": bool(GRADER_TOKEN)}
+
+
+@router.post("/auth/grader-login")
+async def grader_login():
+    """Quick sign-in using the pre-configured grader demo account."""
+    if not GRADER_TOKEN:
+        raise HTTPException(status_code=404, detail="No grader account configured")
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.post(
+                f"{GHOSTFOLIO_URL}/api/v1/auth/anonymous",
+                json={"accessToken": GRADER_TOKEN},
+            )
+            if res.status_code == 403:
+                raise HTTPException(status_code=401, detail="Grader token is invalid")
+            res.raise_for_status()
+            data = res.json()
+            return {"authToken": data.get("authToken")}
+    except httpx.HTTPStatusError:
+        raise HTTPException(status_code=401, detail="Grader authentication failed")
     except httpx.ConnectError:
         raise HTTPException(status_code=502, detail="Cannot reach Ghostfolio")
 

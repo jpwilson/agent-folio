@@ -797,6 +797,17 @@
         <div style="margin-top: 16px; text-align: center;">
           <a href="#" onclick="showManualToken(event)" style="color: #666; font-size: 11px; text-decoration: underline;">Or paste a JWT token directly</a>
         </div>
+        <!-- Grader quick sign-in -->
+        <div id="grader-section" style="display: none; margin-top: 20px; padding-top: 16px; border-top: 1px solid #2a2a2a;">
+          <p style="color: #888; font-size: 11px; margin-bottom: 10px; text-align: center;">Demo Account</p>
+          <button id="grader-btn" onclick="doGraderLogin()"
+            style="width: 100%; padding: 10px; background: #1a1a1a; color: #36cfb4; border: 1px solid #36cfb4; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; transition: background 0.2s;">
+            Quick Sign-in for Grading
+          </button>
+          <p style="color: #555; font-size: 10px; margin-top: 6px; text-align: center;">
+            Pre-seeded account with 5 years of diversified portfolio history
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -1229,6 +1240,7 @@
       statusEl.textContent = 'Not authenticated';
       statusEl.className = 'status disconnected';
       document.getElementById('login-overlay').style.display = 'flex';
+      checkGraderAvailable();
     }
 
     async function doLogin() {
@@ -1274,6 +1286,41 @@
         sessionStorage.setItem('auth-token', TOKEN);
         document.getElementById('login-overlay').style.display = 'none';
         onAuthenticated();
+      }
+    }
+
+    async function checkGraderAvailable() {
+      try {
+        const res = await fetch(`${API_BASE}/auth/grader-available`);
+        const data = await res.json();
+        const section = document.getElementById('grader-section');
+        if (section) section.style.display = data.available ? 'block' : 'none';
+      } catch { /* ignore */ }
+    }
+
+    async function doGraderLogin() {
+      const btn = document.getElementById('grader-btn');
+      const errorEl = document.getElementById('login-error');
+      btn.textContent = 'Signing in as grader...';
+      btn.disabled = true;
+      errorEl.style.display = 'none';
+      try {
+        const res = await fetch(`${API_BASE}/auth/grader-login`, { method: 'POST' });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.detail || 'Grader login failed');
+        }
+        const data = await res.json();
+        TOKEN = data.authToken;
+        sessionStorage.setItem('auth-token', TOKEN);
+        document.getElementById('login-overlay').style.display = 'none';
+        onAuthenticated();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      } finally {
+        btn.textContent = 'Quick Sign-in for Grading';
+        btn.disabled = false;
       }
     }
 
