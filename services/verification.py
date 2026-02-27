@@ -115,15 +115,20 @@ def verify_response(tool_results: list[dict], response_text: str) -> dict:
     # 5a: Performance data has numeric values
     if performance_result and performance_result["result"].get("success"):
         perf = performance_result["result"]
-        has_chart = len(perf.get("chart", [])) > 0 or perf.get("netPerformance") is not None
+        perf_inner = perf.get("performance", {})
+        has_data = (
+            perf_inner.get("netPerformance") is not None
+            or perf_inner.get("currentNetWorth") is not None
+            or perf.get("chartSummary", {}).get("dataPoints", 0) > 0
+        )
         checks.append(
             {
                 "check": "performance_data_valid",
-                "passed": has_chart,
+                "passed": has_data,
                 "detail": (
                     "Performance data contains valid metrics"
-                    if has_chart
-                    else "Performance data missing chart or metrics"
+                    if has_data
+                    else "Performance data missing metrics"
                 ),
             }
         )

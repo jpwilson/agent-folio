@@ -413,6 +413,41 @@
       border: 1px solid #2a2a2a; color: #e0e0e0;
     }
     .suggestions button:hover { background: #1a2a2a; border-color: #36cfb4; color: #36cfb4; }
+    /* Suggestion category tabs on welcome screen */
+    .suggestion-cats { display: flex; gap: 6px; justify-content: center; margin: 16px 0 4px; flex-wrap: wrap; }
+    .suggestion-cat-btn {
+      padding: 5px 12px; font-size: 11px; background: #1a1a1a;
+      border: 1px solid #2a2a2a; color: #888; border-radius: 14px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .suggestion-cat-btn:hover { border-color: #36cfb4; color: #36cfb4; }
+    .suggestion-cat-btn.active { background: rgba(54,207,180,0.12); border-color: #36cfb4; color: #36cfb4; }
+    .suggestion-label {
+      font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;
+      margin: 10px 0 4px; text-align: center;
+    }
+
+    /* Follow-up suggestions bar */
+    #followups-bar {
+      display: none; padding: 8px 24px 0; background: #111111;
+    }
+    #followups-bar.visible { display: block; }
+    #followups-bar .followups-label {
+      font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;
+    }
+    #followups-bar .followups-label .arrow { transition: transform 0.2s; font-size: 8px; }
+    #followups-bar .followups-label .arrow.collapsed { transform: rotate(-90deg); }
+    #followups-bar .followups-list {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px;
+    }
+    #followups-bar .followups-list.collapsed { display: none; }
+    #followups-bar .followup-btn {
+      padding: 6px 12px; font-size: 12px; background: #1a1a1a;
+      border: 1px solid #2a2a2a; color: #ccc; border-radius: 16px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    #followups-bar .followup-btn:hover { border-color: #36cfb4; color: #36cfb4; background: #1a2a2a; }
 
     /* Help button in sidebar */
     .help-section {
@@ -579,8 +614,6 @@
     <a class="back" href="javascript:void(0)" id="ghostfolio-link">&#8592; Ghostfolio</a>
     <div class="header-left">
       <h1>Agent-Folio</h1>
-      <span class="subtitle">AI Financial Assistant</span>
-      <span class="sdk-badge" id="sdk-badge">LiteLLM</span>
     </div>
     <div class="header-center-logo" id="header-center-logo">
       <svg class="ghost-logo" viewBox="0 0 512 512" width="28" height="28" fill="#36cfb4"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg>
@@ -640,16 +673,16 @@
         <div class="welcome" id="welcome">
           <div class="logo-large"><svg viewBox="0 0 512 512" width="64" height="64" fill="#36cfb4"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
           <h2>Ask me about your portfolio</h2>
-          <div>I can analyze your holdings, look up market data, review transactions, assess risk, and estimate taxes.</div>
-          <div class="suggestions">
-            <button onclick="sendSuggestion(this.textContent)">What does my portfolio look like?</button>
-            <button onclick="sendSuggestion(this.textContent)">What have I bought recently?</button>
-            <button onclick="sendSuggestion(this.textContent)">How risky is my portfolio?</button>
-            <button onclick="sendSuggestion(this.textContent)">What are my unrealized gains?</button>
-            <button onclick="sendSuggestion(this.textContent)">Am I too heavy in tech stocks?</button>
-            <button onclick="sendSuggestion(this.textContent)">What's my estimated tax bill?</button>
-          </div>
+          <div>I can analyze your holdings, track performance, review transactions, assess risk, estimate taxes, and more.</div>
+          <div class="suggestion-cats" id="suggestion-cats"></div>
+          <div class="suggestions" id="suggestion-buttons"></div>
         </div>
+      </div>
+      <div id="followups-bar">
+        <div class="followups-label" onclick="toggleFollowups()">
+          <span class="arrow" id="followups-arrow">&#9660;</span> Suggested follow-ups
+        </div>
+        <div class="followups-list" id="followups-list"></div>
       </div>
       <div id="input-area">
         <input id="input" type="text" placeholder="Ask about your portfolio..." autofocus />
@@ -1379,21 +1412,18 @@
       currentConversationId = null;
       messages = [];
       setChatMode(false);
+      const fbar = document.getElementById('followups-bar');
+      if (fbar) fbar.classList.remove('visible');
       chat.innerHTML = `
         <div class="welcome" id="welcome">
           <div class="logo-large"><svg viewBox="0 0 512 512" width="64" height="64" fill="#36cfb4"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
           <h2>Ask me about your portfolio</h2>
-          <div>I can analyze your holdings, look up market data, review transactions, assess risk, and estimate taxes.</div>
-          <div class="suggestions">
-            <button onclick="sendSuggestion(this.textContent)">What does my portfolio look like?</button>
-            <button onclick="sendSuggestion(this.textContent)">What have I bought recently?</button>
-            <button onclick="sendSuggestion(this.textContent)">How risky is my portfolio?</button>
-            <button onclick="sendSuggestion(this.textContent)">What are my unrealized gains?</button>
-            <button onclick="sendSuggestion(this.textContent)">Am I too heavy in tech stocks?</button>
-            <button onclick="sendSuggestion(this.textContent)">What's my estimated tax bill?</button>
-          </div>
+          <div>I can analyze your holdings, track performance, review transactions, assess risk, estimate taxes, and more.</div>
+          <div class="suggestion-cats" id="suggestion-cats"></div>
+          <div class="suggestions" id="suggestion-buttons"></div>
         </div>
       `;
+      initSuggestionCategories();
       document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
     }
 
@@ -1435,12 +1465,186 @@
         }
         messages.push({ role: 'assistant', content: data.message });
         addMessage(data.message, 'assistant', data.toolCalls, data.verification);
+        showFollowups(data.toolCalls);
       } catch (err) {
         typing.remove();
         addMessage(`Network error: ${err.message}`, 'error');
       }
       sendBtn.disabled = false;
       input.focus();
+    }
+
+    // ---- Categorized Suggestions ----
+    const SUGGESTION_CATEGORIES = {
+      'All': [
+        // First 2: single-tool | Next 2: multi-tool
+        { q: 'What does my portfolio look like?', tools: 'portfolio_summary', type: 'single' },
+        { q: 'What have I bought recently?', tools: 'transaction_history', type: 'single' },
+        { q: 'Show my portfolio allocation and how it performed this year', tools: 'portfolio_summary + portfolio_performance', type: 'multi' },
+        { q: 'How risky is my portfolio and what\'s my tax situation?', tools: 'risk_assessment + tax_estimate', type: 'multi' },
+      ],
+      'Portfolio': [
+        { q: 'What does my portfolio look like?', type: 'single' },
+        { q: 'What percentage is each stock?', type: 'single' },
+        { q: 'Give me a complete breakdown of my holdings with values', type: 'single' },
+        { q: 'Am I too heavy in tech stocks?', type: 'single' },
+      ],
+      'Performance': [
+        { q: 'How has my portfolio performed this year?', type: 'single' },
+        { q: 'Show me my portfolio performance since inception', type: 'single' },
+        { q: 'What are my annualized returns?', type: 'single' },
+        { q: 'Compare my YTD vs 1-year performance', type: 'multi' },
+      ],
+      'Tax': [
+        { q: 'What are my unrealized gains?', type: 'single' },
+        { q: 'What\'s my estimated tax bill?', type: 'single' },
+        { q: 'Show my cost basis for each holding', type: 'single' },
+        { q: 'Which positions have the biggest gains?', type: 'single' },
+      ],
+      'Risk': [
+        { q: 'How risky is my portfolio?', type: 'single' },
+        { q: 'How diversified am I across sectors?', type: 'single' },
+        { q: 'Run a health check on my portfolio', type: 'single' },
+        { q: 'Analyze my risk and show which sectors I\'m overweight in', type: 'multi' },
+      ],
+      'Income': [
+        { q: 'How much dividend income have I earned?', type: 'single' },
+        { q: 'Show my dividends by month this year', type: 'single' },
+        { q: 'What\'s my investment timeline?', type: 'single' },
+        { q: 'Show my dividend income and portfolio performance together', type: 'multi' },
+      ],
+      'Accounts': [
+        { q: 'What accounts do I have?', type: 'single' },
+        { q: 'Show me my account balances', type: 'single' },
+        { q: 'What platforms are my investments on?', type: 'single' },
+        { q: 'Overview my accounts and total holdings', type: 'multi' },
+      ],
+    };
+
+    let activeSuggestionCat = 'All';
+
+    function initSuggestionCategories() {
+      const catsEl = document.getElementById('suggestion-cats');
+      const btnsEl = document.getElementById('suggestion-buttons');
+      if (!catsEl || !btnsEl) return;
+      catsEl.innerHTML = Object.keys(SUGGESTION_CATEGORIES).map(cat =>
+        `<span class="suggestion-cat-btn${cat === activeSuggestionCat ? ' active' : ''}" onclick="switchSuggestionCat('${cat}')">${cat}</span>`
+      ).join('');
+      renderSuggestionButtons(activeSuggestionCat);
+    }
+
+    function switchSuggestionCat(cat) {
+      activeSuggestionCat = cat;
+      document.querySelectorAll('.suggestion-cat-btn').forEach(el => {
+        el.classList.toggle('active', el.textContent === cat);
+      });
+      renderSuggestionButtons(cat);
+    }
+
+    function renderSuggestionButtons(cat) {
+      const btnsEl = document.getElementById('suggestion-buttons');
+      if (!btnsEl) return;
+      const items = SUGGESTION_CATEGORIES[cat] || [];
+      btnsEl.innerHTML = items.map(item =>
+        `<button onclick="sendSuggestion(this.getAttribute('data-q'))" data-q="${item.q.replace(/"/g, '&quot;')}">${item.q}</button>`
+      ).join('');
+    }
+
+    // Initialize on page load
+    setTimeout(() => initSuggestionCategories(), 0);
+
+    // ---- Follow-up Suggestions ----
+    const FOLLOWUP_MAP = {
+      'portfolio_summary': [
+        'How has this performed over time?',
+        'Am I too concentrated in any sector?',
+        'What are my unrealized gains on these holdings?',
+      ],
+      'portfolio_performance': [
+        'Show me my portfolio allocation breakdown',
+        'How much have I invested in total?',
+        'What dividends have I earned?',
+      ],
+      'transaction_history': [
+        'What does my portfolio look like now?',
+        'How has my portfolio performed since these trades?',
+        'What are my unrealized gains?',
+      ],
+      'risk_assessment': [
+        'Run a full health check on my portfolio',
+        'What\'s my portfolio allocation?',
+        'How has my portfolio performed this year?',
+      ],
+      'tax_estimate': [
+        'Which positions have the biggest unrealized gains?',
+        'What does my full portfolio look like?',
+        'How has my portfolio performed?',
+      ],
+      'dividend_history': [
+        'Show my investment timeline',
+        'How has my portfolio performed this year?',
+        'What does my portfolio allocation look like?',
+      ],
+      'portfolio_report': [
+        'How diversified is my portfolio?',
+        'What are my unrealized gains?',
+        'Show me my performance this year',
+      ],
+      'investment_timeline': [
+        'How has my portfolio performed?',
+        'What dividends have I earned?',
+        'What does my current portfolio look like?',
+      ],
+      'account_overview': [
+        'What does my portfolio look like across all accounts?',
+        'How has my portfolio performed?',
+        'Show me my recent transactions',
+      ],
+      'market_data': [
+        'What does my portfolio look like?',
+        'How has my portfolio performed this year?',
+        'Am I too heavy in any one stock?',
+      ],
+    };
+
+    function showFollowups(toolCalls) {
+      const bar = document.getElementById('followups-bar');
+      const list = document.getElementById('followups-list');
+      if (!bar || !list || !toolCalls || toolCalls.length === 0) {
+        if (bar) bar.classList.remove('visible');
+        return;
+      }
+      // Collect unique follow-ups from all tools used
+      const seen = new Set();
+      const followups = [];
+      for (const tc of toolCalls) {
+        const tool = tc.tool || tc;
+        const suggestions = FOLLOWUP_MAP[tool] || [];
+        for (const s of suggestions) {
+          if (!seen.has(s)) {
+            seen.add(s);
+            followups.push(s);
+          }
+        }
+      }
+      if (followups.length === 0) {
+        bar.classList.remove('visible');
+        return;
+      }
+      // Show max 3
+      list.innerHTML = followups.slice(0, 3).map(s =>
+        `<button class="followup-btn" onclick="sendSuggestion(this.textContent)">${s}</button>`
+      ).join('');
+      list.classList.remove('collapsed');
+      document.getElementById('followups-arrow').classList.remove('collapsed');
+      bar.classList.add('visible');
+    }
+
+    function toggleFollowups() {
+      const list = document.getElementById('followups-list');
+      const arrow = document.getElementById('followups-arrow');
+      list.classList.toggle('collapsed');
+      arrow.classList.toggle('collapsed');
     }
 
     // ---- Inline Chart Rendering ----
@@ -1761,6 +1965,7 @@
 
     function updateSdkBadge(sdkId) {
       const badge = document.getElementById('sdk-badge');
+      if (!badge) return;
       const opt = (sdkSettings.sdkOptions || []).find(o => o.id === sdkId);
       badge.textContent = opt ? opt.name : sdkId;
     }
