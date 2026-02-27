@@ -1,7 +1,13 @@
 import json
+import os
 import litellm
 from sdks.base import BaseSDK, AgentResponse
 from config import OPENAI_API_KEY, ANTHROPIC_API_KEY
+
+# Enable Langfuse callback if keys are present
+if os.getenv("LANGFUSE_SECRET_KEY"):
+    litellm.success_callback = ["langfuse"]
+    litellm.failure_callback = ["langfuse"]
 
 
 class LiteLLMSDK(BaseSDK):

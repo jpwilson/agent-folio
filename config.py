@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GHOSTFOLIO_URL = os.getenv("GHOSTFOLIO_URL", "http://localhost:3333")
+GHOSTFOLIO_PUBLIC_URL = os.getenv("GHOSTFOLIO_PUBLIC_URL", GHOSTFOLIO_URL)
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 DEFAULT_SDK = os.getenv("DEFAULT_SDK", "litellm")
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")

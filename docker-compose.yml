@@ -7,6 +7,7 @@ services:
       - .env
     environment:
       - GHOSTFOLIO_URL=http://host.docker.internal:3333
+      - GHOSTFOLIO_PUBLIC_URL=http://localhost:3333
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

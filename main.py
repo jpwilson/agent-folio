@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from routers.agent import router as agent_router
 from routers.admin import router as admin_router
-from config import HOST, PORT
+from config import HOST, PORT, GHOSTFOLIO_PUBLIC_URL
 import os
 
 app = FastAPI(title="Agent-Folio", description="AI Financial Agent for Ghostfolio")
@@ -40,6 +40,12 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/api/v1/agent/config")
+async def get_config():
+    """Public config for the chat UI."""
+    return {"ghostfolioUrl": GHOSTFOLIO_PUBLIC_URL}
 
 
 if __name__ == "__main__":

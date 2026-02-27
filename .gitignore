@@ -3,7 +3,9 @@ __pycache__/
 .env
 agent_settings.json
 conversations/
+feedback/
 eval/eval-snapshots.json
+eval/history/
 .venv/
 venv/
 *.egg-info/

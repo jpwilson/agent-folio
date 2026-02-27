@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agent-Folio</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%230d0d0d'/%3E%3Ctext x='50' y='72' font-family='Arial,sans-serif' font-size='72' font-weight='bold' fill='%2336cfb4' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -391,7 +392,7 @@
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     .welcome { text-align: center; color: #666; margin: auto; font-size: 14px; line-height: 2; }
     .welcome h2 { color: #36cfb4; font-size: 18px; margin-bottom: 8px; }
-    .welcome .logo-large { font-size: 48px; font-weight: 800; color: #36cfb4; letter-spacing: 3px; margin-bottom: 16px; }
+    .welcome .logo-large { margin-bottom: 16px; display: flex; justify-content: center; }
     .suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
     .suggestions button {
       padding: 8px 14px; font-size: 12px; background: #1a1a1a;
@@ -409,7 +410,7 @@
       <span class="sdk-badge" id="sdk-badge">LiteLLM</span>
     </div>
     <div class="header-center-logo" id="header-center-logo">
-      <span class="logo-text">AF</span>
+      <svg class="ghost-logo" viewBox="0 0 512 512" width="28" height="28" fill="#36cfb4"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg>
     </div>
     <div class="header-actions">
       <button onclick="newConversation()">+ New Chat</button>
@@ -442,7 +443,7 @@
     <div id="chat-area">
       <div id="chat">
         <div class="welcome" id="welcome">
-          <div class="logo-large">AF</div>
+          <div class="logo-large"><svg viewBox="0 0 512 512" width="64" height="64" fill="#36cfb4"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
           <h2>Ask me about your portfolio</h2>
           <div>I can analyze your holdings, look up market data, review transactions, assess risk, and estimate taxes.</div>
           <div class="suggestions">
@@ -462,6 +463,33 @@
     </div>
   </div>
 
+  <!-- Login Overlay -->
+  <div class="admin-overlay" id="login-overlay" style="display:none;">
+    <div class="admin-modal" style="max-width: 400px;">
+      <div class="admin-modal-header">
+        <h2>Sign in to Agent-Folio</h2>
+      </div>
+      <div class="admin-modal-body" style="padding: 24px;">
+        <p style="color: #999; font-size: 13px; margin-bottom: 16px;">
+          Enter your Ghostfolio security token to authenticate. This is the same token you use to sign into Ghostfolio.
+        </p>
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">Security Token</label>
+          <input id="login-token" type="password" placeholder="Enter your security token..."
+            style="width: 100%; padding: 10px 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; font-size: 14px;" />
+        </div>
+        <div id="login-error" style="color: #ff4444; font-size: 12px; margin-bottom: 12px; display: none;"></div>
+        <button id="login-btn" onclick="doLogin()"
+          style="width: 100%; padding: 10px; background: #36cfb4; color: #000; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">
+          Sign In
+        </button>
+        <div style="margin-top: 16px; text-align: center;">
+          <a href="#" onclick="showManualToken(event)" style="color: #666; font-size: 11px; text-decoration: underline;">Or paste a JWT token directly</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Agent Admin Panel Modal -->
   <div class="admin-overlay" id="admin-overlay" onclick="if(event.target===this)toggleAdminPanel()">
     <div class="admin-modal">
@@ -474,6 +502,8 @@
         <div class="admin-tab" data-tab="overview" onclick="switchAdminTab('overview')">Overview</div>
         <div class="admin-tab" data-tab="display" onclick="switchAdminTab('display')">Display</div>
         <div class="admin-tab" data-tab="evals" onclick="switchAdminTab('evals')">Evaluations</div>
+        <div class="admin-tab" data-tab="analytics" onclick="switchAdminTab('analytics'); loadTraces();">Analytics</div>
+        <div class="admin-tab" data-tab="costs" onclick="switchAdminTab('costs'); loadCostAnalysis();">Cost Analysis</div>
       </div>
       <div class="admin-modal-body" id="admin-body">
         <!-- SDK / Provider tab -->
@@ -604,17 +634,175 @@
         <div id="admin-tab-evals" style="display:none;">
           <div class="admin-section">
             <h3>Golden Set Evaluations</h3>
-            <div class="admin-placeholder">
-              Run evaluation suites against golden test sets to measure agent accuracy.<br><br>
-              Configure golden sets in <code style="color:#36cfb4;">eval/golden_data.yaml</code>
+            <p style="color:#999; font-size:12px; margin-bottom:12px;">
+              Two-step eval: <strong>Step 1</strong> generates snapshots by sending test cases to the live agent (costs tokens).
+              <strong>Step 2</strong> runs deterministic checks against those snapshots (instant, no LLM calls).
+            </p>
+            <div style="display:flex; gap:8px; margin-bottom:16px;">
+              <button id="eval-run-btn" onclick="runEvals()" style="padding:8px 16px; background:#36cfb4; color:#000; border:none; border-radius:6px; font-weight:600; cursor:pointer; font-size:13px;">
+                Run Full Eval
+              </button>
+              <button id="eval-check-btn" onclick="runCheckOnly()" style="padding:8px 16px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:13px;">
+                Re-run Checks Only
+              </button>
             </div>
           </div>
+          <!-- Progress -->
+          <div id="eval-progress" style="display:none;" class="admin-section">
+            <h3 id="eval-phase-title">Generating Snapshots...</h3>
+            <p id="eval-phase-desc" style="color:#999; font-size:12px;"></p>
+            <div style="background:#1a1a1a; border-radius:6px; overflow:hidden; height:6px; margin:8px 0;">
+              <div id="eval-progress-bar" style="height:100%; background:#36cfb4; width:0%; transition:width 0.3s;"></div>
+            </div>
+            <div id="eval-progress-log" style="font-family:monospace; font-size:11px; color:#888; max-height:200px; overflow-y:auto; margin-top:8px;"></div>
+          </div>
+          <!-- Results -->
+          <div id="eval-results" style="display:none;" class="admin-section">
+            <h3>Results</h3>
+            <div class="admin-card" style="margin-bottom:12px;">
+              <div class="admin-list-item"><span class="label">Snapshots Generated</span><span class="value" id="eval-snap-time">--</span></div>
+              <div class="admin-list-item"><span class="label">Total Eval Time</span><span class="value" id="eval-total-time">--</span></div>
+              <div class="admin-list-item"><span class="label">Cases Passed</span><span class="value" id="eval-cases-pass">--</span></div>
+              <div class="admin-list-item"><span class="label">Checks Passed</span><span class="value" id="eval-checks-pass">--</span></div>
+            </div>
+            <div id="eval-results-table"></div>
+          </div>
+          <!-- User Feedback Summary -->
+          <div class="admin-section" style="margin-top:16px;">
+            <h3>User Feedback</h3>
+            <button onclick="loadFeedbackSummary()" style="padding:6px 14px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:12px; margin-bottom:12px;">
+              Load Feedback
+            </button>
+            <div id="feedback-content" style="display:none;">
+              <div class="admin-card" style="margin-bottom:12px;">
+                <div class="admin-list-item"><span class="label">Total Feedback</span><span class="value" id="fb-total">--</span></div>
+                <div class="admin-list-item"><span class="label">Thumbs Up</span><span class="value" id="fb-up">--</span></div>
+                <div class="admin-list-item"><span class="label">Thumbs Down</span><span class="value" id="fb-down">--</span></div>
+                <div class="admin-list-item"><span class="label">Satisfaction Rate</span><span class="value" id="fb-rate">--</span></div>
+              </div>
+              <div id="fb-entries-table"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Analytics tab (Langfuse tracing data) -->
+        <div id="admin-tab-analytics" style="display:none;">
           <div class="admin-section">
-            <h3>Latest Results</h3>
-            <div class="admin-card">
-              <div class="admin-list-item"><span class="label">Last Run</span><span class="value">--</span></div>
-              <div class="admin-list-item"><span class="label">Pass Rate</span><span class="value">--</span></div>
-              <div class="admin-list-item"><span class="label">Avg Latency</span><span class="value">--</span></div>
+            <h3>Analytics</h3>
+            <p style="color:#999; font-size:12px; margin-bottom:12px;">
+              LLM tracing and performance data from <strong>Langfuse</strong>. Shows latency, usage, and recent traces.
+            </p>
+            <button onclick="loadTraces()" style="padding:6px 14px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:12px; margin-bottom:12px;">
+              Refresh
+            </button>
+          </div>
+          <div id="traces-loading" style="display:none; text-align:center; color:#888; padding:20px;">Loading from Langfuse...</div>
+          <div id="traces-error" style="display:none;" class="admin-section"></div>
+          <div id="traces-content" style="display:none;">
+            <!-- KPI cards row -->
+            <div class="admin-section" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <div class="admin-card" style="flex:1; min-width:100px; text-align:center; padding:12px;">
+                <div style="font-size:20px; font-weight:700; color:#36cfb4;" id="t-avg-latency">--</div>
+                <div style="font-size:10px; color:#888; margin-top:2px;">Avg Latency</div>
+              </div>
+              <div class="admin-card" style="flex:1; min-width:100px; text-align:center; padding:12px;">
+                <div style="font-size:20px; font-weight:700; color:#36cfb4;" id="t-p95-latency">--</div>
+                <div style="font-size:10px; color:#888; margin-top:2px;">P95 Latency</div>
+              </div>
+              <div class="admin-card" style="flex:1; min-width:100px; text-align:center; padding:12px;">
+                <div style="font-size:20px; font-weight:700; color:#4CAF50;" id="t-success-rate">--</div>
+                <div style="font-size:10px; color:#888; margin-top:2px;">Success Rate</div>
+              </div>
+              <div class="admin-card" style="flex:1; min-width:100px; text-align:center; padding:12px;">
+                <div style="font-size:20px; font-weight:700; color:#e0e0e0;" id="t-total-traces">--</div>
+                <div style="font-size:10px; color:#888; margin-top:2px;">Total Calls</div>
+              </div>
+            </div>
+            <!-- Latency Distribution -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Latency Distribution</h3>
+              <div id="t-latency-chart" style="display:flex; align-items:flex-end; gap:4px; height:100px; padding:0 4px;"></div>
+              <div id="t-latency-labels" style="display:flex; gap:4px; padding:0 4px; margin-top:4px;"></div>
+            </div>
+            <!-- Daily Usage Chart -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Daily Usage</h3>
+              <div id="t-daily-chart" style="display:flex; align-items:flex-end; gap:6px; height:80px; padding:0 4px;"></div>
+              <div id="t-daily-labels" style="display:flex; gap:6px; padding:0 4px; margin-top:4px;"></div>
+            </div>
+            <!-- Latency Stats -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Performance Metrics</h3>
+              <div class="admin-card">
+                <div class="admin-list-item"><span class="label">Average Latency</span><span class="value" id="t-stat-avg">--</span></div>
+                <div class="admin-list-item"><span class="label">Median (P50)</span><span class="value" id="t-stat-p50">--</span></div>
+                <div class="admin-list-item"><span class="label">P95</span><span class="value" id="t-stat-p95">--</span></div>
+                <div class="admin-list-item"><span class="label">Avg Time to First Token</span><span class="value" id="t-stat-ttft">--</span></div>
+                <div class="admin-list-item"><span class="label">Successful Calls</span><span class="value" style="color:#4CAF50;" id="t-stat-success">--</span></div>
+                <div class="admin-list-item"><span class="label">Failed Calls</span><span class="value" style="color:#ff4444;" id="t-stat-errors">--</span></div>
+              </div>
+            </div>
+            <!-- Recent Traces -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Recent Traces</h3>
+              <div id="t-recent-traces"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Cost Analysis tab -->
+        <div id="admin-tab-costs" style="display:none;">
+          <div class="admin-section">
+            <h3>AI Cost Analysis</h3>
+            <p style="color:#999; font-size:12px; margin-bottom:12px;">
+              Understanding AI costs is critical for production applications. Data sourced from <strong>Langfuse</strong> observability.
+            </p>
+            <button onclick="loadCostAnalysis()" style="padding:6px 14px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:12px; margin-bottom:12px;">
+              Refresh Data
+            </button>
+          </div>
+          <div id="costs-loading" style="display:none; text-align:center; color:#888; padding:20px;">Loading cost data from Langfuse...</div>
+          <div id="costs-error" style="display:none;" class="admin-section"></div>
+          <div id="costs-content" style="display:none;">
+            <!-- Dev & Testing Costs -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Development & Testing Costs</h3>
+              <div class="admin-card">
+                <div class="admin-list-item"><span class="label">Total API Calls</span><span class="value" id="c-total-calls">--</span></div>
+                <div class="admin-list-item"><span class="label">Total Input Tokens</span><span class="value" id="c-input-tokens">--</span></div>
+                <div class="admin-list-item"><span class="label">Total Output Tokens</span><span class="value" id="c-output-tokens">--</span></div>
+                <div class="admin-list-item"><span class="label">Total Tokens</span><span class="value" id="c-total-tokens">--</span></div>
+                <div class="admin-list-item"><span class="label">LLM API Cost</span><span class="value" style="color:#36cfb4;" id="c-total-cost">--</span></div>
+                <div class="admin-list-item"><span class="label">Observability Cost (Langfuse)</span><span class="value" id="c-obs-cost">--</span></div>
+              </div>
+            </div>
+            <!-- By Model Breakdown -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Cost Breakdown by Model</h3>
+              <div id="c-model-breakdown" class="admin-card"></div>
+            </div>
+            <!-- Production Cost Projections -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Production Cost Projections</h3>
+              <div id="c-projections">
+                <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                  <tr style="color:#999; text-align:center; border-bottom:1px solid #333;">
+                    <th style="padding:8px;">100 Users</th>
+                    <th style="padding:8px;">1,000 Users</th>
+                    <th style="padding:8px;">10,000 Users</th>
+                    <th style="padding:8px;">100,000 Users</th>
+                  </tr>
+                  <tr style="text-align:center;">
+                    <td style="padding:8px; color:#36cfb4; font-weight:600; font-size:14px;" id="c-proj-100">--</td>
+                    <td style="padding:8px; color:#36cfb4; font-weight:600; font-size:14px;" id="c-proj-1000">--</td>
+                    <td style="padding:8px; color:#36cfb4; font-weight:600; font-size:14px;" id="c-proj-10000">--</td>
+                    <td style="padding:8px; color:#36cfb4; font-weight:600; font-size:14px;" id="c-proj-100000">--</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <!-- Assumptions -->
+            <div class="admin-section">
+              <h3 style="color:#888; font-size:12px; margin-bottom:6px;">Assumptions</h3>
+              <div class="admin-card" style="font-size:11px; color:#666;" id="c-assumptions"></div>
             </div>
           </div>
         </div>
@@ -703,21 +891,94 @@
     const convSearchEl = document.getElementById('conv-search');
 
     if (!TOKEN) {
-      statusEl.textContent = 'Not authenticated';
-      statusEl.className = 'status disconnected';
-      const t = prompt('No auth token found. Please sign into Ghostfolio first, then paste your JWT token here:');
-      if (t) {
-        TOKEN = t;
-        sessionStorage.setItem('auth-token', t);
-      }
+      showLoginOverlay();
+    } else {
+      onAuthenticated();
     }
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
 
-    loadConversations();
-    loadSdkSettings();
+    document.getElementById('login-token').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    function showLoginOverlay() {
+      statusEl.textContent = 'Not authenticated';
+      statusEl.className = 'status disconnected';
+      document.getElementById('login-overlay').style.display = 'flex';
+    }
+
+    async function doLogin() {
+      const tokenInput = document.getElementById('login-token');
+      const errorEl = document.getElementById('login-error');
+      const btn = document.getElementById('login-btn');
+      const securityToken = tokenInput.value.trim();
+      if (!securityToken) return;
+
+      btn.textContent = 'Signing in...';
+      btn.disabled = true;
+      errorEl.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ securityToken })
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.detail || 'Authentication failed');
+        }
+        const data = await res.json();
+        TOKEN = data.authToken;
+        sessionStorage.setItem('auth-token', TOKEN);
+        document.getElementById('login-overlay').style.display = 'none';
+        onAuthenticated();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      } finally {
+        btn.textContent = 'Sign In';
+        btn.disabled = false;
+      }
+    }
+
+    function showManualToken(e) {
+      e.preventDefault();
+      const t = prompt('Paste your JWT token:');
+      if (t) {
+        TOKEN = t;
+        sessionStorage.setItem('auth-token', TOKEN);
+        document.getElementById('login-overlay').style.display = 'none';
+        onAuthenticated();
+      }
+    }
+
+    function onAuthenticated() {
+      statusEl.textContent = 'Connected';
+      statusEl.className = 'status connected';
+      loadConversations();
+      loadSdkSettings();
+      loadConfig();
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch(`${API_BASE}/config`);
+        if (res.ok) {
+          const data = await res.json();
+          const link = document.getElementById('ghostfolio-link');
+          if (data.ghostfolioUrl && link) {
+            let url = data.ghostfolioUrl;
+            if (!url.endsWith('/en/home')) url = url.replace(/\/$/, '') + '/en/home';
+            link.href = url;
+            link.target = '_blank';
+          }
+        }
+      } catch {}
+    }
 
     function classifyConversation(title) {
       if (!title) return 'general';
@@ -832,7 +1093,7 @@
       setChatMode(false);
       chat.innerHTML = `
         <div class="welcome" id="welcome">
-          <div class="logo-large">AF</div>
+          <div class="logo-large"><svg viewBox="0 0 512 512" width="64" height="64" fill="#36cfb4"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
           <h2>Ask me about your portfolio</h2>
           <div>I can analyze your holdings, look up market data, review transactions, assess risk, and estimate taxes.</div>
           <div class="suggestions">
@@ -917,11 +1178,17 @@
           div.appendChild(tc);
         }
 
-        if (verification && verification.checks?.length > 0) {
+        if (verification && (verification.checks?.length > 0 || verification.confidence)) {
           const vDiv = document.createElement('div');
           vDiv.className = `verification ${verification.verified ? 'pass' : 'fail'}`;
           const icon = verification.verified ? '&#10003;' : '&#9888;';
-          vDiv.innerHTML = `${icon} Verified: ${verification.checks.map(c => `${c.passed ? '&#10003;' : '&#10007;'} ${c.check}`).join(', ')}`;
+          let html = `${icon} Verified: ${(verification.checks || []).map(c => `${c.passed ? '&#10003;' : '&#10007;'} ${c.check}`).join(', ')}`;
+          if (verification.confidence) {
+            const conf = verification.confidence.overall;
+            const color = conf >= 80 ? '#36cfb4' : conf >= 50 ? '#f0c674' : '#f87171';
+            html += ` &nbsp;|&nbsp; <span style="color:${color}">Confidence: ${conf}%</span>`;
+          }
+          vDiv.innerHTML = html;
           div.appendChild(vDiv);
         }
 
@@ -949,13 +1216,17 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    let pendingFeedback = {};
+
     function feedback(btn, msgIdx, direction) {
       const fbContainer = btn.closest('.msg-feedback');
       fbContainer.querySelectorAll('.fb-btn').forEach(b => { b.classList.remove('liked', 'disliked'); });
+      pendingFeedback[msgIdx] = direction;
       if (direction === 'up') {
         btn.classList.add('liked');
         const explainEl = document.getElementById(`fb-explain-${msgIdx}`);
         if (explainEl) explainEl.classList.remove('visible');
+        sendFeedback(msgIdx, direction, '');
         const recordedEl = document.getElementById(`fb-recorded-${msgIdx}`);
         if (recordedEl) {
           recordedEl.classList.add('visible');
@@ -969,19 +1240,34 @@
           explainEl.querySelector('input').focus();
         }
       }
-      console.log(`Feedback: message ${msgIdx} = ${direction}`);
     }
 
     function submitFeedback(msgIdx) {
       const explainEl = document.getElementById(`fb-explain-${msgIdx}`);
       const explanation = explainEl ? explainEl.querySelector('input').value : '';
-      console.log(`Feedback explanation for message ${msgIdx}: ${explanation}`);
+      sendFeedback(msgIdx, pendingFeedback[msgIdx] || 'down', explanation);
       if (explainEl) explainEl.classList.remove('visible');
       const recordedEl = document.getElementById(`fb-recorded-${msgIdx}`);
       if (recordedEl) {
         recordedEl.classList.add('visible');
         setTimeout(() => recordedEl.classList.remove('visible'), 2000);
       }
+    }
+
+    function sendFeedback(msgIdx, direction, explanation) {
+      const msgs = document.querySelectorAll('.message.assistant');
+      const msgContent = msgs[msgIdx]?.querySelector('.msg-content')?.textContent?.substring(0, 200) || '';
+      fetch('/api/v1/agent/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({
+          conversationId: currentConversationId,
+          messageIndex: msgIdx,
+          direction: direction,
+          explanation: explanation || null,
+          messageContent: msgContent,
+        })
+      }).catch(err => console.warn('Feedback send failed:', err));
     }
 
     // Admin Panel
@@ -1124,6 +1410,394 @@
 
       btn.disabled = false;
       btn.textContent = 'Save Settings';
+    }
+
+    // ---- Eval Runner ----
+
+    async function runEvals() {
+      const btn = document.getElementById('eval-run-btn');
+      const checkBtn = document.getElementById('eval-check-btn');
+      btn.disabled = true;
+      checkBtn.disabled = true;
+      btn.textContent = 'Running...';
+
+      const progressEl = document.getElementById('eval-progress');
+      const resultsEl = document.getElementById('eval-results');
+      const logEl = document.getElementById('eval-progress-log');
+      const barEl = document.getElementById('eval-progress-bar');
+      const phaseTitle = document.getElementById('eval-phase-title');
+      const phaseDesc = document.getElementById('eval-phase-desc');
+
+      progressEl.style.display = 'block';
+      resultsEl.style.display = 'none';
+      logEl.innerHTML = '';
+      barEl.style.width = '0%';
+
+      const evalStartTime = Date.now();
+
+      // Phase 1: Generate Snapshots
+      phaseTitle.textContent = 'Step 1: Generating Snapshots';
+      phaseDesc.textContent = 'Sending test cases to the live agent. This makes real LLM calls and costs tokens...';
+      logEl.innerHTML += '<div style="color:#36cfb4;">Starting snapshot generation...</div>';
+
+      try {
+        const snapRes = await fetch(`${API_BASE}/admin/eval/snapshot`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${TOKEN}` },
+        });
+
+        if (!snapRes.ok) {
+          throw new Error(`Snapshot generation failed: HTTP ${snapRes.status}`);
+        }
+
+        const snapData = await snapRes.json();
+        barEl.style.width = '50%';
+
+        // Log snapshot results
+        for (const snap of (snapData.snapshots || [])) {
+          const tools = snap.toolCalls.length > 0 ? snap.toolCalls.join(', ') : 'none';
+          logEl.innerHTML += `<div><span style="color:#36cfb4;">[${snap.id}]</span> ${snap.query.substring(0, 40)}... <span style="color:#666;">(${snap.durationMs}ms, tools: ${tools})</span></div>`;
+        }
+        for (const err of (snapData.errors || [])) {
+          logEl.innerHTML += `<div style="color:#ff4444;">[${err.id}] ERROR: ${err.error}</div>`;
+        }
+
+        logEl.innerHTML += `<div style="color:#36cfb4; margin-top:4px;">Snapshots captured: ${snapData.captured}/${snapData.total}</div>`;
+
+        // Phase 2: Run Checks
+        phaseTitle.textContent = 'Step 2: Running Deterministic Checks';
+        phaseDesc.textContent = 'Validating responses against golden data rules. No LLM calls — pure string matching...';
+        logEl.innerHTML += '<div style="color:#36cfb4; margin-top:8px;">Running deterministic checks...</div>';
+
+        const checkRes = await fetch(`${API_BASE}/admin/eval/check`, {
+          method: 'POST',
+        });
+
+        if (!checkRes.ok) {
+          throw new Error(`Check failed: HTTP ${checkRes.status}`);
+        }
+
+        const checkData = await checkRes.json();
+        barEl.style.width = '100%';
+
+        // Log check results
+        for (const r of (checkData.results || [])) {
+          const icon = r.passed ? '<span style="color:#4CAF50;">PASS</span>' : '<span style="color:#ff4444;">FAIL</span>';
+          logEl.innerHTML += `<div><span style="color:#36cfb4;">[${r.id}]</span> ${icon} ${r.query.substring(0, 45)}</div>`;
+          if (!r.passed) {
+            for (const c of r.checks) {
+              if (!c.passed) {
+                logEl.innerHTML += `<div style="padding-left:20px; color:#ff4444;">  x [${c.type}] ${c.detail}</div>`;
+              }
+            }
+          }
+        }
+
+        logEl.scrollTop = logEl.scrollHeight;
+
+        // Show results summary
+        const evalDuration = ((Date.now() - evalStartTime) / 1000).toFixed(1);
+        phaseTitle.textContent = 'Eval Complete';
+        phaseDesc.textContent = `Total time: ${evalDuration}s`;
+        displayEvalResults(snapData, checkData, evalDuration);
+
+      } catch (err) {
+        logEl.innerHTML += `<div style="color:#ff4444;">Error: ${err.message}</div>`;
+        phaseTitle.textContent = 'Eval Failed';
+        phaseDesc.textContent = err.message;
+      }
+
+      btn.disabled = false;
+      checkBtn.disabled = false;
+      btn.textContent = 'Run Full Eval';
+    }
+
+    async function runCheckOnly() {
+      const btn = document.getElementById('eval-check-btn');
+      btn.disabled = true;
+      btn.textContent = 'Checking...';
+
+      const progressEl = document.getElementById('eval-progress');
+      const logEl = document.getElementById('eval-progress-log');
+      const barEl = document.getElementById('eval-progress-bar');
+      const phaseTitle = document.getElementById('eval-phase-title');
+      const phaseDesc = document.getElementById('eval-phase-desc');
+
+      progressEl.style.display = 'block';
+      logEl.innerHTML = '';
+      barEl.style.width = '50%';
+
+      phaseTitle.textContent = 'Running Deterministic Checks';
+      phaseDesc.textContent = 'Validating existing snapshots against golden data. No LLM calls...';
+
+      try {
+        const checkRes = await fetch(`${API_BASE}/admin/eval/check`, {
+          method: 'POST',
+        });
+
+        if (!checkRes.ok) {
+          const data = await checkRes.json().catch(() => ({}));
+          throw new Error(data.error || `HTTP ${checkRes.status}`);
+        }
+
+        const checkData = await checkRes.json();
+        barEl.style.width = '100%';
+
+        if (checkData.error) {
+          logEl.innerHTML += `<div style="color:#ff4444;">${checkData.error}</div>`;
+        } else {
+          for (const r of (checkData.results || [])) {
+            const icon = r.passed ? '<span style="color:#4CAF50;">PASS</span>' : '<span style="color:#ff4444;">FAIL</span>';
+            logEl.innerHTML += `<div><span style="color:#36cfb4;">[${r.id}]</span> ${icon} ${r.query.substring(0, 45)}</div>`;
+            if (!r.passed) {
+              for (const c of r.checks) {
+                if (!c.passed) {
+                  logEl.innerHTML += `<div style="padding-left:20px; color:#ff4444;">  x [${c.type}] ${c.detail}</div>`;
+                }
+              }
+            }
+          }
+
+          phaseTitle.textContent = 'Check Complete';
+          phaseDesc.textContent = `Snapshots from: ${checkData.generatedAt || 'unknown'}`;
+          displayEvalResults(null, checkData);
+        }
+      } catch (err) {
+        logEl.innerHTML += `<div style="color:#ff4444;">Error: ${err.message}</div>`;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Re-run Checks Only';
+    }
+
+    function displayEvalResults(snapData, checkData, evalDuration) {
+      const resultsEl = document.getElementById('eval-results');
+      resultsEl.style.display = 'block';
+
+      document.getElementById('eval-snap-time').textContent = checkData.generatedAt || (snapData ? 'Just now' : '--');
+      document.getElementById('eval-total-time').textContent = evalDuration ? `${evalDuration}s` : '--';
+      document.getElementById('eval-cases-pass').textContent = `${checkData.cases.passed}/${checkData.cases.total}`;
+      document.getElementById('eval-checks-pass').textContent = `${checkData.checks.passed}/${checkData.checks.total}`;
+
+      const passRate = checkData.cases.total > 0 ? (checkData.cases.passed / checkData.cases.total * 100).toFixed(0) : 0;
+      const casesEl = document.getElementById('eval-cases-pass');
+      casesEl.style.color = passRate == 100 ? '#4CAF50' : passRate >= 80 ? '#FFC107' : '#ff4444';
+
+      // Build results table
+      const tableEl = document.getElementById('eval-results-table');
+      let html = '<table style="width:100%; font-size:12px; border-collapse:collapse;">';
+      html += '<tr style="color:#999; text-align:left; border-bottom:1px solid #333;"><th style="padding:6px;">ID</th><th style="padding:6px;">Query</th><th style="padding:6px;">Category</th><th style="padding:6px;">Result</th></tr>';
+
+      for (const r of (checkData.results || [])) {
+        const color = r.passed ? '#4CAF50' : '#ff4444';
+        const icon = r.passed ? 'PASS' : 'FAIL';
+        html += `<tr style="border-bottom:1px solid #1a1a1a;">`;
+        html += `<td style="padding:6px; color:#666;">${r.id}</td>`;
+        html += `<td style="padding:6px; color:#ccc;" title="${r.query}">${r.query.substring(0, 40)}${r.query.length > 40 ? '...' : ''}</td>`;
+        html += `<td style="padding:6px; color:#888;">${r.category}</td>`;
+        html += `<td style="padding:6px; color:${color}; font-weight:600;">${icon}</td>`;
+        html += `</tr>`;
+
+        if (!r.passed) {
+          for (const c of r.checks) {
+            if (!c.passed) {
+              html += `<tr><td></td><td colspan="3" style="padding:2px 6px 6px 16px; color:#ff4444; font-size:11px;">x [${c.type}] ${c.detail}</td></tr>`;
+            }
+          }
+        }
+      }
+
+      html += '</table>';
+      tableEl.innerHTML = html;
+    }
+
+    // ---- User Feedback Summary ----
+    async function loadFeedbackSummary() {
+      try {
+        const res = await fetch(`${API_BASE}/feedback/summary`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+
+        document.getElementById('feedback-content').style.display = 'block';
+        document.getElementById('fb-total').textContent = data.total || 0;
+        document.getElementById('fb-up').textContent = data.thumbsUp || 0;
+        document.getElementById('fb-down').textContent = data.thumbsDown || 0;
+        document.getElementById('fb-rate').textContent = data.satisfactionRate || '--';
+
+        const entries = data.recentEntries || [];
+        if (entries.length > 0) {
+          let html = '<table style="width:100%; font-size:12px; border-collapse:collapse;">';
+          html += '<tr style="color:#888; border-bottom:1px solid #333;"><th style="text-align:left; padding:4px;">Time</th><th style="text-align:left; padding:4px;">Vote</th><th style="text-align:left; padding:4px;">Message</th><th style="text-align:left; padding:4px;">Explanation</th></tr>';
+          for (const e of entries.reverse()) {
+            const vote = e.direction === 'up' ? '<span style="color:#36cfb4;">&#128077;</span>' : '<span style="color:#f87171;">&#128078;</span>';
+            const time = e.timestamp ? new Date(e.timestamp).toLocaleString() : '--';
+            const msg = (e.messageContent || '').substring(0, 60);
+            html += `<tr style="border-bottom:1px solid #222;"><td style="padding:4px; color:#888;">${time}</td><td style="padding:4px;">${vote}</td><td style="padding:4px;">${msg}</td><td style="padding:4px; color:#888;">${e.explanation || ''}</td></tr>`;
+          }
+          html += '</table>';
+          document.getElementById('fb-entries-table').innerHTML = html;
+        }
+      } catch (err) {
+        document.getElementById('feedback-content').style.display = 'block';
+        document.getElementById('fb-entries-table').innerHTML = `<p style="color:#f87171;">Error loading feedback: ${err.message}</p>`;
+      }
+    }
+
+    // ---- Analytics (Langfuse Traces) ----
+    async function loadTraces() {
+      const loading = document.getElementById('traces-loading');
+      const content = document.getElementById('traces-content');
+      const errorEl = document.getElementById('traces-error');
+      loading.style.display = 'block';
+      content.style.display = 'none';
+      errorEl.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/traces`);
+        const data = await res.json();
+        if (data.error) {
+          errorEl.style.display = 'block';
+          errorEl.innerHTML = `<p style="color:#ff4444;">${data.error}</p>`;
+          loading.style.display = 'none';
+          return;
+        }
+
+        const ls = data.latencyStats;
+        const sr = data.successRate;
+
+        // KPI cards
+        document.getElementById('t-avg-latency').textContent = `${ls.avg}s`;
+        document.getElementById('t-p95-latency').textContent = `${ls.p95}s`;
+        document.getElementById('t-success-rate').textContent = `${sr.rate}%`;
+        document.getElementById('t-total-traces').textContent = sr.total;
+
+        // Performance metrics
+        document.getElementById('t-stat-avg').textContent = `${ls.avg}s`;
+        document.getElementById('t-stat-p50').textContent = `${ls.p50}s`;
+        document.getElementById('t-stat-p95').textContent = `${ls.p95}s`;
+        document.getElementById('t-stat-ttft').textContent = `${ls.avgTtft}s`;
+        document.getElementById('t-stat-success').textContent = sr.success;
+        document.getElementById('t-stat-errors').textContent = sr.errors;
+
+        // Latency distribution chart
+        const ld = data.latencyDistribution;
+        const maxLd = Math.max(...Object.values(ld), 1);
+        const chartEl = document.getElementById('t-latency-chart');
+        const labelsEl = document.getElementById('t-latency-labels');
+        chartEl.innerHTML = '';
+        labelsEl.innerHTML = '';
+        for (const [bucket, count] of Object.entries(ld)) {
+          const pct = (count / maxLd) * 100;
+          chartEl.innerHTML += `<div style="flex:1; background:#36cfb4; border-radius:3px 3px 0 0; height:${Math.max(pct, 2)}%; display:flex; align-items:flex-start; justify-content:center; min-height:4px;" title="${bucket}: ${count}"><span style="font-size:9px; color:#fff; margin-top:2px;">${count || ''}</span></div>`;
+          labelsEl.innerHTML += `<div style="flex:1; text-align:center; font-size:9px; color:#888;">${bucket}</div>`;
+        }
+
+        // Daily usage chart
+        const daily = data.dailyChart;
+        if (daily.length > 0) {
+          const maxTraces = Math.max(...daily.map(d => d.traces), 1);
+          const dailyChartEl = document.getElementById('t-daily-chart');
+          const dailyLabelsEl = document.getElementById('t-daily-labels');
+          dailyChartEl.innerHTML = '';
+          dailyLabelsEl.innerHTML = '';
+          for (const d of daily) {
+            const pct = (d.traces / maxTraces) * 100;
+            const dateShort = d.date.slice(5); // MM-DD
+            dailyChartEl.innerHTML += `<div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;"><span style="font-size:9px; color:#ccc; margin-bottom:2px;">${d.traces}</span><div style="width:100%; background:#36cfb4; border-radius:3px 3px 0 0; height:${Math.max(pct, 4)}%; opacity:0.8;"></div></div>`;
+            dailyLabelsEl.innerHTML += `<div style="flex:1; text-align:center; font-size:9px; color:#888;">${dateShort}</div>`;
+          }
+        } else {
+          document.getElementById('t-daily-chart').innerHTML = '<div style="color:#666; padding:20px; text-align:center;">No daily data yet</div>';
+        }
+
+        // Recent traces table
+        const tracesEl = document.getElementById('t-recent-traces');
+        if (data.recentTraces.length > 0) {
+          let html = '<table style="width:100%; font-size:11px; border-collapse:collapse;">';
+          html += '<tr style="color:#888; text-align:left; border-bottom:1px solid #333;"><th style="padding:6px;">Time</th><th style="padding:6px;">Latency</th><th style="padding:6px;">Cost</th><th style="padding:6px;">Obs</th></tr>';
+          for (const t of data.recentTraces) {
+            const time = t.timestamp ? new Date(t.timestamp).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '--';
+            const lat = t.latency ? `${t.latency.toFixed(1)}s` : '--';
+            const cost = t.cost ? `$${t.cost.toFixed(6)}` : '--';
+            const latColor = t.latency > 10 ? '#ff4444' : t.latency > 5 ? '#FFC107' : '#4CAF50';
+            html += `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:5px 6px; color:#999;">${time}</td><td style="padding:5px 6px; color:${latColor}; font-weight:600;">${lat}</td><td style="padding:5px 6px; color:#36cfb4;">${cost}</td><td style="padding:5px 6px; color:#888;">${t.observations}</td></tr>`;
+          }
+          html += '</table>';
+          tracesEl.innerHTML = html;
+        } else {
+          tracesEl.innerHTML = '<div style="color:#666; padding:8px;">No traces yet</div>';
+        }
+
+        loading.style.display = 'none';
+        content.style.display = 'block';
+      } catch (e) {
+        loading.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.innerHTML = `<p style="color:#ff4444;">Failed to load traces: ${e.message}</p>`;
+      }
+    }
+
+    // ---- Cost Analysis ----
+    async function loadCostAnalysis() {
+      const loading = document.getElementById('costs-loading');
+      const content = document.getElementById('costs-content');
+      const errorEl = document.getElementById('costs-error');
+      loading.style.display = 'block';
+      content.style.display = 'none';
+      errorEl.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/analytics`);
+        const data = await res.json();
+
+        if (data.error) {
+          errorEl.style.display = 'block';
+          errorEl.innerHTML = `<p style="color:#ff4444;">${data.error}</p>`;
+          loading.style.display = 'none';
+          return;
+        }
+
+        const dev = data.devCosts;
+        const proj = data.projections;
+        const assumptions = data.assumptions;
+
+        document.getElementById('c-total-calls').textContent = dev.totalCalls.toLocaleString();
+        document.getElementById('c-input-tokens').textContent = dev.totalInputTokens.toLocaleString();
+        document.getElementById('c-output-tokens').textContent = dev.totalOutputTokens.toLocaleString();
+        document.getElementById('c-total-tokens').textContent = dev.totalTokens.toLocaleString();
+        document.getElementById('c-total-cost').textContent = `$${dev.totalCost.toFixed(4)}`;
+        document.getElementById('c-obs-cost').textContent = dev.observabilityCost === 0 ? '$0.00 (free tier)' : `$${dev.observabilityCost.toFixed(2)}`;
+
+        const modelEl = document.getElementById('c-model-breakdown');
+        let modelHtml = '';
+        for (const [model, info] of Object.entries(dev.byModel)) {
+          modelHtml += `<div class="admin-list-item"><span class="label" style="flex:2;">${model}</span><span class="value" style="flex:1;">${info.calls} calls</span><span class="value" style="flex:1;">${(info.inputTokens + info.outputTokens).toLocaleString()} tok</span><span class="value" style="flex:1; color:#36cfb4;">$${info.cost.toFixed(4)}</span></div>`;
+        }
+        modelEl.innerHTML = modelHtml || '<div style="color:#666; padding:8px;">No data</div>';
+
+        for (const count of ['100', '1000', '10000', '100000']) {
+          const p = proj[count];
+          document.getElementById(`c-proj-${count}`).textContent = `$${p.monthlyCost.toFixed(2)}/mo`;
+        }
+
+        const aEl = document.getElementById('c-assumptions');
+        aEl.innerHTML = `
+          <div class="admin-list-item"><span class="label">Queries per user per day</span><span class="value">${assumptions.queriesPerUserPerDay}</span></div>
+          <div class="admin-list-item"><span class="label">Avg input tokens per query</span><span class="value">${assumptions.avgInputTokensPerQuery.toLocaleString()}</span></div>
+          <div class="admin-list-item"><span class="label">Avg output tokens per query</span><span class="value">${assumptions.avgOutputTokensPerQuery.toLocaleString()}</span></div>
+          <div class="admin-list-item"><span class="label">Avg cost per query</span><span class="value">$${assumptions.avgCostPerQuery.toFixed(6)}</span></div>
+          <div class="admin-list-item"><span class="label">Avg tool calls per query</span><span class="value">${assumptions.avgToolCallsPerQuery}</span></div>
+          <div class="admin-list-item"><span class="label">Model</span><span class="value">${assumptions.model}</span></div>
+        `;
+
+        loading.style.display = 'none';
+        content.style.display = 'block';
+      } catch (e) {
+        loading.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.innerHTML = `<p style="color:#ff4444;">Failed to load cost data: ${e.message}</p>`;
+      }
     }
   </script>
 </body>
