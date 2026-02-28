@@ -1,6 +1,7 @@
 """Unit tests for tools/ — validate TOOL_DEFINITION dicts across all 10 tool modules."""
 
 import importlib
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -167,3 +168,128 @@ class TestToolNamesMatchRegistry:
         assert definition_names == registry_keys, (
             f"Mismatch between TOOL_DEFINITIONS names {definition_names} and ALL_TOOLS keys {registry_keys}"
         )
+
+
+# ============================================================
+# Execute function tests (with mocked GhostfolioClient)
+# ============================================================
+
+
+class TestPortfolioSummaryExecute:
+    @pytest.mark.asyncio
+    async def test_success_dict_holdings(self):
+        from tools.portfolio_summary import execute
+
+        mock = AsyncMock()
+        mock.get_portfolio_details.return_value = {
+            "holdings": {
+                "AAPL": {
+                    "name": "Apple",
+                    "symbol": "AAPL",
+                    "currency": "USD",
+                    "assetClass": "EQUITY",
+                    "assetSubClass": "STOCK",
+                    "allocationInPercentage": 0.35,
+                    "marketPrice": 175.0,
+                    "quantity": 10,
+                    "valueInBaseCurrency": 1750.0,
+                }
+            },
+            "summary": {"netWorth": 5000},
+        }
+        result = await execute(mock, {})
+        assert result["success"] is True
+        assert len(result["holdings"]) == 1
+        assert result["holdings"][0]["allocationInPercentage"] == "35.00"
+
+    @pytest.mark.asyncio
+    async def test_success_list_holdings(self):
+        from tools.portfolio_summary import execute
+
+        mock = AsyncMock()
+        mock.get_portfolio_details.return_value = {
+            "holdings": [
+                {
+                    "name": "MSFT",
+                    "symbol": "MSFT",
+                    "currency": "USD",
+                    "assetClass": "EQUITY",
+                    "assetSubClass": "STOCK",
+                    "allocationInPercentage": 0.5,
+                    "marketPrice": 400.0,
+                    "quantity": 5,
+                    "valueInBaseCurrency": 2000.0,
+                }
+            ],
+            "summary": {},
+        }
+        result = await execute(mock, {})
+        assert result["success"] is True
+        assert result["holdings"][0]["symbol"] == "MSFT"
+
+    @pytest.mark.asyncio
+    async def test_failure(self):
+        from tools.portfolio_summary import execute
+
+        mock = AsyncMock()
+        mock.get_portfolio_details.side_effect = Exception("API error")
+        result = await execute(mock, {})
+        assert result["success"] is False
+        assert "API error" in result["error"]
+
+
+class TestTransactionHistoryExecute:
+    @pytest.mark.asyncio
+    async def test_success(self):
+        from tools.transaction_history import execute
+
+        mock = AsyncMock()
+        mock.get_orders.return_value = {
+            "activities": [
+                {
+                    "date": "2024-01-15",
+                    "type": "BUY",
+                    "SymbolProfile": {"symbol": "AAPL", "name": "Apple Inc", "currency": "USD"},
+                    "quantity": 10,
+                    "unitPrice": 150.0,
+                    "fee": 0,
+                }
+            ]
+        }
+        result = await execute(mock, {})
+        assert result["success"] is True
+        assert len(result["transactions"]) == 1
+        assert result["transactions"][0]["symbol"] == "AAPL"
+        assert result["totalCount"] == 1
+
+    @pytest.mark.asyncio
+    async def test_with_limit(self):
+        from tools.transaction_history import execute
+
+        mock = AsyncMock()
+        activities = [
+            {
+                "date": f"2024-01-{i:02d}",
+                "type": "BUY",
+                "SymbolProfile": {"symbol": f"S{i}", "name": f"Stock {i}", "currency": "USD"},
+                "quantity": 1,
+                "unitPrice": 100.0,
+                "fee": 0,
+            }
+            for i in range(1, 11)
+        ]
+        mock.get_orders.return_value = {"activities": activities}
+        result = await execute(mock, {"limit": 3})
+        assert result["success"] is True
+        assert len(result["transactions"]) == 3
+        assert result["totalCount"] == 10
+
+    @pytest.mark.asyncio
+    async def test_failure(self):
+        from tools.transaction_history import execute
+
+        mock = AsyncMock()
+        mock.get_orders.side_effect = Exception("timeout")
+        result = await execute(mock, {})
+        assert result["success"] is False
+        assert "timeout" in result["error"]
