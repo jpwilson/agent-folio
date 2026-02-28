@@ -1,7 +1,6 @@
 """Tests for the Rotki provider — mock httpx responses and verify data normalization."""
 
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

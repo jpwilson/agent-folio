@@ -259,14 +259,13 @@ async def delete_backend(connection_id: str, request: Request):
 @router.post("/backends/{connection_id}/test")
 async def test_backend(connection_id: str, request: Request):
     """Test connectivity to a backend."""
-    user_id = get_user_id(request)
-    backends = await db.get_active_backends(user_id)
-    # Also check inactive backends
-    all_backends = await db.list_backend_connections(user_id)
-    # Find the connection (list_backend_connections redacts creds, so we use get_active_backends)
-    # We need to get the full connection from db
-    from services.db import _get_pool
+    import json
     import uuid as uuid_mod
+
+    from services.db import _get_pool
+    from services.providers.factory import build_provider
+
+    user_id = get_user_id(request)
 
     pool = _get_pool()
     async with pool.acquire() as conn:
@@ -278,7 +277,6 @@ async def test_backend(connection_id: str, request: Request):
     if not row:
         raise HTTPException(status_code=404, detail="Connection not found")
 
-    import json
     connection = {
         "provider": row["provider"],
         "base_url": row["base_url"],
@@ -286,10 +284,7 @@ async def test_backend(connection_id: str, request: Request):
     }
 
     try:
-        from services.providers.factory import build_provider
-
         provider = await build_provider(connection)
-        # Try a lightweight call to verify connectivity
         await provider.get_accounts()
         return {"success": True, "message": f"Connected to {row['provider']} successfully"}
     except Exception as e:
