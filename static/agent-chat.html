@@ -665,6 +665,15 @@
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-12px); }
     }
+    /* Fade-in animation for analytics/cost sections */
+    .fade-in-section {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.4s ease forwards;
+    }
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     /* Feedback tab chart bars */
     .fb-chart-bar-group { display: flex; align-items: flex-end; gap: 2px; }
@@ -912,11 +921,10 @@
         <div class="admin-tab active" data-tab="sdk" onclick="switchAdminTab('sdk')">SDK / Provider</div>
         <div class="admin-tab" data-tab="overview" onclick="switchAdminTab('overview')">Overview</div>
         <div class="admin-tab" data-tab="display" onclick="switchAdminTab('display')">Display</div>
-        <div class="admin-tab" data-tab="evals" onclick="switchAdminTab('evals')">Evaluations</div>
-        <div class="admin-tab" data-tab="feedback" onclick="switchAdminTab('feedback'); loadFeedbackDetail();">Feedback</div>
+        <div class="admin-tab" data-tab="evals" onclick="switchAdminTab('evals'); loadEvalsTab();">Evaluations</div>
         <div class="admin-tab" data-tab="analytics" onclick="switchAdminTab('analytics'); loadTraces();">Analytics</div>
         <div class="admin-tab" data-tab="costs" onclick="switchAdminTab('costs'); loadCostAnalysis();">Cost Analysis</div>
-        <div class="admin-tab" data-tab="portfolio" onclick="switchAdminTab('portfolio');">Portfolio</div>
+        <div class="admin-tab" data-tab="portfolio" onclick="switchAdminTab('portfolio'); loadImportHistory();">Portfolio</div>
       </div>
       <div class="admin-modal-body" id="admin-body">
         <!-- SDK / Provider tab -->
@@ -1081,77 +1089,60 @@
             </div>
             <div id="eval-results-table"></div>
           </div>
-          <!-- Eval History -->
+          <!-- Eval History (collapsible, auto-loaded) -->
           <div class="admin-section" style="margin-top:16px;">
-            <h3>Eval History</h3>
-            <button onclick="loadEvalHistory()" style="padding:6px 14px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:12px; margin-bottom:12px;">
-              Load History
-            </button>
+            <h3 onclick="toggleEvalHistory()" style="cursor:pointer; user-select:none;">
+              <span id="eval-history-arrow">&#9654;</span> Eval History
+            </h3>
             <div id="eval-history-content" style="display:none;"></div>
           </div>
-          <!-- Feedback moved to its own tab -->
-        </div>
-        <!-- Agent Feedback tab -->
-        <div id="admin-tab-feedback" style="display:none;">
-          <div class="admin-section">
-            <h3>Agent Feedback</h3>
+          <!-- Agent Prompt Feedback (embedded in evals tab) -->
+          <div class="admin-section" style="margin-top:24px; border-top:1px solid #333; padding-top:16px;">
+            <h3>Agent Prompt Feedback</h3>
             <p style="color:#999; font-size:12px; margin-bottom:12px;">
-              User satisfaction data from thumbs up/down interactions. Click <strong>Load</strong> to fetch the latest data.
+              User satisfaction data from thumbs up/down interactions.
             </p>
-            <button onclick="loadFeedbackDetail()" style="padding:6px 14px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:12px; margin-bottom:12px;">
-              Refresh
-            </button>
-          </div>
-          <div id="fbd-loading" style="display:none;">
-            <div class="ghost-loader">
-              <div class="ghost-icon"><svg viewBox="0 0 512 512"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
-              <div class="loader-text">Loading feedback data<span class="loader-dots"></span></div>
-            </div>
-          </div>
-          <div id="fbd-content" style="display:none;">
-            <!-- KPI cards -->
-            <div class="admin-stat-row" style="margin-bottom:12px;">
-              <div class="admin-stat">
-                <div class="stat-value" id="fbd-total">--</div>
-                <div class="stat-label">Total Feedback</div>
-              </div>
-              <div class="admin-stat">
-                <div class="stat-value" style="color:#4CAF50;" id="fbd-up">--</div>
-                <div class="stat-label">Thumbs Up</div>
-              </div>
-              <div class="admin-stat">
-                <div class="stat-value" style="color:#f87171;" id="fbd-down">--</div>
-                <div class="stat-label">Thumbs Down</div>
-              </div>
-              <div class="admin-stat">
-                <div class="stat-value" style="color:#36cfb4;" id="fbd-rate">--</div>
-                <div class="stat-label">Satisfaction</div>
+            <div id="fbd-loading" style="display:none;">
+              <div class="ghost-loader">
+                <div class="ghost-icon"><svg viewBox="0 0 512 512"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
+                <div class="loader-text">Loading feedback data<span class="loader-dots"></span></div>
               </div>
             </div>
-            <!-- Daily Chart -->
-            <div class="admin-section">
-              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Daily Feedback (Last 30 Days)</h3>
-              <div id="fbd-daily-chart" style="display:flex; align-items:flex-end; gap:4px; height:100px; padding:0 4px;"></div>
-              <div id="fbd-daily-labels" style="display:flex; gap:4px; padding:0 4px; margin-top:4px;"></div>
-              <div style="display:flex; gap:16px; justify-content:center; margin-top:8px;">
-                <span style="font-size:10px; color:#4CAF50;">&#9632; Thumbs Up</span>
-                <span style="font-size:10px; color:#f87171;">&#9632; Thumbs Down</span>
+            <div id="fbd-content" style="display:none;">
+              <!-- KPI cards -->
+              <div class="admin-stat-row" style="margin-bottom:12px;">
+                <div class="admin-stat">
+                  <div class="stat-value" id="fbd-total">--</div>
+                  <div class="stat-label">Total Feedback</div>
+                </div>
+                <div class="admin-stat">
+                  <div class="stat-value" style="color:#4CAF50;" id="fbd-up">--</div>
+                  <div class="stat-label">Thumbs Up</div>
+                </div>
+                <div class="admin-stat">
+                  <div class="stat-value" style="color:#f87171;" id="fbd-down">--</div>
+                  <div class="stat-label">Thumbs Down</div>
+                </div>
+                <div class="admin-stat">
+                  <div class="stat-value" style="color:#36cfb4;" id="fbd-rate">--</div>
+                  <div class="stat-label">Satisfaction</div>
+                </div>
               </div>
-            </div>
-            <!-- Per-Conversation Breakdown -->
-            <div class="admin-section">
-              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Feedback by Conversation</h3>
-              <div id="fbd-conv-table"></div>
-            </div>
-            <!-- Negative Feedback Reasons -->
-            <div class="admin-section">
-              <h3 style="color:#f87171; font-size:13px; margin-bottom:8px;">Thumbs Down Details</h3>
-              <div id="fbd-negative-table"></div>
-            </div>
-            <!-- All Recent Entries -->
-            <div class="admin-section">
-              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Recent Feedback Log</h3>
-              <div id="fbd-all-table"></div>
+              <!-- Per-Conversation Breakdown -->
+              <div class="admin-section">
+                <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Feedback by Conversation</h3>
+                <div id="fbd-conv-table"></div>
+              </div>
+              <!-- Negative Feedback Reasons -->
+              <div class="admin-section">
+                <h3 style="color:#f87171; font-size:13px; margin-bottom:8px;">Thumbs Down Details</h3>
+                <div id="fbd-negative-table"></div>
+              </div>
+              <!-- All Recent Entries -->
+              <div class="admin-section">
+                <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Recent Feedback Log</h3>
+                <div id="fbd-all-table"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1300,11 +1291,9 @@
               <div class="drop-icon">&#128230;</div>
               <div class="drop-text">Drag & drop your portfolio file here</div>
               <div class="drop-subtext">or click to browse</div>
-              <input type="file" id="portfolio-file-input" accept=".csv,.xls,.xlsx,.json" style="display:none;" />
+              <input type="file" id="portfolio-file-input" accept=".csv,.json" style="display:none;" />
               <div class="drop-formats">
                 <span class="format-badge">CSV</span>
-                <span class="format-badge">XLS</span>
-                <span class="format-badge">XLSX</span>
                 <span class="format-badge">JSON</span>
               </div>
             </div>
@@ -1330,13 +1319,12 @@
               <div class="admin-list-item"><span class="label">Custom Format</span><span class="value" style="color:#888;">Coming Soon</span></div>
             </div>
           </div>
-          <div class="admin-section">
-            <button id="portfolio-import-btn" disabled style="padding:10px 24px; background:#333; border:1px solid #444; color:#666; border-radius:6px; font-size:13px; cursor:not-allowed; font-weight:600;">
-              Import Portfolio
-            </button>
-            <p style="color:#555; font-size:11px; margin-top:8px;">
-              Import functionality coming soon. File upload and preview are available now.
-            </p>
+          <!-- Preview (populated by JS) -->
+          <div id="portfolio-preview" style="display:none;" class="admin-section"></div>
+          <!-- Upload History -->
+          <div class="admin-section" style="margin-top:16px; border-top:1px solid #333; padding-top:16px;">
+            <h3>Upload History</h3>
+            <div id="portfolio-history" style="display:none;"></div>
           </div>
         </div>
       </div>
@@ -2694,10 +2682,32 @@
       tableEl.innerHTML = html;
     }
 
-    // ---- Eval History ----
+    // ---- Eval Tab Combined Loader ----
+    let evalsTabLoaded = false;
+    async function loadEvalsTab() {
+      if (evalsTabLoaded) return;
+      evalsTabLoaded = true;
+      loadEvalHistory();
+      loadFeedbackDetail();
+    }
+
+    function toggleEvalHistory() {
+      const content = document.getElementById('eval-history-content');
+      const arrow = document.getElementById('eval-history-arrow');
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        arrow.innerHTML = '&#9660;';
+      } else {
+        content.style.display = 'none';
+        arrow.innerHTML = '&#9654;';
+      }
+    }
+
+    // ---- Eval History (auto-loaded, expandable) ----
     async function loadEvalHistory() {
       const container = document.getElementById('eval-history-content');
       container.style.display = 'block';
+      document.getElementById('eval-history-arrow').innerHTML = '&#9660;';
       container.innerHTML = '<div style="color:#888; font-size:12px;">Loading...</div>';
       try {
         const res = await fetch(`${API_BASE}/admin/eval/history`);
@@ -2713,13 +2723,14 @@
           const date = new Date(r.createdAt).toLocaleString('en-US', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
           const rate = r.casesTotal > 0 ? (r.casesPassed / r.casesTotal * 100).toFixed(0) : 0;
           const color = rate == 100 ? '#4CAF50' : rate >= 80 ? '#FFC107' : '#ff4444';
-          html += `<tr style="border-bottom:1px solid #1a1a1a;">`;
+          html += `<tr style="border-bottom:1px solid #1a1a1a; cursor:pointer;" onclick="toggleEvalRunDetail('${r.id}', this)">`;
           html += `<td style="padding:6px; color:#999;">${date}</td>`;
           html += `<td style="padding:6px; color:#ccc;">${r.model || '--'}</td>`;
           html += `<td style="padding:6px; color:#e0e0e0;">${r.casesPassed}/${r.casesTotal}</td>`;
           html += `<td style="padding:6px; color:#e0e0e0;">${r.checksPassed}/${r.checksTotal}</td>`;
           html += `<td style="padding:6px; color:${color}; font-weight:600;">${rate}%</td>`;
           html += `</tr>`;
+          html += `<tr id="eval-detail-${r.id}" style="display:none;"><td colspan="5" style="padding:0;"></td></tr>`;
         }
         html += '</table>';
         container.innerHTML = html;
@@ -2728,7 +2739,45 @@
       }
     }
 
-    // ---- Agent Feedback Detail (dedicated tab) ----
+    async function toggleEvalRunDetail(runId, rowEl) {
+      const detailRow = document.getElementById(`eval-detail-${runId}`);
+      if (!detailRow) return;
+      if (detailRow.style.display !== 'none') {
+        detailRow.style.display = 'none';
+        return;
+      }
+      const cell = detailRow.querySelector('td');
+      cell.innerHTML = '<div style="padding:8px; color:#888; font-size:11px;">Loading results...</div>';
+      detailRow.style.display = 'table-row';
+      try {
+        const res = await fetch(`${API_BASE}/admin/eval/history/${runId}`);
+        const data = await res.json();
+        const results = data.results || [];
+        if (results.length === 0) {
+          cell.innerHTML = '<div style="padding:8px; color:#666; font-size:11px;">No detailed results stored for this run.</div>';
+          return;
+        }
+        let html = '<div style="padding:8px 16px; background:#111; border-radius:4px; margin:4px 0;">';
+        html += '<table style="width:100%; font-size:11px; border-collapse:collapse;">';
+        html += '<tr style="color:#666;"><th style="padding:4px; text-align:left;">ID</th><th style="padding:4px; text-align:left;">Query</th><th style="padding:4px;">Category</th><th style="padding:4px;">Result</th></tr>';
+        for (const r of results) {
+          const passColor = r.passed ? '#4CAF50' : '#ff4444';
+          const passText = r.passed ? 'PASS' : 'FAIL';
+          html += `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:4px; color:#666;">${r.id}</td><td style="padding:4px; color:#999;" title="${r.query || ''}">${(r.query || '').substring(0, 50)}</td><td style="padding:4px; color:#888; text-align:center;">${r.category || ''}</td><td style="padding:4px; color:${passColor}; font-weight:600; text-align:center;">${passText}</td></tr>`;
+          if (!r.passed && r.checks) {
+            for (const c of r.checks.filter(ch => !ch.passed)) {
+              html += `<tr><td></td><td colspan="3" style="padding:2px 4px; color:#f87171; font-size:10px;">[${c.type}] ${c.detail}</td></tr>`;
+            }
+          }
+        }
+        html += '</table></div>';
+        cell.innerHTML = html;
+      } catch (err) {
+        cell.innerHTML = `<div style="padding:8px; color:#ff4444; font-size:11px;">Error: ${err.message}</div>`;
+      }
+    }
+
+    // ---- Agent Feedback Detail (embedded in evals tab) ----
     async function loadFeedbackDetail() {
       const loading = document.getElementById('fbd-loading');
       const content = document.getElementById('fbd-content');
@@ -2746,25 +2795,6 @@
         document.getElementById('fbd-up').textContent = data.thumbsUp || 0;
         document.getElementById('fbd-down').textContent = data.thumbsDown || 0;
         document.getElementById('fbd-rate').textContent = data.satisfactionRate || '--';
-
-        // Daily chart (stacked bar)
-        const daily = data.dailyChart || [];
-        const chartEl = document.getElementById('fbd-daily-chart');
-        const labelsEl = document.getElementById('fbd-daily-labels');
-        if (daily.length > 0) {
-          const maxDay = Math.max(...daily.map(d => d.up + d.down), 1);
-          chartEl.innerHTML = '';
-          labelsEl.innerHTML = '';
-          for (const d of daily) {
-            const upH = ((d.up / maxDay) * 100).toFixed(0);
-            const downH = ((d.down / maxDay) * 100).toFixed(0);
-            chartEl.innerHTML += `<div style="flex:1; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-end; height:100%;" title="${d.date}: ${d.up} up, ${d.down} down"><div class="fb-chart-bar down" style="height:${Math.max(downH, d.down > 0 ? 4 : 0)}%;"></div><div class="fb-chart-bar up" style="height:${Math.max(upH, d.up > 0 ? 4 : 0)}%;"></div></div>`;
-            labelsEl.innerHTML += `<div style="flex:1; text-align:center; font-size:9px; color:#888;">${d.date.slice(5)}</div>`;
-          }
-        } else {
-          chartEl.innerHTML = '<div style="color:#666; padding:20px; text-align:center; width:100%;">No daily data yet</div>';
-          labelsEl.innerHTML = '';
-        }
 
         // Per-conversation table
         const convTable = document.getElementById('fbd-conv-table');
@@ -2828,7 +2858,7 @@
       }
     }
 
-    // ---- Portfolio Import (scaffolding) ----
+    // ---- Portfolio Import ----
     (function initPortfolioImport() {
       const dropZone = document.getElementById('portfolio-drop-zone');
       const fileInput = document.getElementById('portfolio-file-input');
@@ -2848,11 +2878,14 @@
     })();
 
     let portfolioFile = null;
+    let portfolioParsedOrders = [];
+    let portfolioFileHash = '';
+
     function handlePortfolioFile(file) {
-      const validExts = ['.csv', '.xls', '.xlsx', '.json'];
+      const validExts = ['.csv', '.json'];
       const ext = '.' + file.name.split('.').pop().toLowerCase();
       if (!validExts.includes(ext)) {
-        alert('Unsupported file type. Please use CSV, XLS, XLSX, or JSON.');
+        alert('Unsupported file type. Please use CSV or JSON.');
         return;
       }
       portfolioFile = file;
@@ -2860,12 +2893,239 @@
       const sizeKb = (file.size / 1024).toFixed(1);
       document.getElementById('portfolio-file-size').textContent = `${sizeKb} KB \u2022 ${ext.toUpperCase().slice(1)}`;
       document.getElementById('portfolio-file-info').style.display = 'block';
+
+      // Parse the file
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const content = e.target.result;
+        portfolioFileHash = await hashString(content);
+        try {
+          if (ext === '.json') {
+            portfolioParsedOrders = parseJsonPortfolio(content);
+          } else {
+            portfolioParsedOrders = parseCsvPortfolio(content);
+          }
+          showPortfolioPreview(portfolioParsedOrders);
+        } catch (err) {
+          document.getElementById('portfolio-preview').innerHTML = `<p style="color:#f87171; font-size:12px;">Parse error: ${err.message}</p>`;
+          document.getElementById('portfolio-preview').style.display = 'block';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    async function hashString(str) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function parseCsvPortfolio(content) {
+      const lines = content.trim().split('\n');
+      if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row');
+      const delim = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
+      const headers = lines[0].split(delim).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+      const colMap = {
+        date: headers.findIndex(h => ['date','trade date','tradedate'].includes(h)),
+        symbol: headers.findIndex(h => ['symbol','ticker','stock','isin'].includes(h)),
+        type: headers.findIndex(h => ['type','action','side','transaction type'].includes(h)),
+        quantity: headers.findIndex(h => ['quantity','shares','qty','amount'].includes(h)),
+        unitPrice: headers.findIndex(h => ['price','unit price','unitprice','price per share'].includes(h)),
+        fee: headers.findIndex(h => ['fee','commission','fees'].includes(h)),
+        currency: headers.findIndex(h => ['currency','cur'].includes(h)),
+      };
+      if (colMap.date === -1 || colMap.symbol === -1) throw new Error('CSV must have Date and Symbol columns');
+      const orders = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(delim).map(c => c.trim().replace(/['"]/g, ''));
+        if (cols.length < 2 || !cols[colMap.date]) continue;
+        const rawType = (colMap.type >= 0 ? cols[colMap.type] : 'BUY').toUpperCase();
+        const type = rawType.includes('SELL') ? 'SELL' : rawType.includes('DIV') ? 'DIVIDEND' : 'BUY';
+        orders.push({
+          date: cols[colMap.date],
+          symbol: cols[colMap.symbol],
+          type,
+          quantity: parseFloat(cols[colMap.quantity] || '0') || 0,
+          unitPrice: parseFloat(cols[colMap.unitPrice] || '0') || 0,
+          fee: colMap.fee >= 0 ? (parseFloat(cols[colMap.fee] || '0') || 0) : 0,
+          currency: colMap.currency >= 0 ? (cols[colMap.currency] || 'USD') : 'USD',
+        });
+      }
+      if (orders.length === 0) throw new Error('No valid orders found in CSV');
+      return orders;
+    }
+
+    function parseJsonPortfolio(content) {
+      const data = JSON.parse(content);
+      // Support Ghostfolio export format: { activities: [{...}] }
+      const activities = data.activities || data.orders || (Array.isArray(data) ? data : []);
+      if (activities.length === 0) throw new Error('No activities found in JSON');
+      return activities.map(a => ({
+        date: a.date || a.Date || '',
+        symbol: a.symbol || a.Symbol || a.ticker || '',
+        type: (a.type || a.Type || 'BUY').toUpperCase(),
+        quantity: parseFloat(a.quantity || a.Quantity || 0),
+        unitPrice: parseFloat(a.unitPrice || a.price || a.Price || 0),
+        fee: parseFloat(a.fee || a.Fee || 0),
+        currency: a.currency || a.Currency || 'USD',
+        dataSource: a.dataSource || a.DataSource || undefined,
+      }));
+    }
+
+    function showPortfolioPreview(orders) {
+      const preview = document.getElementById('portfolio-preview');
+      let html = `<h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Preview (${orders.length} orders)</h3>`;
+      html += '<div style="max-height:250px; overflow-y:auto;">';
+      html += '<table style="width:100%; font-size:11px; border-collapse:collapse;">';
+      html += '<tr style="color:#888; border-bottom:1px solid #333;"><th style="padding:4px;">Date</th><th style="padding:4px;">Symbol</th><th style="padding:4px;">Type</th><th style="padding:4px;">Qty</th><th style="padding:4px;">Price</th><th style="padding:4px;">Fee</th><th style="padding:4px;">Cur</th></tr>';
+      for (const o of orders.slice(0, 50)) {
+        const typeColor = o.type === 'BUY' ? '#4CAF50' : o.type === 'SELL' ? '#f87171' : '#FFC107';
+        html += `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:4px; color:#999;">${o.date}</td><td style="padding:4px; color:#ccc; font-weight:600;">${o.symbol}</td><td style="padding:4px; color:${typeColor};">${o.type}</td><td style="padding:4px; color:#e0e0e0;">${o.quantity}</td><td style="padding:4px; color:#e0e0e0;">${o.unitPrice}</td><td style="padding:4px; color:#888;">${o.fee}</td><td style="padding:4px; color:#888;">${o.currency}</td></tr>`;
+      }
+      if (orders.length > 50) html += `<tr><td colspan="7" style="padding:6px; color:#666; text-align:center;">...and ${orders.length - 50} more</td></tr>`;
+      html += '</table></div>';
+      html += '<div style="margin-top:12px; display:flex; gap:8px;">';
+      html += '<button onclick="startPortfolioImport()" style="padding:8px 16px; background:#36cfb4; color:#000; border:none; border-radius:6px; font-weight:600; cursor:pointer; font-size:13px;">Import Portfolio</button>';
+      html += '<button onclick="clearPortfolioFile()" style="padding:8px 16px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:13px;">Cancel</button>';
+      html += '</div>';
+      preview.innerHTML = html;
+      preview.style.display = 'block';
+    }
+
+    async function startPortfolioImport() {
+      if (!portfolioParsedOrders.length) return;
+
+      // Check for duplicates
+      try {
+        const dupRes = await fetch(`${API_BASE}/admin/portfolio/check-duplicate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+          body: JSON.stringify({ fileHash: portfolioFileHash })
+        });
+        const dupData = await dupRes.json();
+        if (dupData.duplicate) {
+          alert(`This file was already imported on ${new Date(dupData.existing.createdAt).toLocaleString()}. Each file can only be imported once.`);
+          return;
+        }
+      } catch (e) { /* proceed if check fails */ }
+
+      // Confirmation dialog
+      const confirmed = confirm(
+        `\u26A0\uFE0F PORTFOLIO IMPORT\n\n` +
+        `This will create ${portfolioParsedOrders.length} orders in your Ghostfolio portfolio.\n\n` +
+        `Symbols: ${[...new Set(portfolioParsedOrders.map(o => o.symbol))].join(', ')}\n\n` +
+        `This action can be rolled back once after completion.\n\n` +
+        `Are you sure you want to proceed?`
+      );
+      if (!confirmed) return;
+
+      // Need an account ID — fetch accounts
+      const preview = document.getElementById('portfolio-preview');
+      preview.innerHTML = '<div class="ghost-loader"><div class="ghost-icon"><svg viewBox="0 0 512 512"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div><div class="loader-text">Importing orders<span class="loader-dots"></span></div></div>';
+
+      try {
+        // Get first account
+        const acctRes = await fetch(`${API_BASE.replace('/admin','')}/chat`, { method: 'HEAD' }).catch(() => null);
+        let accountId = '';
+        try {
+          const accts = await (await fetch(`/api/v1/account`, { headers: { 'Authorization': `Bearer ${TOKEN}` } })).json();
+          if (accts.accounts && accts.accounts.length > 0) accountId = accts.accounts[0].id;
+          else if (Array.isArray(accts) && accts.length > 0) accountId = accts[0].id;
+        } catch (e) { /* will try without */ }
+
+        const importRes = await fetch(`${API_BASE}/admin/portfolio/import`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+          body: JSON.stringify({
+            orders: portfolioParsedOrders,
+            fileName: portfolioFile.name,
+            fileHash: portfolioFileHash,
+            accountId: accountId
+          })
+        });
+        const result = await importRes.json();
+        if (importRes.status === 409) {
+          preview.innerHTML = `<p style="color:#FFC107; font-size:13px;">\u26A0\uFE0F ${result.detail || 'This file has already been imported.'}</p>`;
+          return;
+        }
+        let html = '<div class="admin-section">';
+        html += `<h3 style="color:#36cfb4; font-size:13px;">Import Complete</h3>`;
+        html += `<p style="color:#ccc; font-size:12px;"><span style="color:#4CAF50; font-weight:600;">${result.created}</span> orders created`;
+        if (result.failed > 0) html += `, <span style="color:#f87171; font-weight:600;">${result.failed}</span> failed`;
+        html += `</p>`;
+        if (result.errors && result.errors.length > 0) {
+          html += '<div style="margin-top:8px;">';
+          for (const e of result.errors.slice(0, 5)) {
+            html += `<div style="color:#f87171; font-size:11px;">${e.symbol}: ${e.error}</div>`;
+          }
+          html += '</div>';
+        }
+        if (result.importId) {
+          html += `<button onclick="rollbackImport('${result.importId}')" style="margin-top:12px; padding:8px 16px; background:#1a1a1a; color:#f87171; border:1px solid #f87171; border-radius:6px; cursor:pointer; font-size:12px;">Rollback Import</button>`;
+        }
+        html += '</div>';
+        preview.innerHTML = html;
+        loadImportHistory();
+      } catch (err) {
+        preview.innerHTML = `<p style="color:#f87171; font-size:12px;">Import failed: ${err.message}</p>`;
+      }
+    }
+
+    async function rollbackImport(importId) {
+      if (!confirm('Are you sure you want to rollback this import? All created orders will be deleted.')) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin/portfolio/rollback/${importId}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        const data = await res.json();
+        alert(`Rollback complete: ${data.deleted} orders deleted.`);
+        loadImportHistory();
+      } catch (err) {
+        alert(`Rollback failed: ${err.message}`);
+      }
+    }
+
+    async function loadImportHistory() {
+      const container = document.getElementById('portfolio-history');
+      if (!container) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin/portfolio/history`, {
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        const data = await res.json();
+        const imports = data.imports || [];
+        if (imports.length === 0) {
+          container.innerHTML = '<div class="admin-placeholder">No imports yet.</div>';
+          container.style.display = 'block';
+          return;
+        }
+        let html = '<table style="width:100%; font-size:12px; border-collapse:collapse;">';
+        html += '<tr style="color:#888; border-bottom:1px solid #333;"><th style="padding:6px;">Date</th><th style="padding:6px;">File</th><th style="padding:6px;">Orders</th><th style="padding:6px;">Status</th><th style="padding:6px;"></th></tr>';
+        for (const imp of imports) {
+          const date = new Date(imp.createdAt).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+          const statusColor = imp.status === 'completed' ? '#4CAF50' : imp.status === 'rolled_back' ? '#888' : imp.status === 'failed' ? '#f87171' : '#FFC107';
+          const rollbackBtn = imp.status === 'completed' ? `<button onclick="rollbackImport('${imp.id}')" style="padding:2px 8px; background:none; color:#f87171; border:1px solid #f87171; border-radius:4px; cursor:pointer; font-size:10px;">Rollback</button>` : '';
+          html += `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:6px; color:#999;">${date}</td><td style="padding:6px; color:#ccc;">${imp.fileName}</td><td style="padding:6px; color:#e0e0e0;">${imp.ordersCreated}</td><td style="padding:6px; color:${statusColor}; font-weight:600;">${imp.status}</td><td style="padding:6px;">${rollbackBtn}</td></tr>`;
+        }
+        html += '</table>';
+        container.innerHTML = html;
+        container.style.display = 'block';
+      } catch (err) {
+        container.innerHTML = `<div style="color:#f87171; font-size:12px;">Error: ${err.message}</div>`;
+        container.style.display = 'block';
+      }
     }
 
     function clearPortfolioFile() {
       portfolioFile = null;
+      portfolioParsedOrders = [];
+      portfolioFileHash = '';
       document.getElementById('portfolio-file-info').style.display = 'none';
       document.getElementById('portfolio-file-input').value = '';
+      const preview = document.getElementById('portfolio-preview');
+      if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
     }
 
     // ---- Analytics (Langfuse Traces) ----
@@ -2955,6 +3215,15 @@
 
         loading.style.display = 'none';
         content.style.display = 'block';
+
+        // Staggered fade-in for each section
+        content.querySelectorAll('.admin-section').forEach((sec, i) => {
+          sec.classList.remove('fade-in-section');
+          sec.style.animationDelay = `${i * 0.15}s`;
+          // Force reflow then add class
+          void sec.offsetWidth;
+          sec.classList.add('fade-in-section');
+        });
       } catch (e) {
         loading.style.display = 'none';
         errorEl.style.display = 'block';
@@ -3017,6 +3286,14 @@
 
         loading.style.display = 'none';
         content.style.display = 'block';
+
+        // Staggered fade-in for each section
+        content.querySelectorAll('.admin-section').forEach((sec, i) => {
+          sec.classList.remove('fade-in-section');
+          sec.style.animationDelay = `${i * 0.15}s`;
+          void sec.offsetWidth;
+          sec.classList.add('fade-in-section');
+        });
       } catch (e) {
         loading.style.display = 'none';
         errorEl.style.display = 'block';

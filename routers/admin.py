@@ -4,12 +4,15 @@ import time
 
 import httpx
 import yaml
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 
 import config
+from auth import get_raw_token, get_user_id
 from config import ANTHROPIC_API_KEY, OPENAI_API_KEY
 from models.schemas import SettingsUpdate
 from services import db
+from services.ghostfolio_client import GhostfolioClient
 from services.sdk_registry import (
     MODEL_OPTIONS,
     SDK_OPTIONS,
@@ -126,14 +129,33 @@ async def run_snapshot(request: Request):
             except Exception as e:
                 errors.append({"id": gc["id"], "error": str(e)})
 
-    # Save snapshot file
+    # Save snapshot file (local) and to DB (persists across deploys)
+    generated_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     snapshot_file = {
-        "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "generatedAt": generated_at,
         "apiUrl": chat_url,
         "snapshots": snapshots,
     }
     with open(SNAPSHOT_PATH, "w") as f:
         json.dump(snapshot_file, f, indent=2)
+
+    # Persist snapshots to Postgres so Re-run Checks works after redeploy
+    try:
+        current_settings = await load_settings()
+        model = current_settings.get("model", "unknown")
+        await db.save_eval_run(
+            model=model,
+            cases_passed=len(snapshots),
+            cases_total=len(golden_cases),
+            checks_passed=0,
+            checks_total=0,
+            duration_s=None,
+            snapshot_at=generated_at,
+            results=None,
+            snapshots=snapshots,
+        )
+    except Exception:
+        pass
 
     return {
         "phase": "snapshot",
@@ -150,14 +172,18 @@ async def run_check():
 
     No LLM calls. Pure string matching. Instant.
     """
-    if not os.path.exists(SNAPSHOT_PATH):
-        return {"error": "No snapshots found. Run snapshot generation first."}
-
     with open(GOLDEN_PATH) as f:
         golden_cases = yaml.safe_load(f)
 
-    with open(SNAPSHOT_PATH) as f:
-        snapshot_file = json.load(f)
+    # Try local file first, fall back to DB snapshots
+    if os.path.exists(SNAPSHOT_PATH):
+        with open(SNAPSHOT_PATH) as f:
+            snapshot_file = json.load(f)
+    else:
+        db_snapshots = await db.get_latest_snapshots()
+        if not db_snapshots:
+            return {"error": "No snapshots found. Run snapshot generation first."}
+        snapshot_file = {"generatedAt": "from database", "snapshots": db_snapshots}
 
     snapshot_map = {s["id"]: s for s in snapshot_file.get("snapshots", [])}
 
@@ -596,3 +622,133 @@ async def _fetch_parallel(client, langfuse_api, auth):
         _get(f"{langfuse_api}/observations", {"limit": 100, "type": "GENERATION"}),
     )
     return results
+
+
+# ---- Eval run detail ----
+
+
+@router.get("/eval/history/{run_id}")
+async def get_eval_run_detail(run_id: str):
+    """Return full results for a single eval run."""
+    run = await db.get_eval_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Eval run not found")
+    return run
+
+
+# ---- Portfolio import ----
+
+
+class ImportRequest(BaseModel):
+    orders: list[dict]
+    fileName: str
+    fileHash: str
+    accountId: str
+
+
+class RollbackRequest(BaseModel):
+    pass
+
+
+@router.post("/portfolio/check-duplicate")
+async def check_duplicate(request: Request):
+    user_id = get_user_id(request)
+    body = await request.json()
+    file_hash = body.get("fileHash", "")
+    existing = await db.get_import_by_hash(user_id, file_hash)
+    return {"duplicate": existing is not None, "existing": existing}
+
+
+@router.post("/portfolio/import")
+async def import_portfolio(request: Request, body: ImportRequest):
+    """Import orders into Ghostfolio and track the batch."""
+    user_id = get_user_id(request)
+    token = get_raw_token(request)
+
+    # Check for duplicates
+    existing = await db.get_import_by_hash(user_id, body.fileHash)
+    if existing:
+        raise HTTPException(status_code=409, detail="This file has already been imported")
+
+    # Save import record
+    preview = body.orders[:10]  # Store first 10 for preview
+    import_id = await db.save_import(user_id, body.fileName, body.fileHash, preview)
+    await db.update_import_status(import_id, "importing")
+
+    # Create orders via Ghostfolio API
+    client = GhostfolioClient(token)
+    created_ids = []
+    errors = []
+
+    for order in body.orders:
+        try:
+            order_data = {
+                "accountId": body.accountId,
+                "currency": order.get("currency", "USD"),
+                "date": order["date"],
+                "fee": order.get("fee", 0),
+                "quantity": order["quantity"],
+                "symbol": order["symbol"],
+                "type": order["type"],
+                "unitPrice": order["unitPrice"],
+            }
+            if order.get("dataSource"):
+                order_data["dataSource"] = order["dataSource"]
+            result = await client.create_order(order_data)
+            created_ids.append(result.get("id", ""))
+        except Exception as e:
+            errors.append({"symbol": order.get("symbol", "?"), "error": str(e)})
+
+    # Update import status
+    status = "completed" if not errors else ("failed" if not created_ids else "completed")
+    await db.update_import_status(
+        import_id,
+        status,
+        orders_created=len(created_ids),
+        order_ids=created_ids,
+        error_message=json.dumps(errors) if errors else None,
+    )
+
+    return {
+        "importId": import_id,
+        "created": len(created_ids),
+        "failed": len(errors),
+        "errors": errors,
+        "status": status,
+    }
+
+
+@router.post("/portfolio/rollback/{import_id}")
+async def rollback_import(import_id: str, request: Request):
+    """Delete all orders from an import batch."""
+    user_id = get_user_id(request)
+    token = get_raw_token(request)
+
+    imp = await db.get_import(import_id, user_id)
+    if not imp:
+        raise HTTPException(status_code=404, detail="Import not found")
+    if imp["status"] == "rolled_back":
+        raise HTTPException(status_code=400, detail="Already rolled back")
+
+    order_ids = imp.get("orderIds") or []
+    client = GhostfolioClient(token)
+    deleted = 0
+    errors = []
+
+    for oid in order_ids:
+        try:
+            await client.delete_order(oid)
+            deleted += 1
+        except Exception as e:
+            errors.append({"orderId": oid, "error": str(e)})
+
+    await db.update_import_status(import_id, "rolled_back")
+
+    return {"deleted": deleted, "errors": errors, "status": "rolled_back"}
+
+
+@router.get("/portfolio/history")
+async def get_import_history(request: Request):
+    user_id = get_user_id(request)
+    imports = await db.list_imports(user_id)
+    return {"imports": imports}

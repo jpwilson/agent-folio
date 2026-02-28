@@ -74,6 +74,24 @@ CREATE TABLE IF NOT EXISTS agent_eval_runs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_agent_eval_created ON agent_eval_runs(created_at DESC);
+-- Migration: add snapshots column if missing
+ALTER TABLE agent_eval_runs ADD COLUMN IF NOT EXISTS snapshots JSONB;
+
+CREATE TABLE IF NOT EXISTS agent_portfolio_imports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    file_name TEXT NOT NULL,
+    file_hash TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending','importing','completed','rolled_back','failed')),
+    orders_created INT NOT NULL DEFAULT 0,
+    order_ids JSONB,
+    preview JSONB,
+    error_message TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_agent_imports_user ON agent_portfolio_imports(user_id);
+CREATE INDEX IF NOT EXISTS idx_agent_imports_hash ON agent_portfolio_imports(file_hash);
 """
 
 
@@ -441,15 +459,19 @@ async def save_eval_run(
     duration_s: float | None,
     snapshot_at: str | None,
     results: list | None,
+    snapshots: list | None = None,
 ) -> str:
     pool = _get_pool()
     run_id = str(uuid.uuid4())
     results_json = json.dumps(results) if results else None
+    snapshots_json = json.dumps(snapshots) if snapshots else None
     async with pool.acquire() as conn:
         await conn.execute(
             """
-            INSERT INTO agent_eval_runs (id, model, cases_passed, cases_total, checks_passed, checks_total, duration_s, snapshot_at, results)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+            INSERT INTO agent_eval_runs
+                (id, model, cases_passed, cases_total, checks_passed, checks_total,
+                 duration_s, snapshot_at, results, snapshots)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb)
         """,
             uuid.UUID(run_id),
             model,
@@ -460,8 +482,51 @@ async def save_eval_run(
             duration_s,
             snapshot_at,
             results_json,
+            snapshots_json,
         )
     return run_id
+
+
+async def get_eval_run(run_id: str) -> dict | None:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT id, model, cases_passed, cases_total, checks_passed, checks_total,
+                   duration_s, snapshot_at, results, created_at
+            FROM agent_eval_runs WHERE id = $1
+        """,
+            uuid.UUID(run_id),
+        )
+    if not row:
+        return None
+    return {
+        "id": str(row["id"]),
+        "model": row["model"],
+        "casesPassed": row["cases_passed"],
+        "casesTotal": row["cases_total"],
+        "checksPassed": row["checks_passed"],
+        "checksTotal": row["checks_total"],
+        "durationS": row["duration_s"],
+        "snapshotAt": row["snapshot_at"],
+        "results": json.loads(row["results"]) if row["results"] else None,
+        "createdAt": row["created_at"].isoformat(),
+    }
+
+
+async def get_latest_snapshots() -> list | None:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT snapshots FROM agent_eval_runs
+            WHERE snapshots IS NOT NULL
+            ORDER BY created_at DESC LIMIT 1
+        """
+        )
+    if row and row["snapshots"]:
+        return json.loads(row["snapshots"])
+    return None
 
 
 async def list_eval_runs(limit: int = 20) -> list:
@@ -491,3 +556,129 @@ async def list_eval_runs(limit: int = 20) -> list:
         }
         for r in rows
     ]
+
+
+# ---- Portfolio Imports ----
+
+
+async def save_import(user_id: str, file_name: str, file_hash: str, preview: list | None) -> str:
+    pool = _get_pool()
+    import_id = str(uuid.uuid4())
+    preview_json = json.dumps(preview) if preview else None
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO agent_portfolio_imports (id, user_id, file_name, file_hash, preview)
+            VALUES ($1, $2, $3, $4, $5::jsonb)
+        """,
+            uuid.UUID(import_id),
+            uuid.UUID(user_id),
+            file_name,
+            file_hash,
+            preview_json,
+        )
+    return import_id
+
+
+async def update_import_status(
+    import_id: str,
+    status: str,
+    orders_created: int | None = None,
+    order_ids: list | None = None,
+    error_message: str | None = None,
+) -> None:
+    pool = _get_pool()
+    oids = json.dumps(order_ids) if order_ids else None
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            UPDATE agent_portfolio_imports
+            SET status = $2,
+                orders_created = COALESCE($3, orders_created),
+                order_ids = COALESCE($4::jsonb, order_ids),
+                error_message = $5
+            WHERE id = $1
+        """,
+            uuid.UUID(import_id),
+            status,
+            orders_created,
+            oids,
+            error_message,
+        )
+
+
+async def get_import_by_hash(user_id: str, file_hash: str) -> dict | None:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT id, file_name, status, created_at
+            FROM agent_portfolio_imports
+            WHERE user_id = $1 AND file_hash = $2 AND status != 'rolled_back'
+        """,
+            uuid.UUID(user_id),
+            file_hash,
+        )
+    if not row:
+        return None
+    return {
+        "id": str(row["id"]),
+        "fileName": row["file_name"],
+        "status": row["status"],
+        "createdAt": row["created_at"].isoformat(),
+    }
+
+
+async def list_imports(user_id: str) -> list:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, file_name, file_hash, status, orders_created, error_message, created_at
+            FROM agent_portfolio_imports
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            LIMIT 50
+        """,
+            uuid.UUID(user_id),
+        )
+    return [
+        {
+            "id": str(r["id"]),
+            "fileName": r["file_name"],
+            "fileHash": r["file_hash"],
+            "status": r["status"],
+            "ordersCreated": r["orders_created"],
+            "errorMessage": r["error_message"],
+            "createdAt": r["created_at"].isoformat(),
+        }
+        for r in rows
+    ]
+
+
+async def get_import(import_id: str, user_id: str) -> dict | None:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT id, file_name, file_hash, status, orders_created, order_ids, preview,
+                   error_message, created_at
+            FROM agent_portfolio_imports
+            WHERE id = $1 AND user_id = $2
+        """,
+            uuid.UUID(import_id),
+            uuid.UUID(user_id),
+        )
+    if not row:
+        return None
+    return {
+        "id": str(row["id"]),
+        "fileName": row["file_name"],
+        "fileHash": row["file_hash"],
+        "status": row["status"],
+        "ordersCreated": row["orders_created"],
+        "orderIds": json.loads(row["order_ids"]) if row["order_ids"] else None,
+        "preview": json.loads(row["preview"]) if row["preview"] else None,
+        "errorMessage": row["error_message"],
+        "createdAt": row["created_at"].isoformat(),
+    }
