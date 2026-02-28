@@ -343,7 +343,13 @@
     .verification.pass { color: #36cfb4; }
     .verification.fail { color: #f87171; }
     .msg-feedback {
-      margin-top: 6px; padding-top: 6px; border-top: 1px solid #222;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid #333;
+      position: relative;
+    }
+    .msg-feedback::before {
+      content: ''; position: absolute; top: -4px; left: 0; right: 0;
+      border-top: 1px solid #2a2a2a;
     }
     .msg-feedback .fb-row {
       display: flex; align-items: center; gap: 4px;
@@ -378,6 +384,9 @@
       display: none; font-size: 11px; color: #36cfb4; margin-top: 6px;
     }
     .msg-feedback .fb-recorded.visible { display: block; }
+    .msg-feedback.fb-done .fb-row,
+    .msg-feedback.fb-done .fb-prompt,
+    .msg-feedback.fb-done .fb-explain { display: none !important; }
     body.hide-tools .tool-calls { display: none !important; }
     body.hide-verification .verification { display: none !important; }
     body.hide-feedback .msg-feedback { display: none !important; }
@@ -1044,12 +1053,26 @@
               Load Feedback
             </button>
             <div id="feedback-content" style="display:none;">
-              <div class="admin-card" style="margin-bottom:12px;">
-                <div class="admin-list-item"><span class="label">Total Feedback</span><span class="value" id="fb-total">--</span></div>
-                <div class="admin-list-item"><span class="label">Thumbs Up</span><span class="value" id="fb-up">--</span></div>
-                <div class="admin-list-item"><span class="label">Thumbs Down</span><span class="value" id="fb-down">--</span></div>
-                <div class="admin-list-item"><span class="label">Satisfaction Rate</span><span class="value" id="fb-rate">--</span></div>
+              <div class="admin-stat-row" style="margin-bottom:12px;">
+                <div class="admin-stat">
+                  <div class="stat-value" id="fb-total">--</div>
+                  <div class="stat-label">Total Feedback</div>
+                </div>
+                <div class="admin-stat">
+                  <div class="stat-value" style="color:#4CAF50;" id="fb-up">--</div>
+                  <div class="stat-label">Thumbs Up</div>
+                </div>
+                <div class="admin-stat">
+                  <div class="stat-value" style="color:#f87171;" id="fb-down">--</div>
+                  <div class="stat-label">Thumbs Down</div>
+                </div>
               </div>
+              <div class="admin-card" style="margin-bottom:12px;">
+                <div class="admin-list-item"><span class="label">Satisfaction Rate</span><span class="value" style="color:#36cfb4;" id="fb-rate">--</span></div>
+                <div class="admin-list-item"><span class="label">Feedback / Total Conversations</span><span class="value" id="fb-vs-convos">--</span></div>
+                <div class="admin-list-item"><span class="label">Responses with Text Feedback</span><span class="value" id="fb-with-text">--</span></div>
+              </div>
+              <h3 style="font-size:12px; color:#888; margin:12px 0 8px; text-transform:uppercase; letter-spacing:0.5px;">Text Feedback Entries</h3>
               <div id="fb-entries-table"></div>
             </div>
           </div>
@@ -1639,6 +1662,7 @@
       const progress = document.createElement('div');
       progress.className = 'progress-bar';
       let currentStep = addProgressStep(progress, 'Analyzing your request...', true);
+      let currentStepText = 'Analyzing your request...';
       chat.appendChild(progress);
       chat.scrollTop = chat.scrollHeight;
 
@@ -1684,11 +1708,17 @@
                 try {
                   const parsed = JSON.parse(eventData);
                   if (eventType === 'status') {
-                    completeProgressStep(currentStep);
-                    currentStep = addProgressStep(progress, parsed.text, true);
+                    // Skip if same text as current step (avoids duplicate)
+                    if (parsed.text !== currentStepText) {
+                      completeProgressStep(currentStep);
+                      currentStep = addProgressStep(progress, parsed.text, true);
+                      currentStepText = parsed.text;
+                    }
                   } else if (eventType === 'tool_start') {
                     completeProgressStep(currentStep);
-                    currentStep = addProgressStep(progress, toolDisplayName(parsed.tool, parsed.args), true);
+                    const label = toolDisplayName(parsed.tool, parsed.args);
+                    currentStep = addProgressStep(progress, label, true);
+                    currentStepText = label;
                   } else if (eventType === 'tool_done') {
                     // Step already active, mark complete — next event will add new one
                   } else if (eventType === 'complete') {
@@ -1710,8 +1740,8 @@
             loadConversations();
           }
           messages.push({ role: 'assistant', content: finalData.message });
-          addMessage(finalData.message, 'assistant', finalData.toolCalls, finalData.verification);
-          showFollowups(finalData.toolCalls);
+          addMessage(finalData.message, 'assistant', finalData.toolCalls, finalData.verification, true);
+          showFollowups(finalData.toolCalls, finalData.followups);
         } else {
           addMessage('No response received.', 'error');
         }
@@ -1856,26 +1886,25 @@
       ],
     };
 
-    function showFollowups(toolCalls) {
+    function showFollowups(toolCalls, aiFollowups) {
       const bar = document.getElementById('followups-bar');
       const list = document.getElementById('followups-list');
-      if (!bar || !list || !toolCalls || toolCalls.length === 0) {
-        if (bar) bar.classList.remove('visible');
-        return;
-      }
-      // Collect unique follow-ups from all tools used
-      const seen = new Set();
-      const followups = [];
-      for (const tc of toolCalls) {
-        const tool = tc.tool || tc;
-        const suggestions = FOLLOWUP_MAP[tool] || [];
-        for (const s of suggestions) {
-          if (!seen.has(s)) {
-            seen.add(s);
-            followups.push(s);
+      if (!bar || !list) return;
+
+      // Prefer AI-generated follow-ups, fall back to static map
+      let followups = (aiFollowups && aiFollowups.length > 0) ? aiFollowups : [];
+
+      if (followups.length === 0 && toolCalls && toolCalls.length > 0) {
+        const seen = new Set();
+        for (const tc of toolCalls) {
+          const tool = tc.tool || tc;
+          const suggestions = FOLLOWUP_MAP[tool] || [];
+          for (const s of suggestions) {
+            if (!seen.has(s)) { seen.add(s); followups.push(s); }
           }
         }
       }
+
       if (followups.length === 0) {
         bar.classList.remove('visible');
         return;
@@ -1995,7 +2024,49 @@
       });
     }
 
-    function addMessage(text, role, toolCalls, verification) {
+    function typewriterEffect(element, duration) {
+      duration = duration || 1200;
+      const textNodes = [];
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+      while (walker.nextNode()) textNodes.push(walker.currentNode);
+      if (textNodes.length === 0) return;
+
+      const originals = textNodes.map(n => n.textContent);
+      textNodes.forEach(n => n.textContent = '');
+
+      const totalChars = originals.reduce((sum, t) => sum + t.length, 0);
+      if (totalChars === 0) return;
+
+      const msPerChar = Math.min(duration / totalChars, 8);
+      let nodeIdx = 0;
+      let nodeCharIdx = 0;
+
+      function step() {
+        if (nodeIdx >= textNodes.length) {
+          chat.scrollTop = chat.scrollHeight;
+          return;
+        }
+        // Reveal multiple chars per frame for speed
+        const charsPerFrame = Math.max(1, Math.floor(2 / msPerChar));
+        for (let i = 0; i < charsPerFrame && nodeIdx < textNodes.length; i++) {
+          const orig = originals[nodeIdx];
+          nodeCharIdx++;
+          textNodes[nodeIdx].textContent = orig.substring(0, nodeCharIdx);
+          if (nodeCharIdx >= orig.length) {
+            nodeIdx++;
+            nodeCharIdx = 0;
+          }
+        }
+        if (nodeIdx < textNodes.length) {
+          setTimeout(step, msPerChar * charsPerFrame);
+        } else {
+          chat.scrollTop = chat.scrollHeight;
+        }
+      }
+      step();
+    }
+
+    function addMessage(text, role, toolCalls, verification, useTypewriter) {
       const div = document.createElement('div');
       div.className = `message ${role}`;
 
@@ -2056,6 +2127,12 @@
 
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
+
+      // Typewriter effect for new assistant messages
+      if (useTypewriter && role === 'assistant') {
+        const contentDiv = div.querySelector('.msg-content');
+        if (contentDiv) typewriterEffect(contentDiv, 1200);
+      }
     }
 
     let pendingFeedback = {};
@@ -2063,19 +2140,23 @@
     function feedback(btn, msgIdx, direction) {
       const fbContainer = btn.closest('.msg-feedback');
       fbContainer.querySelectorAll('.fb-btn').forEach(b => { b.classList.remove('liked', 'disliked'); });
+      const prompt = fbContainer.querySelector('.fb-prompt');
       pendingFeedback[msgIdx] = direction;
       if (direction === 'up') {
         btn.classList.add('liked');
+        if (prompt) prompt.textContent = 'Thank you for your feedback!';
         const explainEl = document.getElementById(`fb-explain-${msgIdx}`);
         if (explainEl) explainEl.classList.remove('visible');
         sendFeedback(msgIdx, direction, '');
-        const recordedEl = document.getElementById(`fb-recorded-${msgIdx}`);
-        if (recordedEl) {
-          recordedEl.classList.add('visible');
-          setTimeout(() => recordedEl.classList.remove('visible'), 2000);
-        }
+        // Dismiss feedback section after a moment
+        setTimeout(() => {
+          fbContainer.classList.add('fb-done');
+          const recordedEl = document.getElementById(`fb-recorded-${msgIdx}`);
+          if (recordedEl) { recordedEl.textContent = 'Feedback received \u2014 thank you!'; recordedEl.classList.add('visible'); }
+        }, 1200);
       } else {
         btn.classList.add('disliked');
+        if (prompt) prompt.textContent = 'Help us improve \u2014 what went wrong?';
         const explainEl = document.getElementById(`fb-explain-${msgIdx}`);
         if (explainEl) {
           explainEl.classList.add('visible');
@@ -2088,11 +2169,15 @@
       const explainEl = document.getElementById(`fb-explain-${msgIdx}`);
       const explanation = explainEl ? explainEl.querySelector('input').value : '';
       sendFeedback(msgIdx, pendingFeedback[msgIdx] || 'down', explanation);
-      if (explainEl) explainEl.classList.remove('visible');
-      const recordedEl = document.getElementById(`fb-recorded-${msgIdx}`);
-      if (recordedEl) {
-        recordedEl.classList.add('visible');
-        setTimeout(() => recordedEl.classList.remove('visible'), 2000);
+      // Find the parent feedback container and dismiss it
+      const fbContainer = explainEl ? explainEl.closest('.msg-feedback') : null;
+      if (fbContainer) {
+        fbContainer.classList.add('fb-done');
+        const recordedEl = document.getElementById(`fb-recorded-${msgIdx}`);
+        if (recordedEl) {
+          recordedEl.textContent = 'Feedback received \u2014 thank you!';
+          recordedEl.classList.add('visible');
+        }
       }
     }
 
@@ -2101,7 +2186,7 @@
       const msgContent = msgs[msgIdx]?.querySelector('.msg-content')?.textContent?.substring(0, 200) || '';
       fetch('/api/v1/agent/feedback', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
         body: JSON.stringify({
           conversationId: currentConversationId,
           messageIndex: msgIdx,
@@ -2499,28 +2584,44 @@
     async function loadFeedbackSummary() {
       try {
         const res = await fetch(`${API_BASE}/feedback/summary`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
         });
         const data = await res.json();
 
         document.getElementById('feedback-content').style.display = 'block';
-        document.getElementById('fb-total').textContent = data.total || 0;
-        document.getElementById('fb-up').textContent = data.thumbsUp || 0;
-        document.getElementById('fb-down').textContent = data.thumbsDown || 0;
+        const total = data.total || 0;
+        const up = data.thumbsUp || 0;
+        const down = data.thumbsDown || 0;
+        document.getElementById('fb-total').textContent = total;
+        document.getElementById('fb-up').textContent = up;
+        document.getElementById('fb-down').textContent = down;
         document.getElementById('fb-rate').textContent = data.satisfactionRate || '--';
 
+        // Feedback vs conversations ratio
+        const totalConvos = allConversations.length;
+        document.getElementById('fb-vs-convos').textContent = totalConvos > 0
+          ? `${total} / ${totalConvos} (${(total / totalConvos * 100).toFixed(0)}%)`
+          : `${total} / 0`;
+
+        // Count entries with text explanations
         const entries = data.recentEntries || [];
-        if (entries.length > 0) {
+        const withText = entries.filter(e => e.explanation && e.explanation.trim()).length;
+        document.getElementById('fb-with-text').textContent = `${withText} of ${total}`;
+
+        // Show only entries that have text feedback
+        const textEntries = entries.filter(e => e.explanation && e.explanation.trim());
+        if (textEntries.length > 0) {
           let html = '<table style="width:100%; font-size:12px; border-collapse:collapse;">';
-          html += '<tr style="color:#888; border-bottom:1px solid #333;"><th style="text-align:left; padding:4px;">Time</th><th style="text-align:left; padding:4px;">Vote</th><th style="text-align:left; padding:4px;">Message</th><th style="text-align:left; padding:4px;">Explanation</th></tr>';
-          for (const e of entries.reverse()) {
+          html += '<tr style="color:#888; border-bottom:1px solid #333;"><th style="text-align:left; padding:4px;">Time</th><th style="text-align:left; padding:4px;">Vote</th><th style="text-align:left; padding:4px;">Feedback</th></tr>';
+          for (const e of textEntries.reverse()) {
             const vote = e.direction === 'up' ? '<span style="color:#36cfb4;">&#128077;</span>' : '<span style="color:#f87171;">&#128078;</span>';
-            const time = e.timestamp ? new Date(e.timestamp).toLocaleString() : '--';
-            const msg = (e.messageContent || '').substring(0, 60);
-            html += `<tr style="border-bottom:1px solid #222;"><td style="padding:4px; color:#888;">${time}</td><td style="padding:4px;">${vote}</td><td style="padding:4px;">${msg}</td><td style="padding:4px; color:#888;">${e.explanation || ''}</td></tr>`;
+            const time = e.timestamp ? new Date(e.timestamp).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '--';
+            html += `<tr style="border-bottom:1px solid #222;"><td style="padding:4px; color:#888; white-space:nowrap;">${time}</td><td style="padding:4px;">${vote}</td><td style="padding:4px; color:#ccc;">${e.explanation}</td></tr>`;
           }
           html += '</table>';
           document.getElementById('fb-entries-table').innerHTML = html;
+        } else {
+          document.getElementById('fb-entries-table').innerHTML = '<div class="admin-placeholder">No text feedback entries yet</div>';
         }
       } catch (err) {
         document.getElementById('feedback-content').style.display = 'block';
@@ -2697,6 +2798,13 @@
     });
 
     const CHANGELOG_ENTRIES = [
+      {
+        date: '2026-02-28',
+        title: 'UX polish: typewriter, feedback, contextual follow-ups',
+        desc: 'Response text now types out with a typewriter effect (~1.2s). Feedback buttons change state (thumbs up → "Thank you", thumbs down → "Help us improve"). Submit actually saves and dismisses. Follow-up suggestions are now AI-generated and contextually relevant to the conversation. Fixed duplicate progress step and feedback submit bug.',
+        commit: '',
+        repo: 'agent-folio'
+      },
       {
         date: '2026-02-27',
         title: 'Historical stock price data',

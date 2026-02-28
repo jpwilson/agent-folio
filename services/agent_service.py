@@ -40,7 +40,32 @@ STRICT RULES — you must always follow these:
 ```chart
 {"type":"pie","title":"Portfolio Allocation","labels":["AAPL","GOOGL","MSFT"],"data":[35.2,28.1,18.5],"suffix":"%"}
 ```
-Supported chart types: "pie" (allocations, breakdowns), "doughnut" (similar to pie), "bar" (comparisons, amounts over time), "line" (trends, performance over time). Include "currency":"USD" for monetary values or "suffix":"%" for percentages. Only use charts when they genuinely add value — for allocations, performance trends, dividend history, and comparisons. Do NOT use charts for simple single-value lookups or short text answers."""
+Supported chart types: "pie" (allocations, breakdowns), "doughnut" (similar to pie), "bar" (comparisons, amounts over time), "line" (trends, performance over time). Include "currency":"USD" for monetary values or "suffix":"%" for percentages. Only use charts when they genuinely add value — for allocations, performance trends, dividend history, and comparisons. Do NOT use charts for simple single-value lookups or short text answers.
+9. At the very end of every response, include exactly 3 suggested follow-up questions. Format them on separate lines, each starting with ">>>" (three greater-than signs). These MUST be specific to the data you just presented — reference actual numbers, stock symbols, or findings from your response. Do NOT use generic questions. Example:
+>>> How has AAPL specifically performed compared to the rest of my portfolio?
+>>> What would my tax bill look like at a 20% rate instead?
+>>> Should I be concerned about my 40% tech concentration?"""
+
+
+def _extract_followups(text: str) -> tuple[str, list[str]]:
+    """Extract follow-up suggestions (lines starting with >>>) from response text.
+
+    Returns (cleaned_text, followups_list).
+    """
+    lines = text.split("\n")
+    followups = []
+    clean_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith(">>>"):
+            question = stripped[3:].strip()
+            if question:
+                followups.append(question)
+        else:
+            clean_lines.append(line)
+    # Remove trailing blank lines from cleaned text
+    cleaned = "\n".join(clean_lines).rstrip()
+    return cleaned, followups[:3]
 
 
 # --- Conversation CRUD (delegates to db) ---
@@ -132,6 +157,9 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
         # Run verification
         verification = verify_response(tool_results, response_text)
 
+    # Extract follow-up suggestions from response
+    response_text, followups = _extract_followups(response_text)
+
     # Save assistant response
     await db.add_message(
         conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None
@@ -144,6 +172,7 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
         "message": response_text,
         "toolCalls": tool_calls_list,
         "verification": verification,
+        "followups": followups,
         "durationMs": duration_ms,
     }
 
@@ -170,8 +199,6 @@ async def chat_stream(
             else "New conversation"
         )
         await db.create_conversation(conv_id, user_id, title)
-
-    yield sse("status", {"text": "Analyzing your request..."})
 
     last_msg = messages[-1] if messages else None
     if last_msg and last_msg.get("role") == "user":
@@ -242,6 +269,9 @@ async def chat_stream(
 
         verification = verify_response(tool_results, response_text)
 
+    # Extract follow-up suggestions from response
+    response_text, followups = _extract_followups(response_text)
+
     await db.add_message(
         conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None
     )
@@ -255,6 +285,7 @@ async def chat_stream(
             "message": response_text,
             "toolCalls": tool_calls_list,
             "verification": verification,
+            "followups": followups,
             "durationMs": duration_ms,
         },
     )
