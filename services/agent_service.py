@@ -160,9 +160,14 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
     # Extract follow-up suggestions from response
     response_text, followups = _extract_followups(response_text)
 
-    # Save assistant response
+    # Save assistant response (including followups for old-conversation reload)
     await db.add_message(
-        conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None
+        conv_id,
+        str(uuid.uuid4()),
+        "assistant",
+        response_text,
+        tool_calls_list if tool_calls_list else None,
+        followups if followups else None,
     )
 
     duration_ms = int((time.time() - request_start) * 1000)
@@ -273,7 +278,12 @@ async def chat_stream(
     response_text, followups = _extract_followups(response_text)
 
     await db.add_message(
-        conv_id, str(uuid.uuid4()), "assistant", response_text, tool_calls_list if tool_calls_list else None
+        conv_id,
+        str(uuid.uuid4()),
+        "assistant",
+        response_text,
+        tool_calls_list if tool_calls_list else None,
+        followups if followups else None,
     )
 
     duration_ms = int((time.time() - request_start) * 1000)

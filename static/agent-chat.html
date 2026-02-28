@@ -330,7 +330,7 @@
     }
     .chart-container canvas { max-height: 280px; }
     .message.assistant .tool-calls {
-      margin-top: 8px; padding-top: 8px; border-top: 1px solid #333;
+      margin-top: 10px; padding-top: 8px; border-top: 1px solid #2a2a2a;
       font-size: 11px; color: #888;
     }
     .message.assistant .tool-calls span {
@@ -343,13 +343,8 @@
     .verification.pass { color: #36cfb4; }
     .verification.fail { color: #f87171; }
     .msg-feedback {
-      margin-top: 10px; padding-top: 10px;
+      margin-top: 14px; padding-top: 12px;
       border-top: 1px solid #333;
-      position: relative;
-    }
-    .msg-feedback::before {
-      content: ''; position: absolute; top: -4px; left: 0; right: 0;
-      border-top: 1px solid #2a2a2a;
     }
     .msg-feedback .fb-row {
       display: flex; align-items: center; gap: 4px;
@@ -1568,10 +1563,18 @@
         messages = [];
         chat.innerHTML = '';
         setChatMode(true);
+        let lastFollowups = null;
+        let lastToolCalls = null;
         for (const msg of data.conversation.messages) {
           messages.push({ role: msg.role, content: msg.content });
           addMessage(msg.content, msg.role, msg.toolCalls);
+          if (msg.role === 'assistant') {
+            lastFollowups = msg.followups;
+            lastToolCalls = msg.toolCalls;
+          }
         }
+        // Show follow-ups from the last assistant message
+        showFollowups(lastToolCalls, lastFollowups);
         document.querySelectorAll('.conv-item').forEach(el => {
           el.classList.toggle('active', el.getAttribute('data-id') === id);
         });

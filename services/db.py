@@ -29,9 +29,12 @@ CREATE TABLE IF NOT EXISTS agent_messages (
     role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
     content TEXT NOT NULL,
     tool_calls JSONB,
+    followups JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_agent_msg_conv ON agent_messages(conversation_id);
+-- Migration: add followups column if missing
+ALTER TABLE agent_messages ADD COLUMN IF NOT EXISTS followups JSONB;
 
 CREATE TABLE IF NOT EXISTS agent_feedback (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -144,7 +147,7 @@ async def get_conversation(conversation_id: str, user_id: str) -> dict:
             return {"error": "Conversation not found"}
         messages = await conn.fetch(
             """
-            SELECT id, role, content, tool_calls, created_at
+            SELECT id, role, content, tool_calls, followups, created_at
             FROM agent_messages WHERE conversation_id = $1
             ORDER BY created_at ASC
         """,
@@ -160,6 +163,7 @@ async def get_conversation(conversation_id: str, user_id: str) -> dict:
                     "role": m["role"],
                     "content": m["content"],
                     "toolCalls": json.loads(m["tool_calls"]) if m["tool_calls"] else None,
+                    "followups": json.loads(m["followups"]) if m["followups"] else None,
                     "createdAt": m["created_at"].isoformat(),
                 }
                 for m in messages
@@ -191,21 +195,24 @@ async def add_message(
     role: str,
     content: str,
     tool_calls: list | None = None,
+    followups: list | None = None,
 ) -> None:
     pool = _get_pool()
     tc = json.dumps(tool_calls) if tool_calls else None
+    fu = json.dumps(followups) if followups else None
     now = datetime.now(UTC)
     async with pool.acquire() as conn:
         await conn.execute(
             """
-            INSERT INTO agent_messages (id, conversation_id, role, content, tool_calls, created_at)
-            VALUES ($1, $2, $3, $4, $5::jsonb, $6)
+            INSERT INTO agent_messages (id, conversation_id, role, content, tool_calls, followups, created_at)
+            VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7)
         """,
             uuid.UUID(msg_id),
             uuid.UUID(conversation_id),
             role,
             content,
             tc,
+            fu,
             now,
         )
         await conn.execute(
