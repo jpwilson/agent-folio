@@ -1,4 +1,4 @@
-from services.ghostfolio_client import GhostfolioClient
+from services.providers.base import PortfolioProvider
 
 TOOL_DEFINITION = {
     "type": "function",
@@ -10,7 +10,7 @@ TOOL_DEFINITION = {
 }
 
 
-async def execute(client: GhostfolioClient, args: dict) -> dict:
+async def execute(client: PortfolioProvider, args: dict) -> dict:
     try:
         details = await client.get_portfolio_details()
         holdings_raw = details.get("holdings", {})

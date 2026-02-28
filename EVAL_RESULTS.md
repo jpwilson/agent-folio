@@ -86,11 +86,11 @@ Each response receives a weighted 0-100 confidence score:
 
 ```bash
 # Step 1: Generate snapshots (requires running agent, costs tokens)
-curl -X POST https://agent-folio-production.up.railway.app/api/v1/agent/admin/eval/snapshot \
+curl -X POST http://localhost:8000/api/v1/agent/admin/eval/snapshot \
   -H "Authorization: Bearer <jwt>"
 
 # Step 2: Run deterministic checks (instant, free)
-curl -X POST https://agent-folio-production.up.railway.app/api/v1/agent/admin/eval/check
+curl -X POST http://localhost:8000/api/v1/agent/admin/eval/check
 ```
 
 Or use the **Agent Admin > Evaluations** tab in the UI.

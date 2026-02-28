@@ -5,6 +5,7 @@ import uuid
 from collections.abc import AsyncGenerator
 
 from services import db
+from config import GHOSTFOLIO_URL
 from services.ghostfolio_client import GhostfolioClient
 from services.guardrails import post_filter, pre_filter, validate_message_roles
 from services.sdk_registry import get_current_model, get_sdk
@@ -15,6 +16,37 @@ from tools import ALL_TOOLS, TOOL_DEFINITIONS
 # (configured in sdks/litellm_sdk.py when LANGFUSE_SECRET_KEY is set)
 
 # Generic follow-ups shown when guardrails redirect (no contextual data available)
+async def _get_provider(user_id: str, fallback_token: str):
+    """Build a PortfolioProvider for the user.
+
+    Checks for stored backend connections first. Falls back to creating
+    a GhostfolioClient from the JWT in the request header (legacy path).
+    """
+    try:
+        from services.providers.factory import build_provider
+
+        connections = await db.get_active_backends(user_id)
+        if connections:
+            if len(connections) == 1:
+                return await build_provider(connections[0])
+            # Multiple active backends — use combined provider
+            from services.providers.combined import CombinedProvider
+
+            providers = [await build_provider(c) for c in connections]
+            return CombinedProvider(providers)
+    except Exception:
+        pass  # DB not ready or no connections — use legacy fallback
+    return GhostfolioClient(GHOSTFOLIO_URL, fallback_token)
+
+
+def _build_system_prompt(provider_name: str | None = None) -> str:
+    """Return the system prompt, optionally noting connected backends."""
+    prompt = SYSTEM_PROMPT
+    if provider_name:
+        prompt += f"\n\nYou are connected to: {provider_name}. Some tools may return partial data depending on the backend. Explain what's available."
+    return prompt
+
+
 GUARDRAIL_FOLLOWUPS = [
     "What does my portfolio look like?",
     "How has my portfolio performed this year?",
@@ -99,7 +131,7 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
     # Validate message roles: strip injected 'system' roles, enforce limits
     messages = validate_message_roles(messages)
 
-    client = GhostfolioClient(token)
+    client = await _get_provider(user_id, token)
 
     # Create or load conversation
     conv_id = conversation_id or str(uuid.uuid4())
@@ -147,12 +179,16 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
         sdk = get_sdk(settings.get("sdk"))
         model = settings.get("model") or await get_current_model()
 
+        # Build system prompt with provider context
+        provider_label = getattr(client, "provider_name", None)
+        sys_prompt = _build_system_prompt(provider_label)
+
         # Run the agent
         response = await sdk.chat(
             messages=messages,
             tools=TOOL_DEFINITIONS,
             tool_executor=tool_executor,
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=sys_prompt,
             model=model,
         )
 
@@ -208,7 +244,7 @@ async def chat_stream(
         return f"event: {event}\ndata: {payload}\n\n"
 
     messages = validate_message_roles(messages)
-    client = GhostfolioClient(token)
+    client = await _get_provider(user_id, token)
     conv_id = conversation_id or str(uuid.uuid4())
 
     if not conversation_id:
@@ -257,13 +293,17 @@ async def chat_stream(
 
         yield sse("status", {"text": "Calling AI model..."})
 
+        # Build system prompt with provider context
+        provider_label = getattr(client, "provider_name", None)
+        sys_prompt = _build_system_prompt(provider_label)
+
         # Run the SDK chat in a task so we can drain progress events
         async def run_chat():
             return await sdk.chat(
                 messages=messages,
                 tools=TOOL_DEFINITIONS,
                 tool_executor=tool_executor,
-                system_prompt=SYSTEM_PROMPT,
+                system_prompt=sys_prompt,
                 model=model,
             )
 

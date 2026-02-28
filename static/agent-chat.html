@@ -75,9 +75,112 @@
     .account-badge {
       font-size: 11px; padding: 3px 10px; border-radius: 12px;
       background: rgba(54, 207, 180, 0.1); color: #36cfb4; border: 1px solid rgba(54, 207, 180, 0.2);
-      white-space: nowrap;
+      white-space: nowrap; position: relative;
     }
     .account-badge.grader { background: rgba(250, 204, 21, 0.1); color: #facc15; border-color: rgba(250, 204, 21, 0.2); }
+
+    /* Profile dropdown */
+    .profile-dropdown {
+      position: absolute; top: 100%; right: 0; margin-top: 6px;
+      background: #1a1a1a; border: 1px solid #333; border-radius: 12px;
+      min-width: 320px; z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      display: none; padding: 0; overflow: hidden;
+    }
+    .profile-dropdown.visible { display: block; }
+    .profile-dropdown .pd-header {
+      padding: 16px; border-bottom: 1px solid #2a2a2a;
+    }
+    .profile-dropdown .pd-header .pd-name {
+      font-size: 14px; font-weight: 600; color: #e5e5e5;
+    }
+    .profile-dropdown .pd-header .pd-id {
+      font-size: 11px; color: #888; margin-top: 2px;
+    }
+    .profile-dropdown .pd-section-title {
+      font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 12px 16px 6px;
+    }
+    .profile-dropdown .pd-backend {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px; gap: 8px;
+    }
+    .profile-dropdown .pd-backend:hover { background: rgba(255,255,255,0.03); }
+    .profile-dropdown .pd-backend .pd-be-info {
+      display: flex; flex-direction: column; flex: 1; min-width: 0;
+    }
+    .profile-dropdown .pd-backend .pd-be-label {
+      font-size: 12px; color: #e5e5e5; font-weight: 500;
+    }
+    .profile-dropdown .pd-backend .pd-be-url {
+      font-size: 10px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .profile-dropdown .pd-be-provider {
+      font-size: 10px; padding: 2px 6px; border-radius: 4px;
+      background: rgba(54,207,180,0.1); color: #36cfb4; font-weight: 600;
+    }
+    .profile-dropdown .pd-be-toggle {
+      width: 36px; height: 20px; border-radius: 10px; border: none;
+      cursor: pointer; position: relative; transition: background 0.2s;
+    }
+    .profile-dropdown .pd-be-toggle.active { background: #36cfb4; }
+    .profile-dropdown .pd-be-toggle.inactive { background: #444; }
+    .profile-dropdown .pd-be-toggle::after {
+      content: ''; position: absolute; width: 16px; height: 16px;
+      border-radius: 50%; background: white; top: 2px; transition: left 0.2s;
+    }
+    .profile-dropdown .pd-be-toggle.active::after { left: 18px; }
+    .profile-dropdown .pd-be-toggle.inactive::after { left: 2px; }
+    .profile-dropdown .pd-be-actions {
+      display: flex; gap: 4px;
+    }
+    .profile-dropdown .pd-be-actions button {
+      background: none; border: none; color: #888; cursor: pointer; font-size: 12px; padding: 2px 4px;
+    }
+    .profile-dropdown .pd-be-actions button:hover { color: #e5e5e5; }
+    .profile-dropdown .pd-add-btn {
+      display: block; width: calc(100% - 32px); margin: 8px 16px;
+      padding: 8px; border-radius: 8px; border: 1px dashed #444;
+      background: none; color: #888; cursor: pointer; font-size: 12px; text-align: center;
+    }
+    .profile-dropdown .pd-add-btn:hover { border-color: #36cfb4; color: #36cfb4; }
+    .profile-dropdown .pd-footer {
+      border-top: 1px solid #2a2a2a; padding: 8px 16px; display: flex; justify-content: flex-end;
+    }
+    .profile-dropdown .pd-footer button {
+      background: none; border: none; color: #f87171; cursor: pointer;
+      font-size: 12px; padding: 6px 12px; border-radius: 6px;
+    }
+    .profile-dropdown .pd-footer button:hover { background: rgba(248,113,113,0.1); }
+    .backends-badge {
+      font-size: 10px; color: #888; margin-left: 4px;
+    }
+
+    /* Add backend modal */
+    .add-backend-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000;
+      display: none; align-items: center; justify-content: center;
+    }
+    .add-backend-modal.visible { display: flex; }
+    .add-backend-modal .abm-content {
+      background: #1a1a1a; border: 1px solid #333; border-radius: 12px;
+      padding: 24px; width: 400px; max-width: 90vw;
+    }
+    .add-backend-modal .abm-content h3 { margin: 0 0 16px; font-size: 16px; color: #e5e5e5; }
+    .add-backend-modal .abm-field { margin-bottom: 12px; }
+    .add-backend-modal .abm-field label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; }
+    .add-backend-modal .abm-field input,
+    .add-backend-modal .abm-field select {
+      width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #333;
+      background: #111; color: #e5e5e5; font-size: 13px; box-sizing: border-box;
+    }
+    .add-backend-modal .abm-actions {
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;
+    }
+    .add-backend-modal .abm-actions button {
+      padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px;
+    }
+    .add-backend-modal .abm-cancel { background: #333; color: #e5e5e5; }
+    .add-backend-modal .abm-save { background: #36cfb4; color: #000; font-weight: 600; }
     .main-content { display: flex; flex: 1; overflow: hidden; }
 
     /* Sidebar */
@@ -717,7 +820,22 @@
     </div>
     <div class="header-actions">
       <button onclick="newConversation()">+ New Chat</button>
-      <span class="account-badge" id="account-badge" style="display:none;"></span>
+      <span class="account-badge" id="account-badge" style="display:none;" onclick="toggleProfileDropdown(event)">
+        <span id="badge-text"></span>
+        <span class="backends-badge" id="backends-badge"></span>
+      </span>
+      <div class="profile-dropdown" id="profile-dropdown">
+        <div class="pd-header">
+          <div class="pd-name" id="pd-name">Account</div>
+          <div class="pd-id" id="pd-id"></div>
+        </div>
+        <div class="pd-section-title">Connected Backends</div>
+        <div id="pd-backends-list"></div>
+        <button class="pd-add-btn" onclick="showAddBackendModal()">+ Add Backend</button>
+        <div class="pd-footer">
+          <button onclick="doLogout()">Sign Out</button>
+        </div>
+      </div>
       <div class="status" id="status">Connected</div>
     </div>
   </header>
@@ -1530,52 +1648,202 @@
       loadConfig();
     }
 
+    let _profileUserId = '';
+    let _profileShortId = '';
+    let _profileUsername = null;
+
     async function updateAccountBadge() {
       const badge = document.getElementById('account-badge');
+      const badgeText = document.getElementById('badge-text');
+      const backendsBadge = document.getElementById('backends-badge');
       if (!badge || !TOKEN) return;
       try {
         const payload = JSON.parse(atob(TOKEN.split('.')[1]));
-        const userId = payload.id || payload.sub || '';
-        const shortId = userId.substring(0, 8);
+        _profileUserId = payload.id || payload.sub || '';
+        _profileShortId = _profileUserId.substring(0, 8);
         if (IS_GRADER) {
-          badge.textContent = 'Grader';
+          badgeText.textContent = 'Grader';
           badge.className = 'account-badge grader';
           badge.title = 'Demo grader account';
-          badge.style.cursor = 'default';
-          badge.onclick = null;
+          badge.style.cursor = 'pointer';
         } else {
-          let username = null;
           try {
             const res = await fetch(`${API_BASE}/profile`, {
               headers: { 'Authorization': `Bearer ${TOKEN}` }
             });
-            if (res.ok) username = (await res.json()).username;
+            if (res.ok) _profileUsername = (await res.json()).username;
           } catch {}
-          badge.textContent = username || ('Account ' + shortId);
+          badgeText.textContent = _profileUsername || ('Account ' + _profileShortId);
           badge.className = 'account-badge';
-          badge.title = 'Click to set display name';
+          badge.title = 'Profile & Backends';
           badge.style.cursor = 'pointer';
-          badge.onclick = () => promptUsername(badge, shortId);
         }
-        badge.style.display = 'inline-block';
+        badge.style.display = 'inline-flex';
+        badge.style.alignItems = 'center';
+        badge.style.gap = '4px';
+        // Load backends to show badge count
+        await loadBackendsList();
       } catch {
         badge.style.display = 'none';
       }
     }
 
-    async function promptUsername(badge, shortId) {
-      const current = badge.textContent;
-      const name = prompt('Set your display name:', current.startsWith('Account ') ? '' : current);
-      if (name === null) return;
-      const trimmed = name.trim().substring(0, 50);
+    function toggleProfileDropdown(e) {
+      if (e) e.stopPropagation();
+      const dd = document.getElementById('profile-dropdown');
+      dd.classList.toggle('visible');
+      if (dd.classList.contains('visible')) {
+        document.getElementById('pd-name').textContent = _profileUsername || ('Account ' + _profileShortId);
+        document.getElementById('pd-id').textContent = _profileUserId;
+        loadBackendsList();
+      }
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const dd = document.getElementById('profile-dropdown');
+      const badge = document.getElementById('account-badge');
+      if (dd && dd.classList.contains('visible') && !badge.contains(e.target) && !dd.contains(e.target)) {
+        dd.classList.remove('visible');
+      }
+    });
+
+    async function loadBackendsList() {
       try {
-        await fetch(`${API_BASE}/profile/username`, {
+        const res = await fetch(`${API_BASE}/backends`, {
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const backends = data.backends || [];
+        const container = document.getElementById('pd-backends-list');
+        const backendsBadge = document.getElementById('backends-badge');
+
+        // Update header badge
+        const activeBackends = backends.filter(b => b.isActive);
+        if (activeBackends.length > 0) {
+          const names = activeBackends.map(b => b.provider.charAt(0).toUpperCase() + b.provider.slice(1));
+          backendsBadge.textContent = '(' + names.join(' + ') + ')';
+        } else {
+          backendsBadge.textContent = '';
+        }
+
+        if (backends.length === 0) {
+          container.innerHTML = '<div style="padding: 8px 16px; font-size: 12px; color: #666;">No backends connected</div>';
+          return;
+        }
+
+        container.innerHTML = backends.map(b => `
+          <div class="pd-backend">
+            <span class="pd-be-provider">${b.provider}</span>
+            <div class="pd-be-info">
+              <span class="pd-be-label">${b.label || b.provider}</span>
+              <span class="pd-be-url">${b.baseUrl}</span>
+            </div>
+            <button class="pd-be-toggle ${b.isActive ? 'active' : 'inactive'}"
+                    title="${b.isActive ? 'Active' : 'Inactive'}"
+                    onclick="toggleBackend('${b.id}', ${!b.isActive})"></button>
+            <div class="pd-be-actions">
+              <button onclick="testBackend('${b.id}')" title="Test connection">&#9889;</button>
+              <button onclick="deleteBackend('${b.id}')" title="Remove">&#10005;</button>
+            </div>
+          </div>
+        `).join('');
+      } catch {}
+    }
+
+    async function toggleBackend(id, newActive) {
+      try {
+        await fetch(`${API_BASE}/backends/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
-          body: JSON.stringify({ username: trimmed })
+          body: JSON.stringify({ isActive: newActive })
         });
-        badge.textContent = trimmed || ('Account ' + shortId);
+        await loadBackendsList();
       } catch {}
+    }
+
+    async function testBackend(id) {
+      try {
+        const res = await fetch(`${API_BASE}/backends/${id}/test`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        const data = await res.json();
+        alert(data.message || (data.success ? 'Connected!' : 'Failed'));
+      } catch (e) {
+        alert('Test failed: ' + e.message);
+      }
+    }
+
+    async function deleteBackend(id) {
+      if (!confirm('Remove this backend connection?')) return;
+      try {
+        await fetch(`${API_BASE}/backends/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        await loadBackendsList();
+      } catch {}
+    }
+
+    function showAddBackendModal() {
+      document.getElementById('add-backend-modal').classList.add('visible');
+      onProviderChange();
+    }
+
+    function hideAddBackendModal() {
+      document.getElementById('add-backend-modal').classList.remove('visible');
+      document.getElementById('abm-label').value = '';
+      document.getElementById('abm-url').value = '';
+      document.getElementById('abm-security-token').value = '';
+      document.getElementById('abm-username').value = '';
+      document.getElementById('abm-password').value = '';
+    }
+
+    function onProviderChange() {
+      const provider = document.getElementById('abm-provider').value;
+      const isGF = provider === 'ghostfolio';
+      document.getElementById('abm-cred-token-field').style.display = isGF ? 'block' : 'none';
+      document.getElementById('abm-cred-user-field').style.display = isGF ? 'none' : 'block';
+      document.getElementById('abm-cred-pass-field').style.display = isGF ? 'none' : 'block';
+      document.getElementById('abm-url').placeholder = isGF ? 'http://localhost:3333' : 'http://localhost:4242';
+    }
+
+    async function saveBackend() {
+      const provider = document.getElementById('abm-provider').value;
+      const label = document.getElementById('abm-label').value;
+      const baseUrl = document.getElementById('abm-url').value;
+      if (!baseUrl) { alert('URL is required'); return; }
+
+      let credentials = {};
+      if (provider === 'ghostfolio') {
+        const token = document.getElementById('abm-security-token').value;
+        if (!token) { alert('Security token is required'); return; }
+        credentials = { security_token: token };
+      } else {
+        const username = document.getElementById('abm-username').value;
+        const password = document.getElementById('abm-password').value;
+        if (!username || !password) { alert('Username and password are required'); return; }
+        credentials = { username, password };
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/backends`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+          body: JSON.stringify({ provider, label, baseUrl, credentials })
+        });
+        if (res.ok) {
+          hideAddBackendModal();
+          await loadBackendsList();
+        } else {
+          const data = await res.json();
+          alert(data.detail || 'Failed to add backend');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
     }
 
     let ghostfolioBaseUrl = '';
@@ -3316,6 +3584,41 @@
     const CHANGELOG_ENTRIES = [
       {
         date: '2026-02-28',
+        title: 'Combined portfolio provider',
+        desc: 'When multiple backends are active, data is merged automatically. Holdings are concatenated with allocations recomputed to 100%, activities merged and sorted by date. If one backend fails, the other still works (graceful degradation). UI badge shows active backend names.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'Rotki provider',
+        desc: 'Full Rotki backend support: session-based auth, async task polling, crypto balance normalization, event-to-order mapping, exchange and blockchain account listing. Methods Rotki doesn\'t support return valid empty structures so tools handle them gracefully.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'Profile dropdown & backend management',
+        desc: 'Account badge is now a profile dropdown with display name, user ID, connected backends list with active/inactive toggles, test connection button, add/remove backends, and sign-out. Add Backend modal supports Ghostfolio (security token) and Rotki (username/password). Ghostfolio backends auto-register on login.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'Provider abstraction layer',
+        desc: 'Introduced PortfolioProvider abstract base class with 13 methods. GhostfolioClient now extends it. All 11 tools accept the abstract type instead of the concrete class — zero behavioral change, but any backend can now plug in. Provider factory builds the right client from DB connection records.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'Open-source readiness',
+        desc: 'MIT license, CONTRIBUTING.md with dev setup and "how to add a new backend" guide, README rewritten for multi-backend support ("AI portfolio agent for Ghostfolio, Rotki, and more"), pyproject.toml updated with license field.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
         title: 'Portfolio Import tab scaffolding',
         desc: 'New Portfolio tab in admin panel with drag-and-drop file upload zone supporting CSV, XLS, XLSX, and JSON formats. File info card shows name, size, and type after upload. Import button with "coming soon" placeholder for future implementation.',
         commit: '',
@@ -3652,6 +3955,11 @@
       convListEl.innerHTML = '';
       const badge = document.getElementById('account-badge');
       if (badge) badge.style.display = 'none';
+      const dd = document.getElementById('profile-dropdown');
+      if (dd) dd.classList.remove('visible');
+      _profileUserId = '';
+      _profileShortId = '';
+      _profileUsername = null;
       newConversation();
       showLoginOverlay();
     }
@@ -3689,5 +3997,44 @@
     // Also check on initial load if already authenticated
     if (TOKEN) checkFirstLoginDisclaimer();
   </script>
+
+  <!-- Add Backend Modal -->
+  <div class="add-backend-modal" id="add-backend-modal">
+    <div class="abm-content">
+      <h3>Add Backend Connection</h3>
+      <div class="abm-field">
+        <label>Provider</label>
+        <select id="abm-provider" onchange="onProviderChange()">
+          <option value="ghostfolio">Ghostfolio</option>
+          <option value="rotki">Rotki</option>
+        </select>
+      </div>
+      <div class="abm-field">
+        <label>Label (optional)</label>
+        <input id="abm-label" type="text" placeholder="e.g. My Stocks" />
+      </div>
+      <div class="abm-field">
+        <label>Base URL</label>
+        <input id="abm-url" type="text" placeholder="http://localhost:3333" />
+      </div>
+      <div class="abm-field" id="abm-cred-token-field">
+        <label>Security Token</label>
+        <input id="abm-security-token" type="password" placeholder="Ghostfolio security token" />
+      </div>
+      <div class="abm-field" id="abm-cred-user-field" style="display:none;">
+        <label>Username</label>
+        <input id="abm-username" type="text" placeholder="Rotki username" />
+      </div>
+      <div class="abm-field" id="abm-cred-pass-field" style="display:none;">
+        <label>Password</label>
+        <input id="abm-password" type="password" placeholder="Rotki password" />
+      </div>
+      <div class="abm-actions">
+        <button class="abm-cancel" onclick="hideAddBackendModal()">Cancel</button>
+        <button class="abm-save" onclick="saveBackend()">Add</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-from services.ghostfolio_client import GhostfolioClient
+from services.providers.base import PortfolioProvider
 
 TOOL_DEFINITION = {
     "type": "function",
@@ -34,7 +34,7 @@ PERIOD_DAYS = {
 }
 
 
-async def execute(client: GhostfolioClient, args: dict) -> dict:
+async def execute(client: PortfolioProvider, args: dict) -> dict:
     query = args.get("query", "")
     period = args.get("period", "1y")
     days = PERIOD_DAYS.get(period, 365)

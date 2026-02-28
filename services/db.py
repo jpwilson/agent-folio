@@ -92,6 +92,18 @@ CREATE TABLE IF NOT EXISTS agent_portfolio_imports (
 );
 CREATE INDEX IF NOT EXISTS idx_agent_imports_user ON agent_portfolio_imports(user_id);
 CREATE INDEX IF NOT EXISTS idx_agent_imports_hash ON agent_portfolio_imports(file_hash);
+
+CREATE TABLE IF NOT EXISTS agent_backend_connections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    provider TEXT NOT NULL CHECK (provider IN ('ghostfolio', 'rotki')),
+    label TEXT NOT NULL DEFAULT '',
+    base_url TEXT NOT NULL,
+    credentials JSONB NOT NULL DEFAULT '{}',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_agent_backends_user ON agent_backend_connections(user_id);
 """
 
 
@@ -682,3 +694,144 @@ async def get_import(import_id: str, user_id: str) -> dict | None:
         "errorMessage": row["error_message"],
         "createdAt": row["created_at"].isoformat(),
     }
+
+
+# ---- Backend Connections ----
+
+
+async def list_backend_connections(user_id: str) -> list:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, provider, label, base_url, credentials, is_active, created_at
+            FROM agent_backend_connections
+            WHERE user_id = $1
+            ORDER BY created_at ASC
+        """,
+            uuid.UUID(user_id),
+        )
+    return [
+        {
+            "id": str(r["id"]),
+            "provider": r["provider"],
+            "label": r["label"],
+            "baseUrl": r["base_url"],
+            "credentials": _redact_credentials(json.loads(r["credentials"]) if r["credentials"] else {}),
+            "isActive": r["is_active"],
+            "createdAt": r["created_at"].isoformat(),
+        }
+        for r in rows
+    ]
+
+
+def _redact_credentials(creds: dict) -> dict:
+    """Return credentials with sensitive values masked."""
+    redacted = {}
+    for k, v in creds.items():
+        if isinstance(v, str) and len(v) > 4:
+            redacted[k] = v[:2] + "*" * (len(v) - 4) + v[-2:]
+        else:
+            redacted[k] = "***"
+    return redacted
+
+
+async def add_backend_connection(
+    user_id: str,
+    provider: str,
+    base_url: str,
+    credentials: dict,
+    label: str = "",
+) -> str:
+    pool = _get_pool()
+    conn_id = str(uuid.uuid4())
+    creds_json = json.dumps(credentials)
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO agent_backend_connections (id, user_id, provider, label, base_url, credentials)
+            VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+        """,
+            uuid.UUID(conn_id),
+            uuid.UUID(user_id),
+            provider,
+            label.strip()[:100],
+            base_url.strip().rstrip("/"),
+            creds_json,
+        )
+    return conn_id
+
+
+async def update_backend_connection(
+    connection_id: str,
+    user_id: str,
+    is_active: bool | None = None,
+    label: str | None = None,
+    base_url: str | None = None,
+    credentials: dict | None = None,
+) -> bool:
+    pool = _get_pool()
+    updates = []
+    params = [uuid.UUID(connection_id), uuid.UUID(user_id)]
+    idx = 3
+
+    if is_active is not None:
+        updates.append(f"is_active = ${idx}")
+        params.append(is_active)
+        idx += 1
+    if label is not None:
+        updates.append(f"label = ${idx}")
+        params.append(label.strip()[:100])
+        idx += 1
+    if base_url is not None:
+        updates.append(f"base_url = ${idx}")
+        params.append(base_url.strip().rstrip("/"))
+        idx += 1
+    if credentials is not None:
+        updates.append(f"credentials = ${idx}::jsonb")
+        params.append(json.dumps(credentials))
+        idx += 1
+
+    if not updates:
+        return False
+
+    sql = f"UPDATE agent_backend_connections SET {', '.join(updates)} WHERE id = $1 AND user_id = $2"
+    async with pool.acquire() as conn:
+        result = await conn.execute(sql, *params)
+    return result == "UPDATE 1"
+
+
+async def delete_backend_connection(connection_id: str, user_id: str) -> bool:
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        result = await conn.execute(
+            "DELETE FROM agent_backend_connections WHERE id = $1 AND user_id = $2",
+            uuid.UUID(connection_id),
+            uuid.UUID(user_id),
+        )
+    return result == "DELETE 1"
+
+
+async def get_active_backends(user_id: str) -> list:
+    """Return active backend connections with full (unredacted) credentials."""
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, provider, label, base_url, credentials, is_active, created_at
+            FROM agent_backend_connections
+            WHERE user_id = $1 AND is_active = TRUE
+            ORDER BY created_at ASC
+        """,
+            uuid.UUID(user_id),
+        )
+    return [
+        {
+            "id": str(r["id"]),
+            "provider": r["provider"],
+            "label": r["label"],
+            "base_url": r["base_url"],
+            "credentials": json.loads(r["credentials"]) if r["credentials"] else {},
+        }
+        for r in rows
+    ]

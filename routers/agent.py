@@ -1,3 +1,5 @@
+import logging
+
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -7,6 +9,8 @@ from auth import get_raw_token, get_user_id
 from config import GHOSTFOLIO_URL, GRADER_TOKEN
 from models.schemas import ChatRequest
 from services import agent_service, db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/agent")
 
@@ -28,7 +32,30 @@ async def login(body: LoginRequest):
                 raise HTTPException(status_code=401, detail="Invalid security token")
             res.raise_for_status()
             data = res.json()
-            return {"authToken": data.get("authToken")}
+            auth_token = data.get("authToken")
+
+            # Auto-register Ghostfolio backend connection on login
+            try:
+                import json
+                from base64 import b64decode
+
+                payload = json.loads(b64decode(auth_token.split(".")[1] + "=="))
+                uid = payload.get("id") or payload.get("sub") or ""
+                if uid:
+                    existing = await db.get_active_backends(uid)
+                    has_gf = any(c["provider"] == "ghostfolio" for c in existing)
+                    if not has_gf:
+                        await db.add_backend_connection(
+                            user_id=uid,
+                            provider="ghostfolio",
+                            base_url=GHOSTFOLIO_URL,
+                            credentials={"security_token": body.securityToken},
+                            label="Ghostfolio",
+                        )
+            except Exception:
+                pass  # Auto-register is best-effort
+
+            return {"authToken": auth_token}
     except httpx.HTTPStatusError:
         raise HTTPException(status_code=401, detail="Authentication failed") from None
     except httpx.ConnectError:
@@ -159,3 +186,111 @@ async def set_username(request: Request, body: UsernameRequest):
     user_id = get_user_id(request)
     await db.set_username(user_id, body.username)
     return {"success": True, "username": body.username.strip()[:50]}
+
+
+# ---- Backend connections ----
+
+
+class BackendConnectionRequest(BaseModel):
+    provider: str
+    label: str = ""
+    baseUrl: str
+    credentials: dict = {}
+
+
+class BackendUpdateRequest(BaseModel):
+    isActive: bool | None = None
+    label: str | None = None
+    baseUrl: str | None = None
+    credentials: dict | None = None
+
+
+@router.get("/backends")
+async def list_backends(request: Request):
+    """List user's backend connections (credentials redacted)."""
+    user_id = get_user_id(request)
+    connections = await db.list_backend_connections(user_id)
+    return {"backends": connections}
+
+
+@router.post("/backends")
+async def add_backend(request: Request, body: BackendConnectionRequest):
+    """Add a new backend connection."""
+    user_id = get_user_id(request)
+    if body.provider not in ("ghostfolio", "rotki"):
+        raise HTTPException(status_code=400, detail=f"Unsupported provider: {body.provider}")
+    conn_id = await db.add_backend_connection(
+        user_id=user_id,
+        provider=body.provider,
+        base_url=body.baseUrl,
+        credentials=body.credentials,
+        label=body.label,
+    )
+    return {"success": True, "id": conn_id}
+
+
+@router.put("/backends/{connection_id}")
+async def update_backend(connection_id: str, request: Request, body: BackendUpdateRequest):
+    """Update a backend connection (toggle active, change label/URL)."""
+    user_id = get_user_id(request)
+    updated = await db.update_backend_connection(
+        connection_id=connection_id,
+        user_id=user_id,
+        is_active=body.isActive,
+        label=body.label,
+        base_url=body.baseUrl,
+        credentials=body.credentials,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Connection not found")
+    return {"success": True}
+
+
+@router.delete("/backends/{connection_id}")
+async def delete_backend(connection_id: str, request: Request):
+    """Remove a backend connection."""
+    user_id = get_user_id(request)
+    deleted = await db.delete_backend_connection(connection_id, user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Connection not found")
+    return {"success": True}
+
+
+@router.post("/backends/{connection_id}/test")
+async def test_backend(connection_id: str, request: Request):
+    """Test connectivity to a backend."""
+    user_id = get_user_id(request)
+    backends = await db.get_active_backends(user_id)
+    # Also check inactive backends
+    all_backends = await db.list_backend_connections(user_id)
+    # Find the connection (list_backend_connections redacts creds, so we use get_active_backends)
+    # We need to get the full connection from db
+    from services.db import _get_pool
+    import uuid as uuid_mod
+
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT provider, base_url, credentials FROM agent_backend_connections WHERE id = $1 AND user_id = $2",
+            uuid_mod.UUID(connection_id),
+            uuid_mod.UUID(user_id),
+        )
+    if not row:
+        raise HTTPException(status_code=404, detail="Connection not found")
+
+    import json
+    connection = {
+        "provider": row["provider"],
+        "base_url": row["base_url"],
+        "credentials": json.loads(row["credentials"]) if row["credentials"] else {},
+    }
+
+    try:
+        from services.providers.factory import build_provider
+
+        provider = await build_provider(connection)
+        # Try a lightweight call to verify connectivity
+        await provider.get_accounts()
+        return {"success": True, "message": f"Connected to {row['provider']} successfully"}
+    except Exception as e:
+        return {"success": False, "message": f"Connection failed: {str(e)}"}

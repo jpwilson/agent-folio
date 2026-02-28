@@ -43,6 +43,11 @@ def _mock_db(monkeypatch):
     monkeypatch.setattr(db, "save_settings", AsyncMock())
     monkeypatch.setattr(db, "save_eval_run", AsyncMock(return_value="fake-run-id"))
     monkeypatch.setattr(db, "list_eval_runs", AsyncMock(return_value=[]))
+    monkeypatch.setattr(db, "list_backend_connections", AsyncMock(return_value=[]))
+    monkeypatch.setattr(db, "add_backend_connection", AsyncMock(return_value="fake-conn-id"))
+    monkeypatch.setattr(db, "update_backend_connection", AsyncMock(return_value=True))
+    monkeypatch.setattr(db, "delete_backend_connection", AsyncMock(return_value=True))
+    monkeypatch.setattr(db, "get_active_backends", AsyncMock(return_value=[]))
 
 
 @pytest.fixture()

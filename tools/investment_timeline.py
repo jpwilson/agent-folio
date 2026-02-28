@@ -1,4 +1,4 @@
-from services.ghostfolio_client import GhostfolioClient
+from services.providers.base import PortfolioProvider
 
 TOOL_DEFINITION = {
     "type": "function",
@@ -27,7 +27,7 @@ TOOL_DEFINITION = {
 }
 
 
-async def execute(client: GhostfolioClient, args: dict) -> dict:
+async def execute(client: PortfolioProvider, args: dict) -> dict:
     try:
         date_range = args.get("range", "max")
         group_by = args.get("groupBy", "month")

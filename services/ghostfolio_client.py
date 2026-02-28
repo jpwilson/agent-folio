@@ -1,17 +1,21 @@
 import httpx
 
-from config import GHOSTFOLIO_URL
+from services.providers.base import PortfolioProvider
 
 
-class GhostfolioClient:
+class GhostfolioClient(PortfolioProvider):
     """Async HTTP client for Ghostfolio's public REST API."""
 
-    def __init__(self, token: str):
-        self.base_url = GHOSTFOLIO_URL
+    def __init__(self, base_url: str, token: str):
+        self.base_url = base_url
         self.headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
+
+    @property
+    def provider_name(self) -> str:
+        return "ghostfolio"
 
     async def get_portfolio_details(self) -> dict:
         """GET /api/v1/portfolio/details — holdings, summary, accounts."""

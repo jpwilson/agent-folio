@@ -1,4 +1,4 @@
-from services.ghostfolio_client import GhostfolioClient
+from services.providers.base import PortfolioProvider
 
 TOOL_DEFINITION = {
     "type": "function",
@@ -21,7 +21,7 @@ TOOL_DEFINITION = {
 }
 
 
-async def execute(client: GhostfolioClient, args: dict) -> dict:
+async def execute(client: PortfolioProvider, args: dict) -> dict:
     try:
         date_range = args.get("range", "ytd")
         data = await client.get_portfolio_performance(date_range)

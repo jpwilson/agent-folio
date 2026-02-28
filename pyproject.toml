@@ -1,7 +1,8 @@
 [project]
 name = "agent-folio"
 version = "1.0.0"
-description = "AI Financial Agent for Ghostfolio"
+description = "AI portfolio agent for Ghostfolio, Rotki, and more"
+license = "MIT"
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]

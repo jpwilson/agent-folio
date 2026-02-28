@@ -1,6 +1,6 @@
 import contextlib
 
-from services.ghostfolio_client import GhostfolioClient
+from services.providers.base import PortfolioProvider
 
 TOOL_DEFINITION = {
     "type": "function",
@@ -21,7 +21,7 @@ TOOL_DEFINITION = {
 }
 
 
-async def execute(client: GhostfolioClient, args: dict) -> dict:
+async def execute(client: PortfolioProvider, args: dict) -> dict:
     query = args.get("query", "")
     try:
         result = await client.lookup_symbol(query)

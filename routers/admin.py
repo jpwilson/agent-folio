@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 import config
 from auth import get_raw_token, get_user_id
-from config import ANTHROPIC_API_KEY, OPENAI_API_KEY
+from config import ANTHROPIC_API_KEY, GHOSTFOLIO_URL, OPENAI_API_KEY
 from models.schemas import SettingsUpdate
 from services import db
 from services.ghostfolio_client import GhostfolioClient
@@ -676,7 +676,7 @@ async def import_portfolio(request: Request, body: ImportRequest):
     await db.update_import_status(import_id, "importing")
 
     # Create orders via Ghostfolio API
-    client = GhostfolioClient(token)
+    client = GhostfolioClient(GHOSTFOLIO_URL, token)
     created_ids = []
     errors = []
 
@@ -731,7 +731,7 @@ async def rollback_import(import_id: str, request: Request):
         raise HTTPException(status_code=400, detail="Already rolled back")
 
     order_ids = imp.get("orderIds") or []
-    client = GhostfolioClient(token)
+    client = GhostfolioClient(GHOSTFOLIO_URL, token)
     deleted = 0
     errors = []
 

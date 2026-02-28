@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-app = FastAPI(title="Agent-Folio", description="AI Financial Agent for Ghostfolio", lifespan=lifespan)
+app = FastAPI(title="Agent-Folio", description="AI portfolio agent for Ghostfolio, Rotki, and more", lifespan=lifespan)
 
 # CORS — allow Ghostfolio frontend and local dev
 app.add_middleware(

@@ -1,10 +1,21 @@
 # Agent-Folio
 
-AI-powered financial assistant for [Ghostfolio](https://ghostfol.io) — a standalone sidecar service that provides natural-language portfolio analysis.
+AI-powered portfolio assistant for [Ghostfolio](https://ghostfol.io), [Rotki](https://rotki.com), and more — a standalone service that provides natural-language portfolio analysis across multiple backends.
+
+## Supported Backends
+
+| Backend | Status | Description |
+|---------|--------|-------------|
+| **Ghostfolio** | Stable | Open-source wealth management (stocks, ETFs, crypto) |
+| **Rotki** | Stable | Open-source crypto portfolio tracker & accounting |
+| **Combined** | Stable | Merge data from multiple backends into one view |
+
+Connect one or more backends from the profile dropdown. Each provider normalizes its data so the same tools and AI analysis work everywhere.
 
 ## Features
 
-- **10 financial tools**: Portfolio summary, market data, transactions, risk assessment, tax estimates, performance tracking, dividends, X-Ray health check, investment timeline, account overview
+- **11 financial tools**: Portfolio summary, market data, transactions, risk assessment, tax estimates, performance tracking, dividends, X-Ray health check, investment timeline, account overview, stock history
+- **Multi-backend support**: Connect Ghostfolio, Rotki, or both simultaneously
 - **Switchable LLM backends**: LiteLLM (default, 100+ models), OpenAI, Anthropic, LangChain
 - **Guardrails**: Pre/post filtering for topic enforcement, tone control, and prompt injection defense ([security details](SECURITY.md))
 - **Verification**: Deterministic checks on every response (allocation sums, price validity, hallucination detection, confidence scoring)
@@ -21,9 +32,9 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your Ghostfolio URL, JWT secret, and LLM API key
+# Edit .env with your database URL, JWT secret, and LLM API key
 
-# Run (requires Ghostfolio running on port 3333)
+# Run (requires at least one backend — e.g. Ghostfolio on port 3333)
 uvicorn main:app --reload --port 8000
 ```
 
@@ -32,6 +43,7 @@ Open http://localhost:8000 in your browser.
 ## Documentation
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — Full system design and component overview
+- [CONTRIBUTING.md](CONTRIBUTING.md) — Dev setup, PR guidelines, how to add a new backend
 - [SECURITY.md](SECURITY.md) — Security hardening and jailbreak prevention
 - [EVAL_RESULTS.md](EVAL_RESULTS.md) — Evaluation results (75 test cases, 97.3% pass rate)
 - [TESTING.md](TESTING.md) — Test suite guide (256 tests: guardrails, verification, tools, API)
@@ -39,11 +51,13 @@ Open http://localhost:8000 in your browser.
 ## Architecture
 
 ```
-Browser (Chat UI) --> Agent-Folio (FastAPI) --> Ghostfolio (NestJS) --> Postgres + Redis
+Browser (Chat UI) --> Agent-Folio (FastAPI) --> Ghostfolio / Rotki / ...
                            |
                       LLM Provider
                     (OpenAI/Anthropic/etc)
 ```
+
+All backends implement the `PortfolioProvider` ABC, so tools work identically regardless of the data source.
 
 ## Environment Variables
 
@@ -83,11 +97,11 @@ Click the gear icon in the chat UI to access:
 ## Tech Stack
 
 - **Python 3.12** + **FastAPI** + **uvicorn**
-- **httpx** for async Ghostfolio API calls
+- **httpx** for async backend API calls
 - **LiteLLM** for unified LLM access
 - **Langfuse** for observability
 - **Docker** for deployment
 
 ## License
 
-Open source. Built as part of the Gauntlet AgentForge project.
+[MIT](LICENSE)
