@@ -172,9 +172,8 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
     response_text, followups = _extract_followups(response_text)
 
     # Use generic follow-ups when guardrails activated (no contextual data)
-    if guardrail_triggered or not followups:
-        if guardrail_triggered:
-            followups = GUARDRAIL_FOLLOWUPS
+    if guardrail_triggered:
+        followups = GUARDRAIL_FOLLOWUPS
 
     # Save assistant response (including followups for old-conversation reload)
     await db.add_message(
@@ -298,9 +297,8 @@ async def chat_stream(
     response_text, followups = _extract_followups(response_text)
 
     # Use generic follow-ups when guardrails activated (no contextual data)
-    if guardrail_triggered or not followups:
-        if guardrail_triggered:
-            followups = GUARDRAIL_FOLLOWUPS
+    if guardrail_triggered:
+        followups = GUARDRAIL_FOLLOWUPS
 
     await db.add_message(
         conv_id,
