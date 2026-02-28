@@ -351,10 +351,7 @@ async def get_feedback_detail() -> dict:
         "thumbsUp": up,
         "thumbsDown": down,
         "satisfactionRate": f"{(up / max(total, 1)) * 100:.0f}%",
-        "dailyChart": [
-            {"date": d, "up": v["up"], "down": v["down"]}
-            for d, v in sorted(day_map.items())
-        ],
+        "dailyChart": [{"date": d, "up": v["up"], "down": v["down"]} for d, v in sorted(day_map.items())],
         "perConversation": [
             {
                 "conversationId": str(r["conversation_id"]) if r["conversation_id"] else None,
