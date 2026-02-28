@@ -296,6 +296,59 @@ async def get_eval_history():
     return {"runs": runs}
 
 
+# ---- Conversation cleanup ----
+
+
+@router.get("/conversations/stats")
+async def conversation_stats():
+    """Diagnostic: show conversation counts and duplicates."""
+    from services.db import _get_pool
+
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        total = await conn.fetchval("SELECT COUNT(*) FROM agent_conversations")
+        dupes = await conn.fetch("""
+            SELECT title, COUNT(*) as cnt
+            FROM agent_conversations
+            GROUP BY title
+            HAVING COUNT(*) > 1
+            ORDER BY cnt DESC LIMIT 20
+        """)
+        msg_count = await conn.fetchval("SELECT COUNT(*) FROM agent_messages")
+    return {
+        "totalConversations": total,
+        "totalMessages": msg_count,
+        "duplicateTitles": [{"title": d["title"][:80], "count": d["cnt"]} for d in dupes],
+    }
+
+
+@router.post("/conversations/deduplicate")
+async def deduplicate_conversations():
+    """Remove duplicate conversations, keeping only the most recent one per title."""
+    from services.db import _get_pool
+
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        before = await conn.fetchval("SELECT COUNT(*) FROM agent_conversations")
+        # Delete all but the most recent conversation for each duplicate title
+        await conn.execute("""
+            DELETE FROM agent_conversations
+            WHERE id IN (
+                SELECT id FROM (
+                    SELECT id,
+                           ROW_NUMBER() OVER (PARTITION BY title ORDER BY updated_at DESC) as rn
+                    FROM agent_conversations
+                ) sub WHERE sub.rn > 1
+            )
+        """)
+        after = await conn.fetchval("SELECT COUNT(*) FROM agent_conversations")
+    return {
+        "before": before,
+        "after": after,
+        "removed": before - after,
+    }
+
+
 # ---- Analytics / Cost Analysis endpoint ----
 
 

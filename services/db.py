@@ -296,6 +296,91 @@ async def get_feedback_summary() -> dict:
     }
 
 
+async def get_feedback_detail() -> dict:
+    """Rich feedback analytics: daily counts, per-conversation breakdown, classified reasons."""
+    pool = _get_pool()
+    async with pool.acquire() as conn:
+        total = await conn.fetchval("SELECT COUNT(*) FROM agent_feedback")
+        up = await conn.fetchval("SELECT COUNT(*) FROM agent_feedback WHERE direction = 'up'")
+        down = total - up
+
+        # Daily breakdown (last 30 days)
+        daily = await conn.fetch("""
+            SELECT DATE(created_at) AS day, direction, COUNT(*) AS cnt
+            FROM agent_feedback
+            WHERE created_at > NOW() - INTERVAL '30 days'
+            GROUP BY DATE(created_at), direction
+            ORDER BY day
+        """)
+
+        # Per-conversation summary
+        per_conv = await conn.fetch("""
+            SELECT f.conversation_id,
+                   COALESCE(c.title, 'Unknown') AS title,
+                   SUM(CASE WHEN f.direction = 'up' THEN 1 ELSE 0 END) AS ups,
+                   SUM(CASE WHEN f.direction = 'down' THEN 1 ELSE 0 END) AS downs,
+                   COUNT(*) AS total
+            FROM agent_feedback f
+            LEFT JOIN agent_conversations c ON f.conversation_id = c.id
+            WHERE f.conversation_id IS NOT NULL
+            GROUP BY f.conversation_id, c.title
+            ORDER BY total DESC
+            LIMIT 20
+        """)
+
+        # All entries (last 50 — includes explanations)
+        all_entries = await conn.fetch("""
+            SELECT f.user_id, f.conversation_id, f.message_index, f.direction,
+                   f.explanation, f.message_content, f.created_at,
+                   COALESCE(c.title, 'Unknown') AS conv_title
+            FROM agent_feedback f
+            LEFT JOIN agent_conversations c ON f.conversation_id = c.id
+            ORDER BY f.created_at DESC LIMIT 50
+        """)
+
+    # Build daily chart data
+    day_map: dict[str, dict] = {}
+    for r in daily:
+        d = r["day"].isoformat()
+        if d not in day_map:
+            day_map[d] = {"up": 0, "down": 0}
+        day_map[d][r["direction"]] = r["cnt"]
+
+    return {
+        "total": total,
+        "thumbsUp": up,
+        "thumbsDown": down,
+        "satisfactionRate": f"{(up / max(total, 1)) * 100:.0f}%",
+        "dailyChart": [
+            {"date": d, "up": v["up"], "down": v["down"]}
+            for d, v in sorted(day_map.items())
+        ],
+        "perConversation": [
+            {
+                "conversationId": str(r["conversation_id"]) if r["conversation_id"] else None,
+                "title": r["title"],
+                "ups": r["ups"],
+                "downs": r["downs"],
+                "total": r["total"],
+            }
+            for r in per_conv
+        ],
+        "entries": [
+            {
+                "timestamp": r["created_at"].isoformat(),
+                "userId": str(r["user_id"]),
+                "conversationId": str(r["conversation_id"]) if r["conversation_id"] else None,
+                "convTitle": r["conv_title"],
+                "messageIndex": r["message_index"],
+                "direction": r["direction"],
+                "explanation": r["explanation"],
+                "messageContent": r["message_content"],
+            }
+            for r in all_entries
+        ],
+    }
+
+
 # ---- User Profiles ----
 
 

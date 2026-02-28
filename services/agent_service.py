@@ -14,6 +14,13 @@ from tools import ALL_TOOLS, TOOL_DEFINITIONS
 # Langfuse tracing is handled automatically by LiteLLM's callback
 # (configured in sdks/litellm_sdk.py when LANGFUSE_SECRET_KEY is set)
 
+# Generic follow-ups shown when guardrails redirect (no contextual data available)
+GUARDRAIL_FOLLOWUPS = [
+    "What does my portfolio look like?",
+    "How has my portfolio performed this year?",
+    "What have I bought recently?",
+]
+
 SYSTEM_PROMPT = """You are a professional financial assistant for Ghostfolio, a portfolio management app.
 You help users understand their investments using these tools:
 - portfolio_summary: Holdings, allocations, total value
@@ -127,10 +134,13 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
     last_user_msg = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
     pre_result = pre_filter(last_user_msg) if isinstance(last_user_msg, str) else None
 
+    guardrail_triggered = False
+
     if pre_result and pre_result.get("redirect"):
         response_text = pre_result["redirect"]
         tool_calls_list = []
         verification = {"verified": True, "checks": []}
+        guardrail_triggered = True
     else:
         # Get SDK and model from settings
         settings = await db.load_settings()
@@ -153,12 +163,18 @@ async def chat(messages: list[dict], user_id: str, token: str, conversation_id: 
         post_result = post_filter(response_text, last_user_msg)
         if not post_result["passed"]:
             response_text = post_result["corrected_response"]
+            guardrail_triggered = True
 
         # Run verification
         verification = verify_response(tool_results, response_text)
 
     # Extract follow-up suggestions from response
     response_text, followups = _extract_followups(response_text)
+
+    # Use generic follow-ups when guardrails activated (no contextual data)
+    if guardrail_triggered or not followups:
+        if guardrail_triggered:
+            followups = GUARDRAIL_FOLLOWUPS
 
     # Save assistant response (including followups for old-conversation reload)
     await db.add_message(
@@ -228,10 +244,13 @@ async def chat_stream(
     last_user_msg = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
     pre_result = pre_filter(last_user_msg) if isinstance(last_user_msg, str) else None
 
+    guardrail_triggered = False
+
     if pre_result and pre_result.get("redirect"):
         response_text = pre_result["redirect"]
         tool_calls_list = []
         verification = {"verified": True, "checks": []}
+        guardrail_triggered = True
     else:
         settings = await db.load_settings()
         sdk = get_sdk(settings.get("sdk"))
@@ -271,11 +290,17 @@ async def chat_stream(
         post_result = post_filter(response_text, last_user_msg)
         if not post_result["passed"]:
             response_text = post_result["corrected_response"]
+            guardrail_triggered = True
 
         verification = verify_response(tool_results, response_text)
 
     # Extract follow-up suggestions from response
     response_text, followups = _extract_followups(response_text)
+
+    # Use generic follow-ups when guardrails activated (no contextual data)
+    if guardrail_triggered or not followups:
+        if guardrail_triggered:
+            followups = GUARDRAIL_FOLLOWUPS
 
     await db.add_message(
         conv_id,

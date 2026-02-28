@@ -649,6 +649,52 @@
       background: #1a3a35; border-color: #36cfb4; color: #36cfb4; cursor: pointer;
     }
     .agree-btn.enabled:hover { background: #245a4a; }
+
+    /* Animated loader (ghost bounce) */
+    .ghost-loader {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 40px 20px; gap: 16px;
+    }
+    .ghost-loader .ghost-icon {
+      animation: ghostBounce 1.4s ease-in-out infinite;
+    }
+    .ghost-loader .ghost-icon svg { width: 48px; height: 48px; fill: #36cfb4; opacity: 0.8; }
+    .ghost-loader .loader-text { font-size: 13px; color: #888; }
+    .ghost-loader .loader-dots::after { content: ''; animation: dots 1.5s infinite; }
+    @keyframes ghostBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    /* Feedback tab chart bars */
+    .fb-chart-bar-group { display: flex; align-items: flex-end; gap: 2px; }
+    .fb-chart-bar {
+      border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.3s;
+    }
+    .fb-chart-bar.up { background: #4CAF50; }
+    .fb-chart-bar.down { background: #f87171; }
+    .fb-chart-label { text-align: center; font-size: 9px; color: #888; margin-top: 4px; }
+
+    /* Portfolio import drop zone */
+    .drop-zone {
+      border: 2px dashed #333; border-radius: 12px; padding: 48px 24px;
+      text-align: center; cursor: pointer; transition: all 0.2s;
+      background: #0f0f0f;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #36cfb4; background: rgba(54, 207, 180, 0.04);
+    }
+    .drop-zone .drop-icon { font-size: 48px; color: #333; margin-bottom: 12px; }
+    .drop-zone.drag-over .drop-icon { color: #36cfb4; }
+    .drop-zone .drop-text { font-size: 14px; color: #888; margin-bottom: 8px; }
+    .drop-zone .drop-subtext { font-size: 12px; color: #555; }
+    .drop-zone .drop-formats {
+      display: flex; gap: 8px; justify-content: center; margin-top: 16px;
+    }
+    .drop-zone .format-badge {
+      padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      background: rgba(54, 207, 180, 0.08); color: #36cfb4; border: 1px solid rgba(54, 207, 180, 0.2);
+    }
   </style>
 </head>
 <body>
@@ -867,8 +913,10 @@
         <div class="admin-tab" data-tab="overview" onclick="switchAdminTab('overview')">Overview</div>
         <div class="admin-tab" data-tab="display" onclick="switchAdminTab('display')">Display</div>
         <div class="admin-tab" data-tab="evals" onclick="switchAdminTab('evals')">Evaluations</div>
+        <div class="admin-tab" data-tab="feedback" onclick="switchAdminTab('feedback'); loadFeedbackDetail();">Feedback</div>
         <div class="admin-tab" data-tab="analytics" onclick="switchAdminTab('analytics'); loadTraces();">Analytics</div>
         <div class="admin-tab" data-tab="costs" onclick="switchAdminTab('costs'); loadCostAnalysis();">Cost Analysis</div>
+        <div class="admin-tab" data-tab="portfolio" onclick="switchAdminTab('portfolio');">Portfolio</div>
       </div>
       <div class="admin-modal-body" id="admin-body">
         <!-- SDK / Provider tab -->
@@ -1041,34 +1089,69 @@
             </button>
             <div id="eval-history-content" style="display:none;"></div>
           </div>
-          <!-- User Feedback Summary -->
-          <div class="admin-section" style="margin-top:16px;">
-            <h3>User Feedback</h3>
-            <button onclick="loadFeedbackSummary()" style="padding:6px 14px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:12px; margin-bottom:12px;">
-              Load Feedback
+          <!-- Feedback moved to its own tab -->
+        </div>
+        <!-- Agent Feedback tab -->
+        <div id="admin-tab-feedback" style="display:none;">
+          <div class="admin-section">
+            <h3>Agent Feedback</h3>
+            <p style="color:#999; font-size:12px; margin-bottom:12px;">
+              User satisfaction data from thumbs up/down interactions. Click <strong>Load</strong> to fetch the latest data.
+            </p>
+            <button onclick="loadFeedbackDetail()" style="padding:6px 14px; background:#1a1a1a; color:#e0e0e0; border:1px solid #333; border-radius:6px; cursor:pointer; font-size:12px; margin-bottom:12px;">
+              Refresh
             </button>
-            <div id="feedback-content" style="display:none;">
-              <div class="admin-stat-row" style="margin-bottom:12px;">
-                <div class="admin-stat">
-                  <div class="stat-value" id="fb-total">--</div>
-                  <div class="stat-label">Total Feedback</div>
-                </div>
-                <div class="admin-stat">
-                  <div class="stat-value" style="color:#4CAF50;" id="fb-up">--</div>
-                  <div class="stat-label">Thumbs Up</div>
-                </div>
-                <div class="admin-stat">
-                  <div class="stat-value" style="color:#f87171;" id="fb-down">--</div>
-                  <div class="stat-label">Thumbs Down</div>
-                </div>
+          </div>
+          <div id="fbd-loading" style="display:none;">
+            <div class="ghost-loader">
+              <div class="ghost-icon"><svg viewBox="0 0 512 512"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
+              <div class="loader-text">Loading feedback data<span class="loader-dots"></span></div>
+            </div>
+          </div>
+          <div id="fbd-content" style="display:none;">
+            <!-- KPI cards -->
+            <div class="admin-stat-row" style="margin-bottom:12px;">
+              <div class="admin-stat">
+                <div class="stat-value" id="fbd-total">--</div>
+                <div class="stat-label">Total Feedback</div>
               </div>
-              <div class="admin-card" style="margin-bottom:12px;">
-                <div class="admin-list-item"><span class="label">Satisfaction Rate</span><span class="value" style="color:#36cfb4;" id="fb-rate">--</span></div>
-                <div class="admin-list-item"><span class="label">Feedback / Total Conversations</span><span class="value" id="fb-vs-convos">--</span></div>
-                <div class="admin-list-item"><span class="label">Responses with Text Feedback</span><span class="value" id="fb-with-text">--</span></div>
+              <div class="admin-stat">
+                <div class="stat-value" style="color:#4CAF50;" id="fbd-up">--</div>
+                <div class="stat-label">Thumbs Up</div>
               </div>
-              <h3 style="font-size:12px; color:#888; margin:12px 0 8px; text-transform:uppercase; letter-spacing:0.5px;">Text Feedback Entries</h3>
-              <div id="fb-entries-table"></div>
+              <div class="admin-stat">
+                <div class="stat-value" style="color:#f87171;" id="fbd-down">--</div>
+                <div class="stat-label">Thumbs Down</div>
+              </div>
+              <div class="admin-stat">
+                <div class="stat-value" style="color:#36cfb4;" id="fbd-rate">--</div>
+                <div class="stat-label">Satisfaction</div>
+              </div>
+            </div>
+            <!-- Daily Chart -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Daily Feedback (Last 30 Days)</h3>
+              <div id="fbd-daily-chart" style="display:flex; align-items:flex-end; gap:4px; height:100px; padding:0 4px;"></div>
+              <div id="fbd-daily-labels" style="display:flex; gap:4px; padding:0 4px; margin-top:4px;"></div>
+              <div style="display:flex; gap:16px; justify-content:center; margin-top:8px;">
+                <span style="font-size:10px; color:#4CAF50;">&#9632; Thumbs Up</span>
+                <span style="font-size:10px; color:#f87171;">&#9632; Thumbs Down</span>
+              </div>
+            </div>
+            <!-- Per-Conversation Breakdown -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Feedback by Conversation</h3>
+              <div id="fbd-conv-table"></div>
+            </div>
+            <!-- Negative Feedback Reasons -->
+            <div class="admin-section">
+              <h3 style="color:#f87171; font-size:13px; margin-bottom:8px;">Thumbs Down Details</h3>
+              <div id="fbd-negative-table"></div>
+            </div>
+            <!-- All Recent Entries -->
+            <div class="admin-section">
+              <h3 style="color:#36cfb4; font-size:13px; margin-bottom:8px;">Recent Feedback Log</h3>
+              <div id="fbd-all-table"></div>
             </div>
           </div>
         </div>
@@ -1083,7 +1166,12 @@
               Refresh
             </button>
           </div>
-          <div id="traces-loading" style="display:none; text-align:center; color:#888; padding:20px;">Loading from Langfuse...</div>
+          <div id="traces-loading" style="display:none;">
+            <div class="ghost-loader">
+              <div class="ghost-icon"><svg viewBox="0 0 512 512"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
+              <div class="loader-text">Loading analytics from Langfuse<span class="loader-dots"></span></div>
+            </div>
+          </div>
           <div id="traces-error" style="display:none;" class="admin-section"></div>
           <div id="traces-content" style="display:none;">
             <!-- KPI cards row -->
@@ -1147,7 +1235,12 @@
               Refresh Data
             </button>
           </div>
-          <div id="costs-loading" style="display:none; text-align:center; color:#888; padding:20px;">Loading cost data from Langfuse...</div>
+          <div id="costs-loading" style="display:none;">
+            <div class="ghost-loader">
+              <div class="ghost-icon"><svg viewBox="0 0 512 512"><path d="M255.633,0C145.341,0.198,55.994,89.667,55.994,200.006v278.66c0,14.849,17.953,22.285,28.453,11.786l38.216-39.328 l54.883,55.994c6.51,6.509,17.063,6.509,23.572,0L256,451.124l54.883,55.994c6.509,6.509,17.062,6.509,23.571,0l54.884-55.994 l38.216,39.327c10.499,10.499,28.453,3.063,28.453-11.786V201.719C456.006,91.512,365.84-0.197,255.633,0z M172.664,266.674 c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001S200.236,266.674,172.664,266.674z M339.336,266.674c-27.572,0-50.001-22.429-50.001-50.001s22.43-50.001,50.001-50.001s50.001,22.43,50.001,50.001 S366.908,266.674,339.336,266.674z"/></svg></div>
+              <div class="loader-text">Loading cost data from Langfuse<span class="loader-dots"></span></div>
+            </div>
+          </div>
           <div id="costs-error" style="display:none;" class="admin-section"></div>
           <div id="costs-content" style="display:none;">
             <!-- Dev & Testing Costs -->
@@ -1192,6 +1285,58 @@
               <h3 style="color:#888; font-size:12px; margin-bottom:6px;">Assumptions</h3>
               <div class="admin-card" style="font-size:11px; color:#666;" id="c-assumptions"></div>
             </div>
+          </div>
+        </div>
+        <!-- Portfolio Import tab -->
+        <div id="admin-tab-portfolio" style="display:none;">
+          <div class="admin-section">
+            <h3>Portfolio Import</h3>
+            <p style="color:#999; font-size:12px; margin-bottom:16px;">
+              Bring your data from another service. Upload your portfolio export file and we'll parse it into Ghostfolio format.
+            </p>
+          </div>
+          <div class="admin-section">
+            <div class="drop-zone" id="portfolio-drop-zone">
+              <div class="drop-icon">&#128230;</div>
+              <div class="drop-text">Drag & drop your portfolio file here</div>
+              <div class="drop-subtext">or click to browse</div>
+              <input type="file" id="portfolio-file-input" accept=".csv,.xls,.xlsx,.json" style="display:none;" />
+              <div class="drop-formats">
+                <span class="format-badge">CSV</span>
+                <span class="format-badge">XLS</span>
+                <span class="format-badge">XLSX</span>
+                <span class="format-badge">JSON</span>
+              </div>
+            </div>
+          </div>
+          <div id="portfolio-file-info" style="display:none;" class="admin-section">
+            <div class="admin-card" style="display:flex; align-items:center; gap:12px;">
+              <div style="font-size:24px;">&#128196;</div>
+              <div style="flex:1;">
+                <div style="font-size:13px; color:#e0e0e0; font-weight:500;" id="portfolio-file-name">--</div>
+                <div style="font-size:11px; color:#888;" id="portfolio-file-size">--</div>
+              </div>
+              <button onclick="clearPortfolioFile()" style="padding:6px 12px; background:#1a1a1a; border:1px solid #333; color:#999; border-radius:6px; font-size:12px; cursor:pointer;">Remove</button>
+            </div>
+          </div>
+          <div class="admin-section">
+            <h3 style="color:#888; font-size:12px; margin-bottom:8px;">Supported Sources</h3>
+            <div class="admin-card">
+              <div class="admin-list-item"><span class="label">Interactive Brokers</span><span class="value" style="color:#36cfb4;">CSV</span></div>
+              <div class="admin-list-item"><span class="label">Trading 212</span><span class="value" style="color:#36cfb4;">CSV</span></div>
+              <div class="admin-list-item"><span class="label">Degiro</span><span class="value" style="color:#36cfb4;">CSV / XLS</span></div>
+              <div class="admin-list-item"><span class="label">Robinhood</span><span class="value" style="color:#36cfb4;">CSV</span></div>
+              <div class="admin-list-item"><span class="label">Ghostfolio Export</span><span class="value" style="color:#36cfb4;">JSON</span></div>
+              <div class="admin-list-item"><span class="label">Custom Format</span><span class="value" style="color:#888;">Coming Soon</span></div>
+            </div>
+          </div>
+          <div class="admin-section">
+            <button id="portfolio-import-btn" disabled style="padding:10px 24px; background:#333; border:1px solid #444; color:#666; border-radius:6px; font-size:13px; cursor:not-allowed; font-weight:600;">
+              Import Portfolio
+            </button>
+            <p style="color:#555; font-size:11px; margin-top:8px;">
+              Import functionality coming soon. File upload and preview are available now.
+            </p>
           </div>
         </div>
       </div>
@@ -2583,53 +2728,144 @@
       }
     }
 
-    // ---- User Feedback Summary ----
-    async function loadFeedbackSummary() {
+    // ---- Agent Feedback Detail (dedicated tab) ----
+    async function loadFeedbackDetail() {
+      const loading = document.getElementById('fbd-loading');
+      const content = document.getElementById('fbd-content');
+      loading.style.display = 'block';
+      content.style.display = 'none';
+
       try {
-        const res = await fetch(`${API_BASE}/feedback/summary`, {
+        const res = await fetch(`${API_BASE}/feedback/detail`, {
           headers: { 'Authorization': `Bearer ${TOKEN}` }
         });
         const data = await res.json();
 
-        document.getElementById('feedback-content').style.display = 'block';
-        const total = data.total || 0;
-        const up = data.thumbsUp || 0;
-        const down = data.thumbsDown || 0;
-        document.getElementById('fb-total').textContent = total;
-        document.getElementById('fb-up').textContent = up;
-        document.getElementById('fb-down').textContent = down;
-        document.getElementById('fb-rate').textContent = data.satisfactionRate || '--';
+        // KPI cards
+        document.getElementById('fbd-total').textContent = data.total || 0;
+        document.getElementById('fbd-up').textContent = data.thumbsUp || 0;
+        document.getElementById('fbd-down').textContent = data.thumbsDown || 0;
+        document.getElementById('fbd-rate').textContent = data.satisfactionRate || '--';
 
-        // Feedback vs conversations ratio
-        const totalConvos = allConversations.length;
-        document.getElementById('fb-vs-convos').textContent = totalConvos > 0
-          ? `${total} / ${totalConvos} (${(total / totalConvos * 100).toFixed(0)}%)`
-          : `${total} / 0`;
+        // Daily chart (stacked bar)
+        const daily = data.dailyChart || [];
+        const chartEl = document.getElementById('fbd-daily-chart');
+        const labelsEl = document.getElementById('fbd-daily-labels');
+        if (daily.length > 0) {
+          const maxDay = Math.max(...daily.map(d => d.up + d.down), 1);
+          chartEl.innerHTML = '';
+          labelsEl.innerHTML = '';
+          for (const d of daily) {
+            const upH = ((d.up / maxDay) * 100).toFixed(0);
+            const downH = ((d.down / maxDay) * 100).toFixed(0);
+            chartEl.innerHTML += `<div style="flex:1; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-end; height:100%;" title="${d.date}: ${d.up} up, ${d.down} down"><div class="fb-chart-bar down" style="height:${Math.max(downH, d.down > 0 ? 4 : 0)}%;"></div><div class="fb-chart-bar up" style="height:${Math.max(upH, d.up > 0 ? 4 : 0)}%;"></div></div>`;
+            labelsEl.innerHTML += `<div style="flex:1; text-align:center; font-size:9px; color:#888;">${d.date.slice(5)}</div>`;
+          }
+        } else {
+          chartEl.innerHTML = '<div style="color:#666; padding:20px; text-align:center; width:100%;">No daily data yet</div>';
+          labelsEl.innerHTML = '';
+        }
 
-        // Count entries with text explanations
-        const entries = data.recentEntries || [];
-        const withText = entries.filter(e => e.explanation && e.explanation.trim()).length;
-        document.getElementById('fb-with-text').textContent = `${withText} of ${total}`;
-
-        // Show only entries that have text feedback
-        const textEntries = entries.filter(e => e.explanation && e.explanation.trim());
-        if (textEntries.length > 0) {
+        // Per-conversation table
+        const convTable = document.getElementById('fbd-conv-table');
+        const perConv = data.perConversation || [];
+        if (perConv.length > 0) {
           let html = '<table style="width:100%; font-size:12px; border-collapse:collapse;">';
-          html += '<tr style="color:#888; border-bottom:1px solid #333;"><th style="text-align:left; padding:4px;">Time</th><th style="text-align:left; padding:4px;">Vote</th><th style="text-align:left; padding:4px;">Feedback</th></tr>';
-          for (const e of textEntries.reverse()) {
-            const vote = e.direction === 'up' ? '<span style="color:#36cfb4;">&#128077;</span>' : '<span style="color:#f87171;">&#128078;</span>';
-            const time = e.timestamp ? new Date(e.timestamp).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '--';
-            html += `<tr style="border-bottom:1px solid #222;"><td style="padding:4px; color:#888; white-space:nowrap;">${time}</td><td style="padding:4px;">${vote}</td><td style="padding:4px; color:#ccc;">${e.explanation}</td></tr>`;
+          html += '<tr style="color:#888; text-align:left; border-bottom:1px solid #333;"><th style="padding:6px;">Conversation</th><th style="padding:6px; text-align:center;">&#128077;</th><th style="padding:6px; text-align:center;">&#128078;</th><th style="padding:6px; text-align:center;">Total</th></tr>';
+          for (const c of perConv) {
+            const title = (c.title || 'Unknown').substring(0, 40) + (c.title && c.title.length > 40 ? '...' : '');
+            html += `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:6px; color:#ccc;" title="${c.title || ''}">${title}</td><td style="padding:6px; text-align:center; color:#4CAF50; font-weight:600;">${c.ups}</td><td style="padding:6px; text-align:center; color:#f87171; font-weight:600;">${c.downs}</td><td style="padding:6px; text-align:center; color:#e0e0e0;">${c.total}</td></tr>`;
           }
           html += '</table>';
-          document.getElementById('fb-entries-table').innerHTML = html;
+          convTable.innerHTML = html;
         } else {
-          document.getElementById('fb-entries-table').innerHTML = '<div class="admin-placeholder">No text feedback entries yet</div>';
+          convTable.innerHTML = '<div class="admin-placeholder">No per-conversation feedback yet</div>';
         }
+
+        // Negative feedback details
+        const negTable = document.getElementById('fbd-negative-table');
+        const entries = data.entries || [];
+        const negEntries = entries.filter(e => e.direction === 'down');
+        if (negEntries.length > 0) {
+          let html = '<table style="width:100%; font-size:12px; border-collapse:collapse;">';
+          html += '<tr style="color:#888; text-align:left; border-bottom:1px solid #333;"><th style="padding:6px;">Time</th><th style="padding:6px;">Conversation</th><th style="padding:6px;">Reason</th></tr>';
+          for (const e of negEntries) {
+            const time = e.timestamp ? new Date(e.timestamp).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '--';
+            const convTitle = (e.convTitle || '--').substring(0, 30);
+            const reason = e.explanation ? `<span style="color:#ccc;">${e.explanation}</span>` : '<span style="color:#555; font-style:italic;">No reason given</span>';
+            html += `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:6px; color:#888; white-space:nowrap;">${time}</td><td style="padding:6px; color:#999;">${convTitle}</td><td style="padding:6px;">${reason}</td></tr>`;
+          }
+          html += '</table>';
+          negTable.innerHTML = html;
+        } else {
+          negTable.innerHTML = '<div class="admin-placeholder">No negative feedback yet</div>';
+        }
+
+        // All recent entries
+        const allTable = document.getElementById('fbd-all-table');
+        if (entries.length > 0) {
+          let html = '<table style="width:100%; font-size:11px; border-collapse:collapse;">';
+          html += '<tr style="color:#888; text-align:left; border-bottom:1px solid #333;"><th style="padding:5px;">Time</th><th style="padding:5px;">Vote</th><th style="padding:5px;">Conversation</th><th style="padding:5px;">Note</th></tr>';
+          for (const e of entries.slice(0, 30)) {
+            const time = e.timestamp ? new Date(e.timestamp).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '--';
+            const vote = e.direction === 'up' ? '<span style="color:#4CAF50;">&#128077;</span>' : '<span style="color:#f87171;">&#128078;</span>';
+            const convTitle = (e.convTitle || '--').substring(0, 25);
+            const note = e.explanation || '<span style="color:#444;">--</span>';
+            html += `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:5px; color:#888; white-space:nowrap;">${time}</td><td style="padding:5px;">${vote}</td><td style="padding:5px; color:#999;">${convTitle}</td><td style="padding:5px; color:#ccc;">${note}</td></tr>`;
+          }
+          html += '</table>';
+          allTable.innerHTML = html;
+        } else {
+          allTable.innerHTML = '<div class="admin-placeholder">No feedback entries yet</div>';
+        }
+
+        loading.style.display = 'none';
+        content.style.display = 'block';
       } catch (err) {
-        document.getElementById('feedback-content').style.display = 'block';
-        document.getElementById('fb-entries-table').innerHTML = `<p style="color:#f87171;">Error loading feedback: ${err.message}</p>`;
+        loading.style.display = 'none';
+        document.getElementById('fbd-content').style.display = 'block';
+        document.getElementById('fbd-all-table').innerHTML = `<p style="color:#f87171;">Error loading feedback: ${err.message}</p>`;
       }
+    }
+
+    // ---- Portfolio Import (scaffolding) ----
+    (function initPortfolioImport() {
+      const dropZone = document.getElementById('portfolio-drop-zone');
+      const fileInput = document.getElementById('portfolio-file-input');
+      if (!dropZone || !fileInput) return;
+
+      dropZone.addEventListener('click', () => fileInput.click());
+      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length > 0) handlePortfolioFile(e.dataTransfer.files[0]);
+      });
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) handlePortfolioFile(fileInput.files[0]);
+      });
+    })();
+
+    let portfolioFile = null;
+    function handlePortfolioFile(file) {
+      const validExts = ['.csv', '.xls', '.xlsx', '.json'];
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (!validExts.includes(ext)) {
+        alert('Unsupported file type. Please use CSV, XLS, XLSX, or JSON.');
+        return;
+      }
+      portfolioFile = file;
+      document.getElementById('portfolio-file-name').textContent = file.name;
+      const sizeKb = (file.size / 1024).toFixed(1);
+      document.getElementById('portfolio-file-size').textContent = `${sizeKb} KB \u2022 ${ext.toUpperCase().slice(1)}`;
+      document.getElementById('portfolio-file-info').style.display = 'block';
+    }
+
+    function clearPortfolioFile() {
+      portfolioFile = null;
+      document.getElementById('portfolio-file-info').style.display = 'none';
+      document.getElementById('portfolio-file-input').value = '';
     }
 
     // ---- Analytics (Langfuse Traces) ----
@@ -2803,8 +3039,71 @@
     const CHANGELOG_ENTRIES = [
       {
         date: '2026-02-28',
+        title: 'Portfolio Import tab scaffolding',
+        desc: 'New Portfolio tab in admin panel with drag-and-drop file upload zone supporting CSV, XLS, XLSX, and JSON formats. File info card shows name, size, and type after upload. Import button with "coming soon" placeholder for future implementation.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'Animated ghost loaders',
+        desc: 'Animated bouncing ghost SVG replaces plain "Loading…" text in the Analytics and Cost Analysis admin tabs. Consistent visual feedback while data loads.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'Agent Feedback admin tab',
+        desc: 'Dedicated Feedback tab with KPI cards (total, thumbs up/down, satisfaction rate), daily stacked bar chart, per-conversation breakdown table with titles, thumbs-down detail view, and recent feedback log.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'Guardrail follow-up suggestions',
+        desc: 'When guardrails activate (jailbreak attempts, off-topic questions), the follow-up bar now shows generic starter questions ("What does my portfolio look like?") instead of blank or irrelevant suggestions.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'Conversation deduplication admin tools',
+        desc: 'Admin endpoints for diagnosing and cleaning up duplicate conversations caused by eval snapshot runs. GET /admin/conversations/stats shows counts, POST /admin/conversations/deduplicate removes duplicates keeping the most recent per title.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
         title: 'UX polish: typewriter, feedback, contextual follow-ups',
         desc: 'Response text now types out with a typewriter effect (~1.2s). Feedback buttons change state (thumbs up → "Thank you", thumbs down → "Help us improve"). Submit actually saves and dismisses. Follow-up suggestions are now AI-generated and contextually relevant to the conversation. Fixed duplicate progress step and feedback submit bug.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'SSE streaming with progressive disclosure',
+        desc: 'Chat responses now stream via Server-Sent Events. Tool calls appear as progress steps in real-time (starting → done) before the final response renders. Cache-Control and X-Accel-Buffering headers prevent proxy buffering.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'Username display names',
+        desc: 'Users can set a display name from the profile area. Usernames appear in the chat header and are stored in Postgres via agent_user_profiles table.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-28',
+        title: 'GitHub Actions CI pipeline',
+        desc: 'Automated CI workflow runs ruff linting and the full pytest suite (256 tests) on every push and pull request.',
+        commit: '',
+        repo: 'agent-folio'
+      },
+      {
+        date: '2026-02-27',
+        title: 'Market data search fix',
+        desc: 'Fixed market_data tool failing on search queries. Now properly handles the Ghostfolio search API response format and falls back gracefully when symbols are not found.',
         commit: '',
         repo: 'agent-folio'
       },

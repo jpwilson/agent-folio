@@ -137,6 +137,12 @@ async def get_feedback_summary(request: Request):
     return await db.get_feedback_summary()
 
 
+@router.get("/feedback/detail")
+async def get_feedback_detail(request: Request):
+    get_user_id(request)  # Auth check
+    return await db.get_feedback_detail()
+
+
 class UsernameRequest(BaseModel):
     username: str
 
