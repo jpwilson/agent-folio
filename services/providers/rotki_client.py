@@ -102,17 +102,19 @@ class RotkiClient(PortfolioProvider):
             else:
                 continue
             total_value += usd_value
-            holdings.append({
-                "name": asset_id,
-                "symbol": asset_id,
-                "currency": "USD",
-                "assetClass": "CRYPTO",
-                "assetSubClass": None,
-                "allocationInPercentage": 0,  # Computed below
-                "marketPrice": usd_value / amount if amount > 0 else 0,
-                "quantity": amount,
-                "valueInBaseCurrency": usd_value,
-            })
+            holdings.append(
+                {
+                    "name": asset_id,
+                    "symbol": asset_id,
+                    "currency": "USD",
+                    "assetClass": "CRYPTO",
+                    "assetSubClass": None,
+                    "allocationInPercentage": 0,  # Computed below
+                    "marketPrice": usd_value / amount if amount > 0 else 0,
+                    "quantity": amount,
+                    "valueInBaseCurrency": usd_value,
+                }
+            )
 
         # Compute allocations
         for h in holdings:
@@ -150,17 +152,19 @@ class RotkiClient(PortfolioProvider):
         for event in events:
             if isinstance(event, dict):
                 event_type = str(event.get("event_type", event.get("type", ""))).lower()
-                activities.append({
-                    "id": str(event.get("identifier", event.get("tx_hash", ""))),
-                    "date": event.get("timestamp", ""),
-                    "symbol": event.get("asset", event.get("base_asset", "")),
-                    "type": type_map.get(event_type, "BUY"),
-                    "quantity": float(event.get("amount", event.get("base_amount", 0))),
-                    "unitPrice": float(event.get("rate", event.get("price", 0))),
-                    "fee": float(event.get("fee", 0)),
-                    "currency": "USD",
-                    "dataSource": None,
-                })
+                activities.append(
+                    {
+                        "id": str(event.get("identifier", event.get("tx_hash", ""))),
+                        "date": event.get("timestamp", ""),
+                        "symbol": event.get("asset", event.get("base_asset", "")),
+                        "type": type_map.get(event_type, "BUY"),
+                        "quantity": float(event.get("amount", event.get("base_amount", 0))),
+                        "unitPrice": float(event.get("rate", event.get("price", 0))),
+                        "fee": float(event.get("fee", 0)),
+                        "currency": "USD",
+                        "dataSource": None,
+                    }
+                )
 
         return {"activities": activities}
 
@@ -216,21 +220,25 @@ class RotkiClient(PortfolioProvider):
             exchanges = data.get("result", []) if isinstance(data, dict) else []
             for ex in exchanges:
                 if isinstance(ex, dict):
-                    accounts.append({
-                        "id": ex.get("name", ""),
-                        "name": ex.get("name", ""),
-                        "balance": 0,
-                        "currency": "USD",
-                        "platformId": ex.get("location", ""),
-                    })
+                    accounts.append(
+                        {
+                            "id": ex.get("name", ""),
+                            "name": ex.get("name", ""),
+                            "balance": 0,
+                            "currency": "USD",
+                            "platformId": ex.get("location", ""),
+                        }
+                    )
                 elif isinstance(ex, str):
-                    accounts.append({
-                        "id": ex,
-                        "name": ex,
-                        "balance": 0,
-                        "currency": "USD",
-                        "platformId": ex,
-                    })
+                    accounts.append(
+                        {
+                            "id": ex,
+                            "name": ex,
+                            "balance": 0,
+                            "currency": "USD",
+                            "platformId": ex,
+                        }
+                    )
         except Exception as e:
             logger.warning("Rotki exchanges failed: %s", e)
 
@@ -243,13 +251,15 @@ class RotkiClient(PortfolioProvider):
             for chain in chains:
                 chain_name = chain if isinstance(chain, str) else chain.get("id", "") if isinstance(chain, dict) else ""
                 if chain_name:
-                    accounts.append({
-                        "id": f"blockchain-{chain_name}",
-                        "name": f"{chain_name} Blockchain",
-                        "balance": 0,
-                        "currency": "USD",
-                        "platformId": chain_name,
-                    })
+                    accounts.append(
+                        {
+                            "id": f"blockchain-{chain_name}",
+                            "name": f"{chain_name} Blockchain",
+                            "balance": 0,
+                            "currency": "USD",
+                            "platformId": chain_name,
+                        }
+                    )
         except Exception:
             pass
 
@@ -269,21 +279,25 @@ class RotkiClient(PortfolioProvider):
             items = []
             for asset in result:
                 if isinstance(asset, dict):
-                    items.append({
-                        "symbol": asset.get("identifier", asset.get("symbol", "")),
-                        "name": asset.get("name", asset.get("identifier", "")),
-                        "dataSource": "rotki",
-                        "currency": "USD",
-                        "assetClass": "CRYPTO",
-                    })
+                    items.append(
+                        {
+                            "symbol": asset.get("identifier", asset.get("symbol", "")),
+                            "name": asset.get("name", asset.get("identifier", "")),
+                            "dataSource": "rotki",
+                            "currency": "USD",
+                            "assetClass": "CRYPTO",
+                        }
+                    )
                 elif isinstance(asset, str):
-                    items.append({
-                        "symbol": asset,
-                        "name": asset,
-                        "dataSource": "rotki",
-                        "currency": "USD",
-                        "assetClass": "CRYPTO",
-                    })
+                    items.append(
+                        {
+                            "symbol": asset,
+                            "name": asset,
+                            "dataSource": "rotki",
+                            "currency": "USD",
+                            "assetClass": "CRYPTO",
+                        }
+                    )
             return {"items": items}
         except Exception:
             # Fallback: try the simpler /api/1/assets endpoint

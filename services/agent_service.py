@@ -15,6 +15,7 @@ from tools import ALL_TOOLS, TOOL_DEFINITIONS
 # Langfuse tracing is handled automatically by LiteLLM's callback
 # (configured in sdks/litellm_sdk.py when LANGFUSE_SECRET_KEY is set)
 
+
 # Generic follow-ups shown when guardrails redirect (no contextual data available)
 async def _get_provider(user_id: str, fallback_token: str):
     """Build a PortfolioProvider for the user.
