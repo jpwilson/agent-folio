@@ -1575,6 +1575,9 @@
     let allConversations = [];
     let activeCategory = 'all';
     let isLoadingConversations = false;
+    let _profileUserId = '';
+    let _profileShortId = '';
+    let _profileUsername = null;
 
     const statusEl = document.getElementById('status');
     const chat = document.getElementById('chat');
@@ -1690,10 +1693,6 @@
         btn.disabled = false;
       }
     }
-
-    let _profileUserId = '';
-    let _profileShortId = '';
-    let _profileUsername = null;
 
     function onAuthenticated() {
       statusEl.textContent = 'Connected';
@@ -2703,7 +2702,7 @@
 
     async function loadSettingsProfile() {
       try {
-        const res = await fetch(`${API_BASE}/profile`, { headers: authHeaders() });
+        const res = await fetch(`${API_BASE}/profile`, { headers: { 'Authorization': `Bearer ${TOKEN}` } });
         if (!res.ok) return;
         const data = await res.json();
         document.getElementById('settings-user-id').textContent = data.userId || '--';
@@ -2717,14 +2716,15 @@
       try {
         const res = await fetch(`${API_BASE}/profile/username`, {
           method: 'PUT',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: name })
         });
         if (res.ok) {
+          _profileUsername = name;
           const saved = document.getElementById('settings-name-saved');
           saved.style.display = 'block';
           setTimeout(() => saved.style.display = 'none', 3000);
-          // Update badge
+          // Update badge and dropdown
           document.getElementById('badge-text').textContent = name;
           document.getElementById('pd-name').textContent = name;
         }
@@ -2734,7 +2734,7 @@
     async function loadSettingsBackends() {
       const container = document.getElementById('settings-backends-list');
       try {
-        const res = await fetch(`${API_BASE}/backends`, { headers: authHeaders() });
+        const res = await fetch(`${API_BASE}/backends`, { headers: { 'Authorization': `Bearer ${TOKEN}` } });
         if (!res.ok) { container.innerHTML = '<div style="color:#f87171; padding:12px;">Failed to load backends.</div>'; return; }
         const data = await res.json();
         const backends = data.backends || [];
