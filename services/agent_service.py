@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import time
 import uuid
 from collections.abc import AsyncGenerator
@@ -11,6 +12,8 @@ from services.guardrails import post_filter, pre_filter, validate_message_roles
 from services.sdk_registry import get_current_model, get_sdk
 from services.verification import verify_response
 from tools import ALL_TOOLS, TOOL_DEFINITIONS
+
+logger = logging.getLogger(__name__)
 
 # Langfuse tracing is handled automatically by LiteLLM's callback
 # (configured in sdks/litellm_sdk.py when LANGFUSE_SECRET_KEY is set)
@@ -28,15 +31,20 @@ async def _get_provider(user_id: str, fallback_token: str):
 
         connections = await db.get_active_backends(user_id)
         if connections:
-            if len(connections) == 1:
-                return await build_provider(connections[0])
-            # Multiple active backends — use combined provider
-            from services.providers.combined import CombinedProvider
-
-            providers = [await build_provider(c) for c in connections]
-            return CombinedProvider(providers)
-    except Exception:
-        pass  # DB not ready or no connections — use legacy fallback
+            # Build each provider individually so one failure doesn't kill the rest
+            providers = []
+            for c in connections:
+                try:
+                    providers.append(await build_provider(c))
+                except Exception as e:
+                    logger.warning("Failed to build %s provider: %s", c.get("provider"), e)
+            if len(providers) == 1:
+                return providers[0]
+            if len(providers) > 1:
+                from services.providers.combined import CombinedProvider
+                return CombinedProvider(providers)
+    except Exception as e:
+        logger.error("Failed to build providers from DB, falling back to legacy JWT: %s", e)
     return GhostfolioClient(GHOSTFOLIO_URL, fallback_token)
 
 
@@ -44,7 +52,10 @@ def _build_system_prompt(provider_name: str | None = None) -> str:
     """Return the system prompt, optionally noting connected backends."""
     prompt = SYSTEM_PROMPT
     if provider_name:
-        prompt += f"\n\nYou are connected to: {provider_name}. Some tools may return partial data depending on the backend. Explain what's available."
+        prompt += f"""
+
+CONNECTED BACKENDS: {provider_name}
+IMPORTANT: All your tools (portfolio_summary, transaction_history, risk_assessment, etc.) automatically query ALL connected backends and return merged results. When a user asks about their portfolio, holdings, or transactions from ANY connected backend — use the standard tools. Each holding and transaction is tagged with its source. You have full access to data from all connected backends listed above."""
     return prompt
 
 
@@ -54,7 +65,7 @@ GUARDRAIL_FOLLOWUPS = [
     "What have I bought recently?",
 ]
 
-SYSTEM_PROMPT = """You are a professional financial assistant for Ghostfolio, a portfolio management app.
+SYSTEM_PROMPT = """You are a professional financial assistant that helps users manage their investment portfolios across multiple platforms.
 You help users understand their investments using these tools:
 - portfolio_summary: Holdings, allocations, total value
 - market_data: Look up stock/ETF quotes and info
