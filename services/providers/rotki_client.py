@@ -41,14 +41,17 @@ class RotkiClient(PortfolioProvider):
             raise ValueError("Rotki connection requires username and password")
 
         client = httpx.AsyncClient(timeout=30.0, base_url=base_url)
-        res = await client.patch(
-            "/api/1/users",
-            json={"name": username, "password": password, "action": "login"},
+        # Rotki login: POST /api/1/users/<username> with password
+        res = await client.post(
+            f"/api/1/users/{username}",
+            json={"password": password, "sync_approval": "unknown"},
         )
         if res.status_code == 401:
             await client.aclose()
             raise ValueError("Rotki authentication failed: invalid credentials")
-        res.raise_for_status()
+        # 300 means user is already logged in — that's fine
+        if res.status_code not in (200, 300):
+            res.raise_for_status()
         return cls(base_url, client)
 
     async def _poll_task(self, task_id: int) -> dict:
@@ -84,28 +87,36 @@ class RotkiClient(PortfolioProvider):
     # ------------------------------------------------------------------
 
     async def get_portfolio_details(self) -> dict:
-        """GET /api/1/balances — normalize to holdings array."""
+        """GET /api/1/balances/manual — normalize to holdings array."""
         try:
-            result = await self._get_or_poll("/api/1/balances")
+            res = await self._client.get("/api/1/balances/manual")
+            res.raise_for_status()
+            data = res.json()
+            result = data.get("result", data)
         except Exception as e:
             logger.warning("Rotki balances failed: %s", e)
             return {"holdings": [], "summary": {}}
 
         holdings = []
-        assets = result if isinstance(result, dict) else {}
+        balances = result.get("balances", []) if isinstance(result, dict) else []
         total_value = 0.0
 
-        for asset_id, balance_info in assets.items():
-            if isinstance(balance_info, dict):
-                amount = float(balance_info.get("amount", 0))
-                usd_value = float(balance_info.get("usd_value", 0))
-            else:
+        for bal in balances:
+            if not isinstance(bal, dict):
                 continue
+            amount = float(bal.get("amount", 0))
+            usd_value = float(bal.get("value", bal.get("usd_value", 0)))
+            asset_id = bal.get("asset", "")
+            label = bal.get("label", asset_id)
+            # Use the short symbol from the asset id (e.g. "BTC" from "BTC",
+            # or extract from eip155 format)
+            symbol = asset_id.split("/")[-1] if "/" in asset_id else asset_id
+
             total_value += usd_value
             holdings.append(
                 {
-                    "name": asset_id,
-                    "symbol": asset_id,
+                    "name": label,
+                    "symbol": symbol,
                     "currency": "USD",
                     "assetClass": "CRYPTO",
                     "assetSubClass": None,
@@ -127,44 +138,58 @@ class RotkiClient(PortfolioProvider):
         }
 
     async def get_orders(self) -> dict:
-        """GET /api/1/history/events — map to BUY/SELL activities."""
+        """POST /api/1/history/events — map to BUY/SELL activities."""
         try:
-            result = await self._get_or_poll("/api/1/history/events")
+            res = await self._client.post(
+                "/api/1/history/events",
+                json={
+                    "entry_types": {"values": ["history event"]},
+                    "limit": 100,
+                    "offset": 0,
+                    "ascending": [False],
+                    "order_by_attributes": ["timestamp"],
+                },
+            )
+            res.raise_for_status()
+            data = res.json()
+            result = data.get("result", data)
         except Exception as e:
             logger.warning("Rotki events failed: %s", e)
             return {"activities": []}
 
-        events = result.get("entries", []) if isinstance(result, dict) else result if isinstance(result, list) else []
+        raw_entries = result.get("entries", []) if isinstance(result, dict) else []
 
-        # Map Rotki event types to standard types
-        type_map = {
-            "trade": "BUY",
-            "buy": "BUY",
-            "sell": "SELL",
-            "deposit": "BUY",
-            "withdrawal": "SELL",
-            "staking": "DIVIDEND",
+        # Map Rotki event subtypes to standard types
+        subtype_map = {
             "receive": "BUY",
             "spend": "SELL",
         }
 
         activities = []
-        for event in events:
-            if isinstance(event, dict):
-                event_type = str(event.get("event_type", event.get("type", ""))).lower()
-                activities.append(
-                    {
-                        "id": str(event.get("identifier", event.get("tx_hash", ""))),
-                        "date": event.get("timestamp", ""),
-                        "symbol": event.get("asset", event.get("base_asset", "")),
-                        "type": type_map.get(event_type, "BUY"),
-                        "quantity": float(event.get("amount", event.get("base_amount", 0))),
-                        "unitPrice": float(event.get("rate", event.get("price", 0))),
-                        "fee": float(event.get("fee", 0)),
-                        "currency": "USD",
-                        "dataSource": None,
-                    }
-                )
+        for entry_wrapper in raw_entries:
+            # Rotki wraps events in {"entry": {...}, "states": [...]}
+            event = entry_wrapper.get("entry", entry_wrapper) if isinstance(entry_wrapper, dict) else entry_wrapper
+            if not isinstance(event, dict):
+                continue
+
+            event_subtype = str(event.get("event_subtype", "")).lower()
+            asset = event.get("asset", "")
+            symbol = asset.split("/")[-1] if "/" in asset else asset
+
+            activities.append(
+                {
+                    "id": str(event.get("identifier", "")),
+                    "date": event.get("timestamp", ""),
+                    "symbol": symbol,
+                    "type": subtype_map.get(event_subtype, "BUY"),
+                    "quantity": float(event.get("amount", 0)),
+                    "unitPrice": 0,
+                    "fee": 0,
+                    "currency": "USD",
+                    "dataSource": None,
+                    "notes": event.get("user_notes", ""),
+                }
+            )
 
         return {"activities": activities}
 
