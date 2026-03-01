@@ -1,0 +1,400 @@
+{
+  "repos": {
+    "agent-folio": "https://github.com/jpwilson/agent-folio",
+    "ghostfolio": "https://github.com/jpwilson/ghostfolioJPGauntlet"
+  },
+  "skip_commits": [
+    "f8704d0",
+    "8b60006",
+    "1eb83a3",
+    "5390157",
+    "48aa05c"
+  ],
+  "entries": [
+    {
+      "date": "2026-02-28",
+      "title": "Combined portfolio provider",
+      "desc": "When multiple backends are active, data is merged automatically. Holdings are concatenated with allocations recomputed to 100%, activities merged and sorted by date. If one backend fails, the other still works (graceful degradation). UI badge shows active backend names.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Rotki provider implementation",
+      "desc": "Full Rotki backend support: session-based auth, async task polling, crypto balance normalization, event-to-order mapping, exchange and blockchain account listing. Methods Rotki doesn't support return valid empty structures so tools handle them gracefully.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Add Backend modal (Ghostfolio + Rotki)",
+      "desc": "Modal form to add new backend connections with provider dropdown, label, base URL, and provider-specific credential fields. Ghostfolio uses security token, Rotki uses username/password. Dynamic field visibility based on provider selection.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Profile dropdown with backend management",
+      "desc": "Account badge is now a profile dropdown with display name, user ID, connected backends list with active/inactive toggles, test connection button, and add/remove backends. Sign-out button moved to dropdown footer.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Auto-register Ghostfolio on login",
+      "desc": "When logging in with a Ghostfolio security token, the system automatically creates a backend connection record if none exists. Existing users transition seamlessly with zero disruption.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Provider factory for backend connections",
+      "desc": "Factory function builds the right PortfolioProvider from a DB connection record. For Ghostfolio: exchanges security token for JWT. For Rotki: creates authenticated session. Supports dynamic provider resolution at runtime.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Backend connections DB table and CRUD API",
+      "desc": "New agent_backend_connections table stores per-user backend configs (provider, URL, credentials, active status). REST API: GET/POST/PUT/DELETE /backends plus POST /backends/{id}/test for connectivity checks. Credentials redacted in list responses.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "All 11 tools accept abstract provider type",
+      "desc": "Every tool's execute() function now accepts PortfolioProvider instead of GhostfolioClient. Method calls unchanged — zero behavioral change, but any backend can now plug in.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "GhostfolioClient extends PortfolioProvider ABC",
+      "desc": "GhostfolioClient now implements the abstract base class. Constructor changed from (token) to (base_url, token) for explicit URL configuration. Added provider_name property.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "PortfolioProvider abstract base class",
+      "desc": "Introduced PortfolioProvider ABC with 13 methods defining the contract all backends must implement. Covers portfolio reads, market data, and optional write operations. Each method's docstring specifies the exact return shape.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "README rewrite for multi-backend",
+      "desc": "README rewritten as \"AI portfolio agent for Ghostfolio, Rotki, and more\" with Supported Backends table, architecture diagram, and contributing guide link.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "MIT license and CONTRIBUTING.md",
+      "desc": "Added MIT license for open-source distribution. CONTRIBUTING.md includes dev setup, PR guidelines, code style (ruff, async-first), and step-by-step guide for adding a new backend provider.",
+      "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Tool execute and SDK registry tests",
+      "desc": "Added unit tests for tool execute functions and SDK registry to improve CI coverage. Tests verify tool schemas, parameter validation, and SDK provider switching.",
+      "commit": "00bdda4",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Auth, client, and admin model tests",
+      "desc": "Added tests for JWT auth helpers, GhostfolioClient constructor and API methods, and admin endpoint request/response models. Fade-in animation CSS for smoother loading states.",
+      "commit": "b35e366",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Portfolio Import with file parsing and rollback",
+      "desc": "Full portfolio import: drag-and-drop file upload, multi-format parser (Interactive Brokers, Trading 212, Degiro, Robinhood, Ghostfolio JSON/CSV), preview table, import confirmation, and rollback capability. Upload history with status badges.",
+      "commit": "d8d0a0b",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Animated ghost loaders",
+      "desc": "Animated bouncing ghost SVG replaces plain \"Loading...\" text in the Analytics and Cost Analysis admin tabs. Consistent visual feedback while data loads.",
+      "commit": "7aa6221",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Agent Feedback admin tab",
+      "desc": "Dedicated Feedback tab with KPI cards (total, thumbs up/down, satisfaction rate), daily stacked bar chart, per-conversation breakdown table with titles, thumbs-down detail view, and recent feedback log.",
+      "commit": "7aa6221",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Guardrail follow-up suggestions",
+      "desc": "When guardrails activate (jailbreak attempts, off-topic questions), the follow-up bar now shows generic starter questions (\"What does my portfolio look like?\") instead of blank or irrelevant suggestions.",
+      "commit": "7aa6221",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Agent service unit tests",
+      "desc": "Added comprehensive tests for agent_service.py covering chat flow, streaming, conversation CRUD, guardrail integration, and tool execution. Restored 35% coverage threshold.",
+      "commit": "3d11b35",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Conversation deduplication admin tools",
+      "desc": "Admin endpoints for diagnosing and cleaning up duplicate conversations caused by eval snapshot runs. GET /admin/conversations/stats shows counts, POST /admin/conversations/deduplicate removes duplicates keeping the most recent per title.",
+      "commit": "d8d0a0b",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Tool calls and verification visibility fix",
+      "desc": "Fixed tool calls and verification badges not showing in chat. Persist follow-up suggestions across conversation reload. Improved feedback button spacing and alignment.",
+      "commit": "a3086a3",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "UX polish: typewriter, feedback, contextual follow-ups",
+      "desc": "Response text now types out with a typewriter effect (~1.2s). Feedback buttons change state (thumbs up -> \"Thank you\", thumbs down -> \"Help us improve\"). Submit actually saves and dismisses. Follow-up suggestions are now AI-generated and contextually relevant to the conversation. Fixed duplicate progress step and feedback submit bug.",
+      "commit": "c64c051",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "SSE streaming with progressive disclosure",
+      "desc": "Chat responses now stream via Server-Sent Events. Tool calls appear as progress steps in real-time (starting -> done) before the final response renders. Cache-Control and X-Accel-Buffering headers prevent proxy buffering.",
+      "commit": "e5e6681",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Username display names",
+      "desc": "Users can set a display name from the profile area. Usernames appear in the chat header and are stored in Postgres via agent_user_profiles table.",
+      "commit": "80d31a3",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "GitHub Actions CI pipeline",
+      "desc": "Automated CI workflow runs ruff linting and the full pytest suite on every push and pull request.",
+      "commit": "717843b",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "No-cache headers for static HTML",
+      "desc": "Added Cache-Control no-cache headers to prevent browsers from serving stale versions of the chat UI after deploys.",
+      "commit": "6ee6570",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Market data search fix",
+      "desc": "Fixed market_data tool failing on search queries. Now properly handles the Ghostfolio search API response format and falls back gracefully when symbols are not found.",
+      "commit": "fe9416d",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Historical stock price data",
+      "desc": "New stock_history tool lets the agent show price trends over time (1m, 3m, 6m, 1y, 3y, 5y, max). Returns sampled data points with summary stats (change %, high, low). Works for any stock, ETF, or crypto.",
+      "commit": "c87add9",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Deduplicated tool badges",
+      "desc": "Fixed \"Tools used\" display showing the same tool name multiple times when it was called repeatedly (e.g., market_data x3). Now shows each unique tool name once.",
+      "commit": "15f287f",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Account indicator",
+      "desc": "Header now shows which account is signed in -- \"Demo (Grader)\" badge for the demo account or \"Account xxxxxxxx\" with a short user ID for regular users. Persists across page refreshes.",
+      "commit": "788b48e",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Grader quick sign-in",
+      "desc": "One-click \"Quick Sign-in for Grading\" button on login page. Pre-seeded demo account with 5 years of diversified portfolio history across 15 symbols (90 transactions including buys and sells).",
+      "commit": "02da6a0",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Test suite (256 tests)",
+      "desc": "Comprehensive test suite: 93 guardrail tests (injection, profanity, encoding, multilingual), 24 verification tests, 124 tool schema tests, 17 API integration tests. Ruff linting, pytest-cov coverage.",
+      "commit": "82c9323",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Categorized welcome suggestions",
+      "desc": "Welcome screen suggestions organized into 7 tabs: All, Portfolio, Performance, Tax, Risk, Income, Accounts. First two in \"All\" are single-tool queries, next two are multi-tool for demonstrating agentic behavior.",
+      "commit": "719f5a9",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Suggested follow-ups",
+      "desc": "After each assistant response, a bar of 2-3 contextual follow-up questions appears above the input. Suggestions are based on which tools were called (e.g., portfolio queries suggest risk and tax follow-ups).",
+      "commit": "719f5a9",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Verification fix and confidence boost",
+      "desc": "Fixed performance_data_valid check that was looking for wrong keys in the tool response. Performance queries now correctly verify and show 95%+ confidence instead of failing at 68%.",
+      "commit": "719f5a9",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Header cleanup",
+      "desc": "Removed redundant \"AI Financial Assistant\" subtitle and \"LITELLM (UNIVERSAL)\" SDK badge from header. Cleaner look -- SDK info lives in the admin panel where it belongs.",
+      "commit": "719f5a9",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Eval history persistence",
+      "desc": "Eval results now saved to Postgres across deploys. Collapsible history table in admin Evaluations tab shows date, model, pass rates.",
+      "commit": "ac982ac",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Inline charting",
+      "desc": "Chart.js integration renders pie, bar, line, and doughnut charts inline in chat messages. The agent automatically suggests charts when data benefits from visualization.",
+      "commit": "0c9e006",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Financial disclaimer and first-login agreement",
+      "desc": "Full US-focused financial disclaimer citing SEC, FINRA, and IAA 1940. First-time users must accept before using the app. Accessible anytime via the help menu.",
+      "commit": "d7e7f60",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Discover Features and sign out",
+      "desc": "New help menu options: Discover Features shows 10 upcoming Ghostfolio integrations (FIRE calculator, benchmarks, watchlist, etc.) with Coming Soon badges. Sign out button added to sidebar.",
+      "commit": "d7e7f60",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-27",
+      "title": "Profanity filter and security docs",
+      "desc": "Profanity detection with leetspeak variant handling added to guardrails. SECURITY.md and EVAL_RESULTS.md published with links from README.",
+      "commit": "d7e7f60",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "Changelog and help menu",
+      "desc": "Added a floating help button with project changelog showing all milestones from both the Ghostfolio integration and the standalone agent, with direct links to code changes.",
+      "commit": "5940714",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "Jailbreak and prompt injection defenses",
+      "desc": "Defense-in-depth guardrails: Unicode normalization, base64 payload scanning, ChatML/Llama delimiter detection, DAN/developer mode blocking, multilingual injection detection (6 languages), credential leak prevention, and harmful financial advice filtering.",
+      "commit": "5940714",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "Help button and model descriptions",
+      "desc": "Moved help button to sidebar. Expanded changelog to 12 milestones. Added model descriptions and dropdown arrows to SDK selector.",
+      "commit": "990e54d",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "Persistent data storage",
+      "desc": "Migrated conversations, feedback, and settings from ephemeral file storage to Postgres using asyncpg with connection pooling. Data now survives container redeploys on Railway.",
+      "commit": "eeb82a7",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "10 portfolio analysis tools",
+      "desc": "Five new tools added: portfolio performance (returns over time), dividend history (income tracking), X-Ray report (portfolio health check), investment timeline (monthly/yearly amounts), and account overview (balances and platforms). Bringing total to 10 tools.",
+      "commit": "beec710",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "55 golden evaluation test cases",
+      "desc": "Comprehensive eval suite: 22 happy path cases covering all 10 tools, 8 tool selection tests, 10 edge cases (empty portfolios, ambiguous queries), 10 adversarial cases (prompt injection, jailbreak attempts), and 5 multi-step reasoning tests.",
+      "commit": "beec710",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "Deterministic verification and confidence scoring",
+      "desc": "Every agent response runs through data integrity checks (allocation sums, valid prices, no hallucinated tickers) and gets a weighted 0-100 confidence score based on tool success rate, check pass rate, response quality, and data backing.",
+      "commit": "beec710",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "Langfuse analytics and cost projections",
+      "desc": "Full observability via Langfuse: latency tracking, token usage, cost-per-query metrics, daily trace charts, and production cost projections for 100 to 100k users. Admin panel with Analytics and Cost Analysis tabs.",
+      "commit": "beec710",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "Standalone sidecar agent",
+      "desc": "Extracted the AI agent from the Ghostfolio NestJS app into a standalone FastAPI Python service. Chat UI, JWT auth, 5 core tools (portfolio summary, market data, transactions, risk, tax), LLM-agnostic SDK system with 4 providers, and guardrails.",
+      "commit": "e1f2907",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-26",
+      "title": "Docker networking fix",
+      "desc": "Fixed Docker networking for local development using host.docker.internal to reach Ghostfolio running on the host machine.",
+      "commit": "ea95cec",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-24",
+      "title": "Agent UI enhancements and eval pipeline",
+      "desc": "Redesigned agent chat UI with Ghostfolio dark theme, conversation persistence, category filtering, admin panel with SDK switching, and CI workflow for automated evaluation.",
+      "commit": "27f4eea",
+      "repo": "ghostfolio"
+    },
+    {
+      "date": "2026-02-24",
+      "title": "Langfuse observability integration",
+      "desc": "Integrated Langfuse tracing into the embedded Ghostfolio agent for LLM call monitoring, latency tracking, and cost analysis during development.",
+      "commit": "23338c3",
+      "repo": "ghostfolio"
+    },
+    {
+      "date": "2026-02-24",
+      "title": "Agent MVP with 5 tools",
+      "desc": "First complete version: portfolio summary, market data lookup, transaction history, risk assessment, and tax estimation tools. Conversation persistence, deterministic verification, and golden set evaluation data.",
+      "commit": "44bd810",
+      "repo": "ghostfolio"
+    },
+    {
+      "date": "2026-02-23",
+      "title": "Initial AI agent prototype",
+      "desc": "First AI agent endpoint added to Ghostfolio with basic chat UI, OpenAI integration, and portfolio summary tool. Proof of concept for the financial assistant concept.",
+      "commit": "e5584db",
+      "repo": "ghostfolio"
+    }
+  ]
+}

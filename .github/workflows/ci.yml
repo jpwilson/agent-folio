@@ -21,6 +21,20 @@ jobs:
       - name: Format check
         run: ruff format --check .
 
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Generate changelog
+        run: python scripts/generate_changelog.py
+      - name: Check changelog is up to date
+        run: git diff --exit-code static/changelog.json
+
   test:
     runs-on: ubuntu-latest
     steps:

@@ -144,13 +144,16 @@
     }
     .profile-dropdown .pd-add-btn:hover { border-color: #36cfb4; color: #36cfb4; }
     .profile-dropdown .pd-footer {
-      border-top: 1px solid #2a2a2a; padding: 8px 16px; display: flex; justify-content: flex-end;
+      border-top: 1px solid #2a2a2a; padding: 8px 16px; display: flex; justify-content: space-between; align-items: center;
     }
     .profile-dropdown .pd-footer button {
-      background: none; border: none; color: #f87171; cursor: pointer;
+      background: none; border: none; cursor: pointer;
       font-size: 12px; padding: 6px 12px; border-radius: 6px;
     }
-    .profile-dropdown .pd-footer button:hover { background: rgba(248,113,113,0.1); }
+    .profile-dropdown .pd-footer .pd-settings-btn { color: #888; }
+    .profile-dropdown .pd-footer .pd-settings-btn:hover { background: rgba(255,255,255,0.05); color: #e5e5e5; }
+    .profile-dropdown .pd-footer .pd-signout-btn { color: #f87171; }
+    .profile-dropdown .pd-footer .pd-signout-btn:hover { background: rgba(248,113,113,0.1); }
     .backends-badge {
       font-size: 10px; color: #888; margin-left: 4px;
     }
@@ -833,7 +836,8 @@
         <div id="pd-backends-list"></div>
         <button class="pd-add-btn" onclick="showAddBackendModal()">+ Add Backend</button>
         <div class="pd-footer">
-          <button onclick="doLogout()">Sign Out</button>
+          <button class="pd-settings-btn" onclick="toggleProfileDropdown(event); toggleSettings();">Settings</button>
+          <button class="pd-signout-btn" onclick="doLogout()">Sign Out</button>
         </div>
       </div>
       <div class="status" id="status">Connected</div>
@@ -1038,11 +1042,9 @@
       <div class="admin-tabs">
         <div class="admin-tab active" data-tab="sdk" onclick="switchAdminTab('sdk')">SDK / Provider</div>
         <div class="admin-tab" data-tab="overview" onclick="switchAdminTab('overview')">Overview</div>
-        <div class="admin-tab" data-tab="display" onclick="switchAdminTab('display')">Display</div>
         <div class="admin-tab" data-tab="evals" onclick="switchAdminTab('evals'); loadEvalsTab();">Evaluations</div>
         <div class="admin-tab" data-tab="analytics" onclick="switchAdminTab('analytics'); loadTraces();">Analytics</div>
         <div class="admin-tab" data-tab="costs" onclick="switchAdminTab('costs'); loadCostAnalysis();">Cost Analysis</div>
-        <div class="admin-tab" data-tab="portfolio" onclick="switchAdminTab('portfolio'); loadImportHistory();">Portfolio</div>
       </div>
       <div class="admin-modal-body" id="admin-body">
         <!-- SDK / Provider tab -->
@@ -1123,53 +1125,7 @@
           </div>
         </div>
         <!-- Display tab -->
-        <div id="admin-tab-display" style="display:none;">
-          <div class="admin-section">
-            <h3>Response Rendering</h3>
-            <div class="admin-card">
-              <div class="admin-toggle-row">
-                <div>
-                  <div class="toggle-label">Render Markdown</div>
-                  <div class="toggle-desc">Format agent responses with proper headings, tables, and lists</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-markdown" checked onchange="toggleSetting('markdown', this.checked)" />
-                  <span class="slider"></span>
-                </label>
-              </div>
-              <div class="admin-toggle-row">
-                <div>
-                  <div class="toggle-label">Show Tool Calls</div>
-                  <div class="toggle-desc">Display which agent tools were used for each response</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-tools" checked onchange="toggleSetting('tools', this.checked)" />
-                  <span class="slider"></span>
-                </label>
-              </div>
-              <div class="admin-toggle-row">
-                <div>
-                  <div class="toggle-label">Show Verification</div>
-                  <div class="toggle-desc">Display data verification checks on each response</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-verification" checked onchange="toggleSetting('verification', this.checked)" />
-                  <span class="slider"></span>
-                </label>
-              </div>
-              <div class="admin-toggle-row">
-                <div>
-                  <div class="toggle-label">Show Feedback Buttons</div>
-                  <div class="toggle-desc">Show thumbs up/down on each agent response</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-feedback" checked onchange="toggleSetting('feedback', this.checked)" />
-                  <span class="slider"></span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- Display tab moved to user Settings overlay -->
         <!-- Evals tab -->
         <div id="admin-tab-evals" style="display:none;">
           <div class="admin-section">
@@ -1396,8 +1352,106 @@
             </div>
           </div>
         </div>
-        <!-- Portfolio Import tab -->
-        <div id="admin-tab-portfolio" style="display:none;">
+        <!-- Portfolio Import tab moved to user Settings overlay -->
+      </div>
+    </div>
+  </div>
+
+  <!-- User Settings Overlay -->
+  <div class="admin-overlay" id="settings-overlay" onclick="if(event.target===this)toggleSettings()">
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <h2>Settings</h2>
+        <button class="close-btn" onclick="toggleSettings()">&times;</button>
+      </div>
+      <div class="admin-tabs">
+        <div class="admin-tab active" data-stab="profile" onclick="switchSettingsTab('profile')">Profile</div>
+        <div class="admin-tab" data-stab="backends" onclick="switchSettingsTab('backends')">Backends</div>
+        <div class="admin-tab" data-stab="display" onclick="switchSettingsTab('display')">Display</div>
+        <div class="admin-tab" data-stab="import" onclick="switchSettingsTab('import'); loadImportHistory();">Import</div>
+      </div>
+      <div class="admin-modal-body">
+        <!-- Profile tab -->
+        <div id="settings-tab-profile">
+          <div class="admin-section">
+            <h3>Display Name</h3>
+            <div class="admin-card">
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input class="admin-input" type="text" id="settings-username" placeholder="Enter a display name..." style="flex:1;" />
+                <button class="admin-save-btn" onclick="saveSettingsUsername()" style="padding:8px 16px; background:#36cfb4; color:#000; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Save</button>
+              </div>
+              <div id="settings-name-saved" style="color:#36cfb4; font-size:12px; margin-top:6px; display:none;">Name updated!</div>
+            </div>
+          </div>
+          <div class="admin-section">
+            <h3>Account Info</h3>
+            <div class="admin-card">
+              <div class="admin-list-item"><span class="label">User ID</span><span class="value" id="settings-user-id" style="font-family:monospace; font-size:11px;">--</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- Backends tab -->
+        <div id="settings-tab-backends" style="display:none;">
+          <div class="admin-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3 style="margin:0;">Connected Backends</h3>
+              <button onclick="showAddBackendModal()" style="padding:6px 14px; background:transparent; border:1px solid #36cfb4; color:#36cfb4; border-radius:6px; font-size:12px; cursor:pointer;">+ Add Backend</button>
+            </div>
+            <div id="settings-backends-list">
+              <div style="text-align:center; padding:24px; color:#888;">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <!-- Display tab -->
+        <div id="settings-tab-display" style="display:none;">
+          <div class="admin-section">
+            <h3>Response Rendering</h3>
+            <div class="admin-card">
+              <div class="admin-toggle-row">
+                <div>
+                  <div class="toggle-label">Render Markdown</div>
+                  <div class="toggle-desc">Format agent responses with proper headings, tables, and lists</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-markdown" checked onchange="toggleSetting('markdown', this.checked)" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="admin-toggle-row">
+                <div>
+                  <div class="toggle-label">Show Tool Calls</div>
+                  <div class="toggle-desc">Display which agent tools were used for each response</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-tools" checked onchange="toggleSetting('tools', this.checked)" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="admin-toggle-row">
+                <div>
+                  <div class="toggle-label">Show Verification</div>
+                  <div class="toggle-desc">Display data verification checks on each response</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-verification" checked onchange="toggleSetting('verification', this.checked)" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="admin-toggle-row">
+                <div>
+                  <div class="toggle-label">Show Feedback Buttons</div>
+                  <div class="toggle-desc">Show thumbs up/down on each agent response</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-feedback" checked onchange="toggleSetting('feedback', this.checked)" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Import tab -->
+        <div id="settings-tab-import" style="display:none;">
           <div class="admin-section">
             <h3>Portfolio Import</h3>
             <p style="color:#999; font-size:12px; margin-bottom:16px;">
@@ -1437,9 +1491,7 @@
               <div class="admin-list-item"><span class="label">Custom Format</span><span class="value" style="color:#888;">Coming Soon</span></div>
             </div>
           </div>
-          <!-- Preview (populated by JS) -->
           <div id="portfolio-preview" style="display:none;" class="admin-section"></div>
-          <!-- Upload History -->
           <div class="admin-section" style="margin-top:16px; border-top:1px solid #333; padding-top:16px;">
             <h3>Upload History</h3>
             <div id="portfolio-history" style="display:none;"></div>
@@ -1760,6 +1812,7 @@
           body: JSON.stringify({ isActive: newActive })
         });
         await loadBackendsList();
+        await loadSettingsBackends();
       } catch {}
     }
 
@@ -1784,6 +1837,7 @@
           headers: { 'Authorization': `Bearer ${TOKEN}` }
         });
         await loadBackendsList();
+        await loadSettingsBackends();
       } catch {}
     }
 
@@ -1837,6 +1891,7 @@
         if (res.ok) {
           hideAddBackendModal();
           await loadBackendsList();
+          await loadSettingsBackends();
         } else {
           const data = await res.json();
           alert(data.detail || 'Failed to add backend');
@@ -2606,19 +2661,100 @@
       const overlay = document.getElementById('admin-overlay');
       overlay.classList.toggle('visible');
       if (overlay.classList.contains('visible')) {
-        applySettings();
         loadAdminStats();
         loadSdkSettings();
       }
     }
 
     function switchAdminTab(tab) {
-      document.querySelectorAll('.admin-tab').forEach(el => {
+      document.querySelectorAll('#admin-overlay .admin-tab').forEach(el => {
         el.classList.toggle('active', el.getAttribute('data-tab') === tab);
       });
       document.querySelectorAll('[id^="admin-tab-"]').forEach(el => {
         el.style.display = el.id === `admin-tab-${tab}` ? 'block' : 'none';
       });
+    }
+
+    // ---- User Settings overlay ----
+    function toggleSettings() {
+      const overlay = document.getElementById('settings-overlay');
+      overlay.classList.toggle('visible');
+      if (overlay.classList.contains('visible')) {
+        applySettings();
+        loadSettingsProfile();
+        loadSettingsBackends();
+      }
+    }
+
+    function switchSettingsTab(tab) {
+      document.querySelectorAll('#settings-overlay .admin-tab').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-stab') === tab);
+      });
+      document.querySelectorAll('[id^="settings-tab-"]').forEach(el => {
+        el.style.display = el.id === `settings-tab-${tab}` ? 'block' : 'none';
+      });
+    }
+
+    async function loadSettingsProfile() {
+      try {
+        const res = await fetch(`${API_BASE}/profile`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById('settings-user-id').textContent = data.userId || '--';
+        document.getElementById('settings-username').value = data.username || '';
+      } catch {}
+    }
+
+    async function saveSettingsUsername() {
+      const name = document.getElementById('settings-username').value.trim();
+      if (!name) return;
+      try {
+        const res = await fetch(`${API_BASE}/profile/username`, {
+          method: 'PUT',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: name })
+        });
+        if (res.ok) {
+          const saved = document.getElementById('settings-name-saved');
+          saved.style.display = 'block';
+          setTimeout(() => saved.style.display = 'none', 3000);
+          // Update badge
+          document.getElementById('badge-text').textContent = name;
+          document.getElementById('pd-name').textContent = name;
+        }
+      } catch {}
+    }
+
+    async function loadSettingsBackends() {
+      const container = document.getElementById('settings-backends-list');
+      try {
+        const res = await fetch(`${API_BASE}/backends`, { headers: authHeaders() });
+        if (!res.ok) { container.innerHTML = '<div style="color:#f87171; padding:12px;">Failed to load backends.</div>'; return; }
+        const data = await res.json();
+        const backends = data.backends || [];
+        if (backends.length === 0) {
+          container.innerHTML = '<div class="admin-card" style="text-align:center; color:#888; padding:24px;">No backends connected. Click "+ Add Backend" to get started.</div>';
+          return;
+        }
+        container.innerHTML = backends.map(b => `
+          <div class="admin-card" style="margin-bottom:8px; display:flex; align-items:center; gap:12px;">
+            <div style="flex:1;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="background:${b.is_active?'#36cfb4':'#555'}; color:#000; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; text-transform:uppercase;">${b.provider}</span>
+                <span style="color:#e5e5e5; font-size:13px; font-weight:500;">${b.label || 'Untitled'}</span>
+              </div>
+              <div style="color:#666; font-size:11px; margin-top:4px;">${b.base_url}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div class="pd-be-toggle ${b.is_active?'active':'inactive'}" onclick="toggleBackend('${b.id}', ${!b.is_active})" title="${b.is_active?'Disable':'Enable'}"></div>
+              <button onclick="testBackend('${b.id}')" style="padding:4px 10px; background:#1a1a1a; border:1px solid #333; color:#888; border-radius:5px; font-size:11px; cursor:pointer;" title="Test connection">Test</button>
+              <button onclick="deleteBackend('${b.id}')" style="padding:4px 8px; background:#1a1a1a; border:1px solid #333; color:#f87171; border-radius:5px; font-size:11px; cursor:pointer;" title="Remove">&times;</button>
+            </div>
+          </div>
+        `).join('');
+      } catch {
+        container.innerHTML = '<div style="color:#f87171; padding:12px;">Failed to load backends.</div>';
+      }
     }
 
     function loadAdminStats() {
@@ -3581,319 +3717,35 @@
       }
     });
 
-    const CHANGELOG_ENTRIES = [
-      {
-        date: '2026-02-28',
-        title: 'Combined portfolio provider',
-        desc: 'When multiple backends are active, data is merged automatically. Holdings are concatenated with allocations recomputed to 100%, activities merged and sorted by date. If one backend fails, the other still works (graceful degradation). UI badge shows active backend names.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Rotki provider',
-        desc: 'Full Rotki backend support: session-based auth, async task polling, crypto balance normalization, event-to-order mapping, exchange and blockchain account listing. Methods Rotki doesn\'t support return valid empty structures so tools handle them gracefully.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Profile dropdown & backend management',
-        desc: 'Account badge is now a profile dropdown with display name, user ID, connected backends list with active/inactive toggles, test connection button, add/remove backends, and sign-out. Add Backend modal supports Ghostfolio (security token) and Rotki (username/password). Ghostfolio backends auto-register on login.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Provider abstraction layer',
-        desc: 'Introduced PortfolioProvider abstract base class with 13 methods. GhostfolioClient now extends it. All 11 tools accept the abstract type instead of the concrete class — zero behavioral change, but any backend can now plug in. Provider factory builds the right client from DB connection records.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Open-source readiness',
-        desc: 'MIT license, CONTRIBUTING.md with dev setup and "how to add a new backend" guide, README rewritten for multi-backend support ("AI portfolio agent for Ghostfolio, Rotki, and more"), pyproject.toml updated with license field.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Portfolio Import tab scaffolding',
-        desc: 'New Portfolio tab in admin panel with drag-and-drop file upload zone supporting CSV, XLS, XLSX, and JSON formats. File info card shows name, size, and type after upload. Import button with "coming soon" placeholder for future implementation.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Animated ghost loaders',
-        desc: 'Animated bouncing ghost SVG replaces plain "Loading…" text in the Analytics and Cost Analysis admin tabs. Consistent visual feedback while data loads.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Agent Feedback admin tab',
-        desc: 'Dedicated Feedback tab with KPI cards (total, thumbs up/down, satisfaction rate), daily stacked bar chart, per-conversation breakdown table with titles, thumbs-down detail view, and recent feedback log.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Guardrail follow-up suggestions',
-        desc: 'When guardrails activate (jailbreak attempts, off-topic questions), the follow-up bar now shows generic starter questions ("What does my portfolio look like?") instead of blank or irrelevant suggestions.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Conversation deduplication admin tools',
-        desc: 'Admin endpoints for diagnosing and cleaning up duplicate conversations caused by eval snapshot runs. GET /admin/conversations/stats shows counts, POST /admin/conversations/deduplicate removes duplicates keeping the most recent per title.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'UX polish: typewriter, feedback, contextual follow-ups',
-        desc: 'Response text now types out with a typewriter effect (~1.2s). Feedback buttons change state (thumbs up → "Thank you", thumbs down → "Help us improve"). Submit actually saves and dismisses. Follow-up suggestions are now AI-generated and contextually relevant to the conversation. Fixed duplicate progress step and feedback submit bug.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'SSE streaming with progressive disclosure',
-        desc: 'Chat responses now stream via Server-Sent Events. Tool calls appear as progress steps in real-time (starting → done) before the final response renders. Cache-Control and X-Accel-Buffering headers prevent proxy buffering.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'Username display names',
-        desc: 'Users can set a display name from the profile area. Usernames appear in the chat header and are stored in Postgres via agent_user_profiles table.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-28',
-        title: 'GitHub Actions CI pipeline',
-        desc: 'Automated CI workflow runs ruff linting and the full pytest suite (256 tests) on every push and pull request.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Market data search fix',
-        desc: 'Fixed market_data tool failing on search queries. Now properly handles the Ghostfolio search API response format and falls back gracefully when symbols are not found.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Historical stock price data',
-        desc: 'New stock_history tool lets the agent show price trends over time (1m, 3m, 6m, 1y, 3y, 5y, max). Returns sampled data points with summary stats (change %, high, low). Works for any stock, ETF, or crypto.',
-        commit: 'c87add9',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Deduplicated tool badges',
-        desc: 'Fixed "Tools used" display showing the same tool name multiple times when it was called repeatedly (e.g., market_data x3). Now shows each unique tool name once.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Account indicator',
-        desc: 'Header now shows which account is signed in — "Demo (Grader)" badge for the demo account or "Account xxxxxxxx" with a short user ID for regular users. Persists across page refreshes.',
-        commit: '',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Grader quick sign-in',
-        desc: 'One-click "Quick Sign-in for Grading" button on login page. Pre-seeded demo account with 5 years of diversified portfolio history across 15 symbols (90 transactions including buys and sells).',
-        commit: '02da6a0',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Test suite (256 tests)',
-        desc: 'Comprehensive test suite: 93 guardrail tests (injection, profanity, encoding, multilingual), 24 verification tests, 124 tool schema tests, 17 API integration tests. Ruff linting, pytest-cov coverage.',
-        commit: '82c9323',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Categorized welcome suggestions',
-        desc: 'Welcome screen suggestions organized into 7 tabs: All, Portfolio, Performance, Tax, Risk, Income, Accounts. First two in "All" are single-tool queries, next two are multi-tool for demonstrating agentic behavior.',
-        commit: '719f5a9',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Suggested follow-ups',
-        desc: 'After each assistant response, a bar of 2-3 contextual follow-up questions appears above the input. Suggestions are based on which tools were called (e.g., portfolio queries suggest risk and tax follow-ups).',
-        commit: '719f5a9',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Verification fix & confidence boost',
-        desc: 'Fixed performance_data_valid check that was looking for wrong keys in the tool response. Performance queries now correctly verify and show 95%+ confidence instead of failing at 68%.',
-        commit: '719f5a9',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Header cleanup',
-        desc: 'Removed redundant "AI Financial Assistant" subtitle and "LITELLM (UNIVERSAL)" SDK badge from header. Cleaner look — SDK info lives in the admin panel where it belongs.',
-        commit: '719f5a9',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Eval history persistence',
-        desc: 'Eval results now saved to Postgres across deploys. Collapsible history table in admin Evaluations tab shows date, model, pass rates.',
-        commit: 'ac982ac',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Inline charting',
-        desc: 'Chart.js integration renders pie, bar, line, and doughnut charts inline in chat messages. The agent automatically suggests charts when data benefits from visualization.',
-        commit: '0c9e006',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Financial disclaimer & first-login agreement',
-        desc: 'Full US-focused financial disclaimer citing SEC, FINRA, and IAA 1940. First-time users must accept before using the app. Accessible anytime via the help menu.',
-        commit: 'd7e7f60',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Discover Features & sign out',
-        desc: 'New help menu options: Discover Features shows 10 upcoming Ghostfolio integrations (FIRE calculator, benchmarks, watchlist, etc.) with Coming Soon badges. Sign out button added to sidebar.',
-        commit: 'd7e7f60',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-27',
-        title: 'Profanity filter & security docs',
-        desc: 'Profanity detection with leetspeak variant handling added to guardrails. SECURITY.md and EVAL_RESULTS.md published with links from README.',
-        commit: 'd7e7f60',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-26',
-        title: 'Changelog & help menu',
-        desc: 'Added a floating help button with project changelog showing all milestones from both the Ghostfolio integration and the standalone agent, with direct links to code changes.',
-        commit: '59407146663f7e7efb42817840baf082674e19c4',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-26',
-        title: 'Jailbreak & prompt injection defenses',
-        desc: 'Defense-in-depth guardrails: Unicode normalization, base64 payload scanning, ChatML/Llama delimiter detection, DAN/developer mode blocking, multilingual injection detection (6 languages), credential leak prevention, and harmful financial advice filtering.',
-        commit: '59407146663f7e7efb42817840baf082674e19c4',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-26',
-        title: 'Persistent data storage',
-        desc: 'Migrated conversations, feedback, and settings from ephemeral file storage to Postgres using asyncpg with connection pooling. Data now survives container redeploys on Railway.',
-        commit: 'eeb82a7e43a7839cc7faba2fd656de4f0b3f8365',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-26',
-        title: '10 portfolio analysis tools',
-        desc: 'Five new tools added: portfolio performance (returns over time), dividend history (income tracking), X-Ray report (portfolio health check), investment timeline (monthly/yearly amounts), and account overview (balances and platforms). Bringing total to 10 tools.',
-        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-26',
-        title: '55 golden evaluation test cases',
-        desc: 'Comprehensive eval suite: 22 happy path cases covering all 10 tools, 8 tool selection tests, 10 edge cases (empty portfolios, ambiguous queries), 10 adversarial cases (prompt injection, jailbreak attempts), and 5 multi-step reasoning tests.',
-        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-26',
-        title: 'Deterministic verification & confidence scoring',
-        desc: 'Every agent response runs through data integrity checks (allocation sums, valid prices, no hallucinated tickers) and gets a weighted 0-100 confidence score based on tool success rate, check pass rate, response quality, and data backing.',
-        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-26',
-        title: 'Langfuse analytics & cost projections',
-        desc: 'Full observability via Langfuse: latency tracking, token usage, cost-per-query metrics, daily trace charts, and production cost projections for 100 to 100k users. Admin panel with Analytics and Cost Analysis tabs.',
-        commit: 'beec71028d563adbcb359f790ac31f4cbc5537d2',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-26',
-        title: 'Standalone sidecar agent',
-        desc: 'Extracted the AI agent from the Ghostfolio NestJS app into a standalone FastAPI Python service. Chat UI, JWT auth, 5 core tools (portfolio summary, market data, transactions, risk, tax), LLM-agnostic SDK system with 4 providers, and guardrails.',
-        commit: 'e1f29078f5d57065497f251a7a353debc0e773c7',
-        repo: 'agent-folio'
-      },
-      {
-        date: '2026-02-24',
-        title: 'Agent UI enhancements & eval pipeline',
-        desc: 'Redesigned agent chat UI with Ghostfolio dark theme, conversation persistence, category filtering, admin panel with SDK switching, and CI workflow for automated evaluation.',
-        commit: '27f4eea1e0554b1ff50a5ac9fdc58b78c6ee633b',
-        repo: 'ghostfolio'
-      },
-      {
-        date: '2026-02-24',
-        title: 'Langfuse observability integration',
-        desc: 'Integrated Langfuse tracing into the embedded Ghostfolio agent for LLM call monitoring, latency tracking, and cost analysis during development.',
-        commit: '23338c3955aacbcdc4fe40f2517e859f01f4a9d4',
-        repo: 'ghostfolio'
-      },
-      {
-        date: '2026-02-24',
-        title: 'Agent MVP with 5 tools',
-        desc: 'First complete version: portfolio summary, market data lookup, transaction history, risk assessment, and tax estimation tools. Conversation persistence, deterministic verification, and golden set evaluation data.',
-        commit: '44bd8102b2d236178ada1121669de536b0670668',
-        repo: 'ghostfolio'
-      },
-      {
-        date: '2026-02-23',
-        title: 'Initial AI agent prototype',
-        desc: 'First AI agent endpoint added to Ghostfolio with basic chat UI, OpenAI integration, and portfolio summary tool. Proof of concept for the financial assistant concept.',
-        commit: 'e5584dbd5f82c36ddb3893b79cec966564195fb4',
-        repo: 'ghostfolio'
-      }
-    ];
-
-    const REPO_URLS = {
-      'agent-folio': 'https://github.com/jpwilson/agent-folio',
-      'ghostfolio': 'https://github.com/jpwilson/ghostfolioJPGauntlet',
-    };
-
-    function showChangelog() {
+    async function showChangelog() {
       document.getElementById('help-menu').classList.remove('visible');
       const body = document.getElementById('changelog-body');
-      body.innerHTML = CHANGELOG_ENTRIES.map(e => {
-        const repoUrl = REPO_URLS[e.repo] || REPO_URLS['agent-folio'];
-        return `
-        <div class="changelog-entry">
-          <div class="changelog-entry-top">
-            <div class="changelog-entry-left">
-              <span class="changelog-date">${e.date}</span>
-              <span class="changelog-title">${e.title}</span>
-            </div>
-            <a class="changelog-link" href="${repoUrl}/commit/${e.commit}" target="_blank" rel="noopener">Code changes</a>
-          </div>
-          <div class="changelog-desc">${e.desc}</div>
-        </div>`;
-      }).join('');
+      body.innerHTML = '<div style="text-align:center; padding:24px; color:#888;">Loading...</div>';
       document.getElementById('changelog-overlay').classList.add('visible');
+      try {
+        const res = await fetch('/static/changelog.json');
+        const data = await res.json();
+        const repos = data.repos || {};
+        body.innerHTML = data.entries.map(e => {
+          const repoUrl = repos[e.repo] || repos['agent-folio'] || '#';
+          const link = e.commit
+            ? `<a class="changelog-link" href="${repoUrl}/commit/${e.commit}" target="_blank" rel="noopener">Code changes</a>`
+            : '';
+          return `
+          <div class="changelog-entry">
+            <div class="changelog-entry-top">
+              <div class="changelog-entry-left">
+                <span class="changelog-date">${e.date}</span>
+                <span class="changelog-title">${e.title}</span>
+              </div>
+              ${link}
+            </div>
+            <div class="changelog-desc">${e.desc}</div>
+          </div>`;
+        }).join('');
+      } catch (err) {
+        body.innerHTML = '<div style="color:#f87171; padding:24px;">Failed to load changelog.</div>';
+      }
     }
     function closeChangelog() {
       document.getElementById('changelog-overlay').classList.remove('visible');
