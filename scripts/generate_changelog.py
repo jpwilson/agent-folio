@@ -20,20 +20,8 @@ OVERRIDES_PATH = ROOT / "scripts" / "changelog_overrides.json"
 OUTPUT_PATH = ROOT / "static" / "changelog.json"
 
 
-def get_head_hash() -> str:
-    """Get the short hash of HEAD (to exclude from auto-entries)."""
-    result = subprocess.run(
-        ["git", "rev-parse", "--short", "HEAD"],
-        capture_output=True,
-        text=True,
-        cwd=ROOT,
-    )
-    return result.stdout.strip()
-
-
 def get_git_entries() -> list[dict]:
-    """Parse git log into changelog entry dicts (excluding HEAD)."""
-    head = get_head_hash()
+    """Parse git log into changelog entry dicts."""
     result = subprocess.run(
         ["git", "log", "--format=%h|%ai|%s", "--no-merges"],
         capture_output=True,
@@ -48,9 +36,6 @@ def get_git_entries() -> list[dict]:
         if len(parts) < 3:
             continue
         short_hash, date_str, title = parts
-        # Skip HEAD commit — its hash changes if changelog.json is amended
-        if short_hash.strip() == head:
-            continue
         entries.append(
             {
                 "date": date_str.strip()[:10],

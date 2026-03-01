@@ -8,9 +8,25 @@
     "8b60006",
     "1eb83a3",
     "5390157",
-    "48aa05c"
+    "48aa05c",
+    "9b65afe",
+    "a11037e"
   ],
   "entries": [
+    {
+      "date": "2026-02-28",
+      "title": "User Settings page with 4 tabs",
+      "desc": "New Settings overlay accessible from profile dropdown with Profile (display name, account info), Backends (full CRUD with card layout), Display (4 rendering toggles), and Import (portfolio drag-and-drop upload) tabs. Admin panel reduced from 7 to 5 tabs.",
+      "commit": "a11037e",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Automated changelog from git history",
+      "desc": "Changelog externalized from hardcoded JavaScript to static/changelog.json. Generation script merges git log with curated overrides. 56 entries with commit hashes and rich descriptions. CI verifies the script runs successfully.",
+      "commit": "a11037e",
+      "repo": "agent-folio"
+    },
     {
       "date": "2026-02-28",
       "title": "Combined portfolio provider",

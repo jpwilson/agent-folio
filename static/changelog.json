@@ -44,6 +44,13 @@
     },
     {
       "date": "2026-02-28",
+      "title": "Regenerate changelog.json for CI",
+      "desc": "Regenerate changelog.json for CI",
+      "commit": "d5c4fe5",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
       "title": "README rewrite for multi-backend",
       "desc": "README rewritten as \"AI portfolio agent for Ghostfolio, Rotki, and more\" with Supported Backends table, architecture diagram, and contributing guide link.",
       "commit": "959e2d2",
