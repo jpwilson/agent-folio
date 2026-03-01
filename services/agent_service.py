@@ -30,21 +30,25 @@ async def _get_provider(user_id: str, fallback_token: str):
         from services.providers.factory import build_provider
 
         connections = await db.get_active_backends(user_id)
+        logger.info("_get_provider: found %d active backends for user %s", len(connections) if connections else 0, user_id)
         if connections:
             # Build each provider individually so one failure doesn't kill the rest
             providers = []
             for c in connections:
                 try:
-                    providers.append(await build_provider(c))
+                    p = await build_provider(c)
+                    providers.append(p)
+                    logger.info("_get_provider: built %s provider (%s)", c.get("provider"), c.get("base_url"))
                 except Exception as e:
-                    logger.warning("Failed to build %s provider: %s", c.get("provider"), e)
+                    logger.error("Failed to build %s provider (%s): %s", c.get("provider"), c.get("base_url"), e, exc_info=True)
+            logger.info("_get_provider: %d/%d providers built successfully", len(providers), len(connections))
             if len(providers) == 1:
                 return providers[0]
             if len(providers) > 1:
                 from services.providers.combined import CombinedProvider
                 return CombinedProvider(providers)
     except Exception as e:
-        logger.error("Failed to build providers from DB, falling back to legacy JWT: %s", e)
+        logger.error("Failed to build providers from DB, falling back to legacy JWT: %s", e, exc_info=True)
     return GhostfolioClient(GHOSTFOLIO_URL, fallback_token)
 
 

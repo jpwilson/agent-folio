@@ -308,7 +308,14 @@ async def test_backend(connection_id: str, request: Request):
 
     try:
         provider = await build_provider(connection)
-        await provider.get_accounts()
-        return {"success": True, "message": f"Connected to {row['provider']} successfully"}
+        # Try fetching actual data to verify the full pipeline
+        details = await provider.get_portfolio_details()
+        holdings = details.get("holdings", [])
+        net_worth = details.get("summary", {}).get("netWorth", 0)
+        return {
+            "success": True,
+            "message": f"Connected to {row['provider']} successfully — {len(holdings)} holdings, net worth: ${net_worth:,.2f}",
+        }
     except Exception as e:
-        return {"success": False, "message": f"Connection failed: {str(e)}"}
+        import traceback
+        return {"success": False, "message": f"Connection failed: {type(e).__name__}: {str(e)}", "traceback": traceback.format_exc()}

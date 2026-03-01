@@ -40,17 +40,20 @@ class RotkiClient(PortfolioProvider):
         if not username or not password:
             raise ValueError("Rotki connection requires username and password")
 
+        logger.info("RotkiClient.create: connecting to %s as user %s", base_url, username)
         client = httpx.AsyncClient(timeout=30.0, base_url=base_url)
         # Rotki login: POST /api/1/users/<username> with password
         res = await client.post(
             f"/api/1/users/{username}",
             json={"password": password, "sync_approval": "unknown"},
         )
+        logger.info("RotkiClient.create: login status=%s body=%s", res.status_code, res.text[:200])
         if res.status_code == 401:
             await client.aclose()
             raise ValueError("Rotki authentication failed: invalid credentials")
         if res.status_code == 409:
-            # User already logged in — that's fine, we can still query
+            # User already logged in — that's fine, Rotki is single-user so
+            # the API is "unlocked" and we can query without session cookies
             logger.info("Rotki user %s already logged in, reusing session", username)
         elif res.status_code not in (200, 300):
             res.raise_for_status()
@@ -91,12 +94,14 @@ class RotkiClient(PortfolioProvider):
     async def get_portfolio_details(self) -> dict:
         """GET /api/1/balances/manual — normalize to holdings array."""
         try:
+            logger.info("RotkiClient.get_portfolio_details: fetching %s/api/1/balances/manual", self._base_url)
             res = await self._client.get("/api/1/balances/manual")
+            logger.info("RotkiClient.get_portfolio_details: status=%s len=%s", res.status_code, len(res.text))
             res.raise_for_status()
             data = res.json()
             result = data.get("result", data)
         except Exception as e:
-            logger.warning("Rotki balances failed: %s", e)
+            logger.error("Rotki balances failed: %s (type=%s)", e, type(e).__name__, exc_info=True)
             return {"holdings": [], "summary": {}}
 
         holdings = []
