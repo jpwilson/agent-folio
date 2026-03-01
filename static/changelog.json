@@ -107,6 +107,13 @@
     },
     {
       "date": "2026-02-28",
+      "title": "Fix account badge: show first, populate later",
+      "desc": "Fix account badge: show first, populate later",
+      "commit": "af4e918",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
       "title": "Fix account badge + stabilize changelog CI",
       "desc": "Fix account badge + stabilize changelog CI",
       "commit": "e7b0ca0",

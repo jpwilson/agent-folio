@@ -83,7 +83,30 @@ async def grader_login():
                 raise HTTPException(status_code=401, detail="Grader token is invalid")
             res.raise_for_status()
             data = res.json()
-            return {"authToken": data.get("authToken")}
+            auth_token = data.get("authToken")
+
+            # Auto-register Ghostfolio backend for grader account
+            try:
+                import json as _json
+                from base64 import b64decode
+
+                payload = _json.loads(b64decode(auth_token.split(".")[1] + "=="))
+                uid = payload.get("id") or payload.get("sub") or ""
+                if uid:
+                    existing = await db.get_active_backends(uid)
+                    has_gf = any(c["provider"] == "ghostfolio" for c in existing)
+                    if not has_gf:
+                        await db.add_backend_connection(
+                            user_id=uid,
+                            provider="ghostfolio",
+                            base_url=GHOSTFOLIO_URL,
+                            credentials={"security_token": GRADER_TOKEN},
+                            label="Ghostfolio (Grader)",
+                        )
+            except Exception:
+                pass  # Auto-register is best-effort
+
+            return {"authToken": auth_token}
     except httpx.HTTPStatusError:
         raise HTTPException(status_code=401, detail="Grader authentication failed") from None
     except httpx.ConnectError:

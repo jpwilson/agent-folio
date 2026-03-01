@@ -1691,6 +1691,10 @@
       }
     }
 
+    let _profileUserId = '';
+    let _profileShortId = '';
+    let _profileUsername = null;
+
     function onAuthenticated() {
       statusEl.textContent = 'Connected';
       statusEl.className = 'status connected';
@@ -1699,10 +1703,6 @@
       loadSdkSettings();
       loadConfig();
     }
-
-    let _profileUserId = '';
-    let _profileShortId = '';
-    let _profileUsername = null;
 
     async function updateAccountBadge() {
       const badge = document.getElementById('account-badge');
