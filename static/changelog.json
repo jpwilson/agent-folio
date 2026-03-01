@@ -44,13 +44,6 @@
     },
     {
       "date": "2026-02-28",
-      "title": "Regenerate changelog.json for CI",
-      "desc": "Regenerate changelog.json for CI",
-      "commit": "d5c4fe5",
-      "repo": "agent-folio"
-    },
-    {
-      "date": "2026-02-28",
       "title": "README rewrite for multi-backend",
       "desc": "README rewritten as \"AI portfolio agent for Ghostfolio, Rotki, and more\" with Supported Backends table, architecture diagram, and contributing guide link.",
       "commit": "959e2d2",
@@ -110,6 +103,13 @@
       "title": "GhostfolioClient extends PortfolioProvider ABC",
       "desc": "GhostfolioClient now implements the abstract base class. Constructor changed from (token) to (base_url, token) for explicit URL configuration. Added provider_name property.",
       "commit": "959e2d2",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Fix account badge + stabilize changelog CI",
+      "desc": "Fix account badge + stabilize changelog CI",
+      "commit": "e7b0ca0",
       "repo": "agent-folio"
     },
     {

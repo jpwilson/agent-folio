@@ -1707,37 +1707,43 @@
     async function updateAccountBadge() {
       const badge = document.getElementById('account-badge');
       const badgeText = document.getElementById('badge-text');
-      const backendsBadge = document.getElementById('backends-badge');
-      if (!badge || !TOKEN) return;
+      if (!badge || !TOKEN) { console.warn('[badge] no badge element or TOKEN'); return; }
+
+      // Always show the badge — populate with best-effort data
+      badge.style.display = 'inline-flex';
+      badge.style.alignItems = 'center';
+      badge.style.gap = '4px';
+
       try {
-        const payload = JSON.parse(atob(TOKEN.split('.')[1]));
+        const parts = TOKEN.split('.');
+        const payload = JSON.parse(atob(parts[1] + '=='.slice((2 - parts[1].length * 3) & 3)));
         _profileUserId = payload.id || payload.sub || '';
         _profileShortId = _profileUserId.substring(0, 8);
-        if (IS_GRADER) {
-          badgeText.textContent = 'Grader';
-          badge.className = 'account-badge grader';
-          badge.title = 'Demo grader account';
-          badge.style.cursor = 'pointer';
-        } else {
-          try {
-            const res = await fetch(`${API_BASE}/profile`, {
-              headers: { 'Authorization': `Bearer ${TOKEN}` }
-            });
-            if (res.ok) _profileUsername = (await res.json()).username;
-          } catch {}
-          badgeText.textContent = _profileUsername || ('Account ' + _profileShortId);
-          badge.className = 'account-badge';
-          badge.title = 'Profile & Backends';
-          badge.style.cursor = 'pointer';
-        }
-        badge.style.display = 'inline-flex';
-        badge.style.alignItems = 'center';
-        badge.style.gap = '4px';
-        // Load backends to show badge count (best-effort, don't hide badge on failure)
-        try { await loadBackendsList(); } catch {}
-      } catch {
-        badge.style.display = 'none';
+      } catch (e) {
+        console.warn('[badge] JWT decode failed:', e.message);
+        _profileUserId = '';
+        _profileShortId = '';
       }
+
+      if (IS_GRADER) {
+        badgeText.textContent = 'Grader';
+        badge.className = 'account-badge grader';
+        badge.title = 'Demo grader account';
+      } else {
+        try {
+          const res = await fetch(`${API_BASE}/profile`, {
+            headers: { 'Authorization': `Bearer ${TOKEN}` }
+          });
+          if (res.ok) _profileUsername = (await res.json()).username;
+        } catch {}
+        badgeText.textContent = _profileUsername || ('Account ' + _profileShortId) || 'Account';
+        badge.className = 'account-badge';
+        badge.title = 'Profile & Backends';
+      }
+      badge.style.cursor = 'pointer';
+
+      // Load backends badge count (best-effort)
+      try { await loadBackendsList(); } catch {}
     }
 
     function toggleProfileDropdown(e) {
