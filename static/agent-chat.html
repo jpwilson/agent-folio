@@ -1733,8 +1733,8 @@
         badge.style.display = 'inline-flex';
         badge.style.alignItems = 'center';
         badge.style.gap = '4px';
-        // Load backends to show badge count
-        await loadBackendsList();
+        // Load backends to show badge count (best-effort, don't hide badge on failure)
+        try { await loadBackendsList(); } catch {}
       } catch {
         badge.style.display = 'none';
       }
