@@ -49,8 +49,10 @@ class RotkiClient(PortfolioProvider):
         if res.status_code == 401:
             await client.aclose()
             raise ValueError("Rotki authentication failed: invalid credentials")
-        # 300 means user is already logged in — that's fine
-        if res.status_code not in (200, 300):
+        if res.status_code == 409:
+            # User already logged in — that's fine, we can still query
+            logger.info("Rotki user %s already logged in, reusing session", username)
+        elif res.status_code not in (200, 300):
             res.raise_for_status()
         return cls(base_url, client)
 
