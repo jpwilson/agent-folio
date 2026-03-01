@@ -54,7 +54,12 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    import subprocess
+    try:
+        commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
+    except Exception:
+        commit = "unknown"
+    return {"status": "ok", "commit": commit}
 
 
 @app.get("/api/v1/agent/config")
