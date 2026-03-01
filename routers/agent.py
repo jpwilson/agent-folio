@@ -319,3 +319,55 @@ async def test_backend(connection_id: str, request: Request):
     except Exception as e:
         import traceback
         return {"success": False, "message": f"Connection failed: {type(e).__name__}: {str(e)}", "traceback": traceback.format_exc()}
+
+
+@router.get("/debug/portfolio")
+async def debug_portfolio(request: Request):
+    """Debug endpoint: replicate exactly what the chat does when calling portfolio_summary."""
+    import traceback
+
+    from services.agent_service import _get_provider
+    from tools import ALL_TOOLS
+
+    user_id = get_user_id(request)
+    token = get_raw_token(request)
+    results = {"steps": []}
+
+    # Step 1: Build providers (same as chat)
+    try:
+        client = await _get_provider(user_id, token)
+        provider_name = getattr(client, "provider_name", type(client).__name__)
+        results["provider"] = provider_name
+        results["steps"].append(f"Provider built: {provider_name}")
+    except Exception as e:
+        results["steps"].append(f"Provider build FAILED: {type(e).__name__}: {e}")
+        results["traceback"] = traceback.format_exc()
+        return results
+
+    # Step 2: Call portfolio_summary tool (same as chat)
+    try:
+        tool = ALL_TOOLS.get("portfolio_summary")
+        tool_result = await tool.execute(client, {})
+        results["tool_result"] = tool_result
+        results["steps"].append(f"portfolio_summary returned success={tool_result.get('success')}, holdings={len(tool_result.get('holdings', []))}")
+    except Exception as e:
+        results["steps"].append(f"portfolio_summary FAILED: {type(e).__name__}: {e}")
+        results["tool_traceback"] = traceback.format_exc()
+
+    # Step 3: Call get_portfolio_details directly (bypasses tool formatting)
+    try:
+        raw = await client.get_portfolio_details()
+        results["raw_details"] = {
+            "holdings_count": len(raw.get("holdings", [])),
+            "holdings_preview": [
+                {"name": h.get("name"), "symbol": h.get("symbol"), "value": h.get("valueInBaseCurrency"), "_source": h.get("_source")}
+                for h in raw.get("holdings", [])[:10]
+            ],
+            "summary": raw.get("summary", {}),
+        }
+        results["steps"].append(f"Raw get_portfolio_details: {len(raw.get('holdings', []))} holdings")
+    except Exception as e:
+        results["steps"].append(f"Raw get_portfolio_details FAILED: {type(e).__name__}: {e}")
+        results["raw_traceback"] = traceback.format_exc()
+
+    return results
