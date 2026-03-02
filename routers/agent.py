@@ -318,7 +318,12 @@ async def test_backend(connection_id: str, request: Request):
         }
     except Exception as e:
         import traceback
-        return {"success": False, "message": f"Connection failed: {type(e).__name__}: {str(e)}", "traceback": traceback.format_exc()}
+
+        return {
+            "success": False,
+            "message": f"Connection failed: {type(e).__name__}: {str(e)}",
+            "traceback": traceback.format_exc(),
+        }
 
 
 @router.get("/debug/portfolio")
@@ -349,7 +354,9 @@ async def debug_portfolio(request: Request):
         tool = ALL_TOOLS.get("portfolio_summary")
         tool_result = await tool.execute(client, {})
         results["tool_result"] = tool_result
-        results["steps"].append(f"portfolio_summary returned success={tool_result.get('success')}, holdings={len(tool_result.get('holdings', []))}")
+        results["steps"].append(
+            f"portfolio_summary returned success={tool_result.get('success')}, holdings={len(tool_result.get('holdings', []))}"
+        )
     except Exception as e:
         results["steps"].append(f"portfolio_summary FAILED: {type(e).__name__}: {e}")
         results["tool_traceback"] = traceback.format_exc()
@@ -360,7 +367,12 @@ async def debug_portfolio(request: Request):
         results["raw_details"] = {
             "holdings_count": len(raw.get("holdings", [])),
             "holdings_preview": [
-                {"name": h.get("name"), "symbol": h.get("symbol"), "value": h.get("valueInBaseCurrency"), "_source": h.get("_source")}
+                {
+                    "name": h.get("name"),
+                    "symbol": h.get("symbol"),
+                    "value": h.get("valueInBaseCurrency"),
+                    "_source": h.get("_source"),
+                }
                 for h in raw.get("holdings", [])[:10]
             ],
             "summary": raw.get("summary", {}),

@@ -55,6 +55,7 @@ async def root():
 @app.get("/health")
 async def health():
     import subprocess
+
     try:
         commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
     except Exception:

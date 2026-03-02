@@ -22,16 +22,16 @@ async def execute(client: PortfolioProvider, args: dict) -> dict:
         for h in holdings_list:
             allocation = h.get("allocationInPercentage", 0)
             entry = {
-                    "name": h.get("name"),
-                    "symbol": h.get("symbol"),
-                    "currency": h.get("currency"),
-                    "assetClass": h.get("assetClass"),
-                    "assetSubClass": h.get("assetSubClass"),
-                    "allocationInPercentage": f"{allocation * 100:.2f}",
-                    "marketPrice": h.get("marketPrice"),
-                    "quantity": h.get("quantity"),
-                    "valueInBaseCurrency": h.get("valueInBaseCurrency"),
-                }
+                "name": h.get("name"),
+                "symbol": h.get("symbol"),
+                "currency": h.get("currency"),
+                "assetClass": h.get("assetClass"),
+                "assetSubClass": h.get("assetSubClass"),
+                "allocationInPercentage": f"{allocation * 100:.2f}",
+                "marketPrice": h.get("marketPrice"),
+                "quantity": h.get("quantity"),
+                "valueInBaseCurrency": h.get("valueInBaseCurrency"),
+            }
             if h.get("_source"):
                 entry["source"] = h["_source"]
             holdings.append(entry)
