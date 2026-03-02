@@ -2202,6 +2202,8 @@
         const decoder = new TextDecoder();
         let buffer = '';
         let finalData = null;
+        let eventType = null;
+        let eventData = null;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -2211,9 +2213,6 @@
           // Parse SSE events from buffer
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
-
-          let eventType = null;
-          let eventData = null;
 
           for (const line of lines) {
             if (line.startsWith('event: ')) {
@@ -2401,7 +2400,28 @@
         'How has my portfolio performed this year?',
         'Am I too heavy in any one stock?',
       ],
+      'invest_insight_properties': [
+        'What is the total value of my properties?',
+        'How do my property investments compare to my stocks?',
+        'Show me my full portfolio allocation',
+      ],
+      'invest_insight_search': [
+        'What properties do I currently own?',
+        'How is my portfolio diversified across asset types?',
+        'What does my full portfolio look like?',
+      ],
+      'invest_insight_demographics': [
+        'What properties do I own in that area?',
+        'Show me my investment property portfolio',
+        'What does my portfolio allocation look like?',
+      ],
     };
+
+    const DEFAULT_FOLLOWUPS = [
+      'What does my portfolio look like?',
+      'How has my portfolio performed this year?',
+      'What have I bought recently?',
+    ];
 
     function showFollowups(toolCalls, aiFollowups) {
       const bar = document.getElementById('followups-bar');
@@ -2422,9 +2442,9 @@
         }
       }
 
+      // Final fallback: always show default suggestions
       if (followups.length === 0) {
-        bar.classList.remove('visible');
-        return;
+        followups = DEFAULT_FOLLOWUPS;
       }
       // Show max 3
       list.innerHTML = followups.slice(0, 3).map(s =>
@@ -2445,9 +2465,10 @@
     // ---- Inline Chart Rendering ----
     let chartCounter = 0;
     const CHART_COLORS = [
-      '#36cfb4', '#4ecdc4', '#45b7aa', '#2a9d8f', '#264653',
-      '#e76f51', '#f4a261', '#e9c46a', '#8ab17d', '#7209b7',
-      '#3a86ff', '#ff006e', '#fb5607', '#ffbe0b', '#8338ec',
+      '#36cfb4', '#e76f51', '#3a86ff', '#f4a261', '#8338ec',
+      '#ff006e', '#2a9d8f', '#ffbe0b', '#fb5607', '#7209b7',
+      '#45b7aa', '#e9c46a', '#264653', '#8ab17d', '#f87171',
+      '#60a5fa', '#a78bfa', '#34d399', '#fbbf24', '#f472b6',
     ];
 
     function renderCharts(container) {
