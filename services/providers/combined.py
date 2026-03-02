@@ -53,7 +53,13 @@ class CombinedProvider(PortfolioProvider):
         summary = {}
 
         for source, data in results:
-            for h in data.get("holdings", []):
+            # Holdings may be a list of dicts or a dict keyed by symbol
+            raw_holdings = data.get("holdings", [])
+            if isinstance(raw_holdings, dict):
+                raw_holdings = list(raw_holdings.values())
+            for h in raw_holdings:
+                if not isinstance(h, dict):
+                    continue
                 h["_source"] = source
                 all_holdings.append(h)
                 total_value += float(h.get("valueInBaseCurrency", 0))
