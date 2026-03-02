@@ -1,0 +1,138 @@
+{
+  "activities": [
+    {
+      "date": "2024-01-08T09:30:00Z",
+      "symbol": "AAPL",
+      "type": "BUY",
+      "quantity": 20,
+      "unitPrice": 181.25,
+      "fee": 4.99,
+      "currency": "USD",
+      "dataSource": "YAHOO"
+    },
+    {
+      "date": "2024-01-22T11:00:00Z",
+      "symbol": "BTC",
+      "type": "BUY",
+      "quantity": 0.3,
+      "unitPrice": 40150.00,
+      "fee": 10.00,
+      "currency": "USD"
+    },
+    {
+      "date": "2024-02-10T14:30:00Z",
+      "symbol": "MSFT",
+      "type": "BUY",
+      "quantity": 10,
+      "unitPrice": 405.80,
+      "fee": 4.99,
+      "currency": "USD",
+      "dataSource": "YAHOO"
+    },
+    {
+      "date": "2024-02-28T10:15:00Z",
+      "symbol": "ETH",
+      "type": "BUY",
+      "quantity": 4.0,
+      "unitPrice": 3280.00,
+      "fee": 8.50,
+      "currency": "USD"
+    },
+    {
+      "date": "2024-03-15T13:45:00Z",
+      "symbol": "NVDA",
+      "type": "BUY",
+      "quantity": 8,
+      "unitPrice": 890.50,
+      "fee": 4.99,
+      "currency": "USD",
+      "dataSource": "YAHOO"
+    },
+    {
+      "date": "2024-04-01T09:00:00Z",
+      "symbol": "SOL",
+      "type": "BUY",
+      "quantity": 75,
+      "unitPrice": 185.20,
+      "fee": 5.00,
+      "currency": "USD"
+    },
+    {
+      "date": "2024-05-10T15:30:00Z",
+      "symbol": "VTI",
+      "type": "BUY",
+      "quantity": 25,
+      "unitPrice": 258.40,
+      "fee": 0,
+      "currency": "USD",
+      "dataSource": "YAHOO"
+    },
+    {
+      "date": "2024-06-20T11:30:00Z",
+      "symbol": "AAPL",
+      "type": "SELL",
+      "quantity": 10,
+      "unitPrice": 210.50,
+      "fee": 4.99,
+      "currency": "USD",
+      "dataSource": "YAHOO"
+    },
+    {
+      "date": "2024-07-05T08:45:00Z",
+      "symbol": "BTC",
+      "type": "BUY",
+      "quantity": 0.2,
+      "unitPrice": 57800.00,
+      "fee": 12.00,
+      "currency": "USD"
+    },
+    {
+      "date": "2024-08-15T10:00:00Z",
+      "symbol": "AMZN",
+      "type": "BUY",
+      "quantity": 15,
+      "unitPrice": 186.70,
+      "fee": 4.99,
+      "currency": "USD",
+      "dataSource": "YAHOO"
+    },
+    {
+      "date": "2024-09-01T14:00:00Z",
+      "symbol": "ETH",
+      "type": "SELL",
+      "quantity": 1.5,
+      "unitPrice": 3450.00,
+      "fee": 7.00,
+      "currency": "USD"
+    },
+    {
+      "date": "2024-10-10T12:30:00Z",
+      "symbol": "GOOGL",
+      "type": "BUY",
+      "quantity": 12,
+      "unitPrice": 165.30,
+      "fee": 4.99,
+      "currency": "USD",
+      "dataSource": "YAHOO"
+    },
+    {
+      "date": "2024-11-20T09:15:00Z",
+      "symbol": "LINK",
+      "type": "BUY",
+      "quantity": 200,
+      "unitPrice": 14.25,
+      "fee": 3.50,
+      "currency": "USD"
+    },
+    {
+      "date": "2024-12-05T16:00:00Z",
+      "symbol": "TSLA",
+      "type": "BUY",
+      "quantity": 18,
+      "unitPrice": 352.80,
+      "fee": 4.99,
+      "currency": "USD",
+      "dataSource": "YAHOO"
+    }
+  ]
+}
