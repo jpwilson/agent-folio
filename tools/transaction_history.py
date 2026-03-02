@@ -33,18 +33,19 @@ async def execute(client: PortfolioProvider, args: dict) -> dict:
         transactions = []
         for a in recent:
             symbol_profile = a.get("SymbolProfile", {}) or {}
-            transactions.append(
-                {
+            entry = {
                     "date": a.get("date"),
                     "type": a.get("type"),
-                    "symbol": symbol_profile.get("symbol"),
+                    "symbol": symbol_profile.get("symbol") or a.get("symbol"),
                     "name": symbol_profile.get("name"),
                     "quantity": a.get("quantity"),
                     "unitPrice": a.get("unitPrice"),
-                    "currency": symbol_profile.get("currency"),
+                    "currency": symbol_profile.get("currency") or a.get("currency"),
                     "fee": a.get("fee"),
                 }
-            )
+            if a.get("_source"):
+                entry["source"] = a["_source"]
+            transactions.append(entry)
 
         return {
             "success": True,

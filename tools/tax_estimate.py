@@ -28,6 +28,7 @@ async def execute(client: PortfolioProvider, args: dict) -> dict:
 
         holdings_raw = details.get("holdings", {})
         holdings = list(holdings_raw.values()) if isinstance(holdings_raw, dict) else holdings_raw
+        holdings = [h for h in holdings if isinstance(h, dict)]
 
         activities = orders_data.get("activities", [])
 

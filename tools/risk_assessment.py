@@ -16,6 +16,7 @@ async def execute(client: PortfolioProvider, args: dict) -> dict:
         holdings_raw = details.get("holdings", {})
 
         holdings = list(holdings_raw.values()) if isinstance(holdings_raw, dict) else holdings_raw
+        holdings = [h for h in holdings if isinstance(h, dict)]
 
         total_value = sum(h.get("valueInBaseCurrency", 0) or 0 for h in holdings)
 

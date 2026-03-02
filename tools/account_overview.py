@@ -17,16 +17,17 @@ async def execute(client: PortfolioProvider, args: dict) -> dict:
 
         formatted = []
         for a in accounts:
-            formatted.append(
-                {
+            entry = {
                     "name": a.get("name"),
                     "currency": a.get("currency"),
                     "balance": a.get("balance"),
                     "valueInBaseCurrency": a.get("valueInBaseCurrency"),
-                    "platform": a.get("Platform", {}).get("name") if a.get("Platform") else None,
+                    "platform": a.get("Platform", {}).get("name") if a.get("Platform") else a.get("platformId"),
                     "isExcluded": a.get("isExcluded", False),
                 }
-            )
+            if a.get("_source"):
+                entry["source"] = a["_source"]
+            formatted.append(entry)
 
         return {
             "success": True,
