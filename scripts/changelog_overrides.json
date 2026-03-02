@@ -10,9 +10,41 @@
     "5390157",
     "48aa05c",
     "9b65afe",
-    "a11037e"
+    "a11037e",
+    "f00265d",
+    "3fd0bbd",
+    "a13337d",
+    "8112503"
   ],
   "entries": [
+    {
+      "date": "2026-03-01",
+      "title": "Fix chart colors and follow-up suggestions",
+      "desc": "Reordered chart color palette so pie chart slices are maximally distinct (teal, coral, blue, orange, purple) instead of all green shades. Fixed SSE parser bug where chunked responses could lose event type. Added Invest Insight tools to follow-up map and default fallback so suggestions always appear.",
+      "commit": "12e3eba",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Fix browser password autofill on chat input",
+      "desc": "Added autocomplete=\"off\" to the chat input and all password fields to prevent Chrome from suggesting saved passwords in the message box.",
+      "commit": "e0b406e",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Edit backend connections",
+      "desc": "Added pencil icon edit button to backend connection cards. Clicking opens the modal pre-filled with current URL and provider. Credentials are optional on edit — only sent if changed. Uses PUT endpoint for updates.",
+      "commit": "6eb9b03",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Invest Insight as third backend provider",
+      "desc": "Full Invest Insight integration: InvestInsightProvider maps real estate properties to Ghostfolio-compatible holdings (REAL_ESTATE asset class). Three new tools: invest_insight_properties (CRUD), invest_insight_search (market saturation analysis), invest_insight_demographics (zip code data). Provider factory, guardrails, and verification updated. Total tools: 14.",
+      "commit": "024f364",
+      "repo": "agent-folio"
+    },
     {
       "date": "2026-02-28",
       "title": "User Settings page with 4 tabs",

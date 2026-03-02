@@ -16,6 +16,13 @@
     },
     {
       "date": "2026-03-01",
+      "title": "Invest Insight as third backend provider",
+      "desc": "Full Invest Insight integration: InvestInsightProvider maps real estate properties to Ghostfolio-compatible holdings (REAL_ESTATE asset class). Three new tools: invest_insight_properties (CRUD), invest_insight_search (market saturation analysis), invest_insight_demographics (zip code data). Provider factory, guardrails, and verification updated. Total tools: 14.",
+      "commit": "024f364",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
       "title": "Handle Rotki 409 conflict and add crypto keywords to guardrails",
       "desc": "Handle Rotki 409 conflict and add crypto keywords to guardrails",
       "commit": "cfce57b",
@@ -23,9 +30,16 @@
     },
     {
       "date": "2026-03-01",
-      "title": "Fix ruff format violations in 6 files",
-      "desc": "Fix ruff format violations in 6 files",
-      "commit": "f00265d",
+      "title": "Fix chart colors and follow-up suggestions",
+      "desc": "Reordered chart color palette so pie chart slices are maximally distinct (teal, coral, blue, orange, purple) instead of all green shades. Fixed SSE parser bug where chunked responses could lose event type. Added Invest Insight tools to follow-up map and default fallback so suggestions always appear.",
+      "commit": "12e3eba",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Fix browser password autofill on chat input",
+      "desc": "Added autocomplete=\"off\" to the chat input and all password fields to prevent Chrome from suggesting saved passwords in the message box.",
+      "commit": "e0b406e",
       "repo": "agent-folio"
     },
     {
@@ -44,30 +58,16 @@
     },
     {
       "date": "2026-03-01",
+      "title": "Edit backend connections",
+      "desc": "Added pencil icon edit button to backend connection cards. Clicking opens the modal pre-filled with current URL and provider. Credentials are optional on edit \u2014 only sent if changed. Uses PUT endpoint for updates.",
+      "commit": "6eb9b03",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
       "title": "Add seed data files for portfolio import testing",
       "desc": "Add seed data files for portfolio import testing",
       "commit": "d8d85a9",
-      "repo": "agent-folio"
-    },
-    {
-      "date": "2026-03-01",
-      "title": "Add diagnostic logging for Rotki provider debugging",
-      "desc": "Add diagnostic logging for Rotki provider debugging",
-      "commit": "3fd0bbd",
-      "repo": "agent-folio"
-    },
-    {
-      "date": "2026-03-01",
-      "title": "Add debug/portfolio endpoint to diagnose tool failures",
-      "desc": "Add debug/portfolio endpoint to diagnose tool failures",
-      "commit": "a13337d",
-      "repo": "agent-folio"
-    },
-    {
-      "date": "2026-03-01",
-      "title": "Add commit hash to health endpoint for deploy verification",
-      "desc": "Add commit hash to health endpoint for deploy verification",
-      "commit": "8112503",
       "repo": "agent-folio"
     },
     {
