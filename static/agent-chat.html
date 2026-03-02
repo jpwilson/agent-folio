@@ -905,7 +905,7 @@
         <div class="followups-list" id="followups-list"></div>
       </div>
       <div id="input-area">
-        <input id="input" type="text" placeholder="Ask about your portfolio..." autofocus />
+        <input id="input" type="text" placeholder="Ask about your portfolio..." autofocus autocomplete="off" name="agent-chat-message" data-form-type="other" />
         <button id="send" onclick="send()">Send</button>
       </div>
 
@@ -1006,7 +1006,7 @@
         </p>
         <div style="margin-bottom: 16px;">
           <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">Security Token</label>
-          <input id="login-token" type="password" placeholder="Enter your security token..."
+          <input id="login-token" type="password" placeholder="Enter your security token..." autocomplete="off"
             style="width: 100%; padding: 10px 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; font-size: 14px;" />
         </div>
         <div id="login-error" style="color: #ff4444; font-size: 12px; margin-bottom: 12px; display: none;"></div>
@@ -1078,19 +1078,19 @@
                 <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">
                   OpenAI API Key <span id="openai-key-status" style="font-size: 10px;"></span>
                 </label>
-                <input class="admin-input" type="password" id="admin-openai-key" placeholder="sk-..." />
+                <input class="admin-input" type="password" id="admin-openai-key" placeholder="sk-..." autocomplete="off" />
               </div>
               <div style="margin-bottom: 12px;">
                 <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">
                   Anthropic API Key <span id="anthropic-key-status" style="font-size: 10px;"></span>
                 </label>
-                <input class="admin-input" type="password" id="admin-anthropic-key" placeholder="sk-ant-..." />
+                <input class="admin-input" type="password" id="admin-anthropic-key" placeholder="sk-ant-..." autocomplete="off" />
               </div>
               <div style="margin-bottom: 12px;">
                 <label style="font-size: 12px; color: #999; display: block; margin-bottom: 6px;">
                   OpenRouter API Key <span id="openrouter-key-status" style="font-size: 10px;"></span>
                 </label>
-                <input class="admin-input" type="password" id="admin-openrouter-key" placeholder="sk-or-..." />
+                <input class="admin-input" type="password" id="admin-openrouter-key" placeholder="sk-or-..." autocomplete="off" />
                 <div style="font-size: 11px; color: #666; margin-top: 4px;">Bring your own key from <a href="https://openrouter.ai/keys" target="_blank" style="color: #36cfb4;">openrouter.ai</a> — access 100+ models</div>
               </div>
             </div>
@@ -3937,11 +3937,11 @@
       </div>
       <div class="abm-field" id="abm-cred-token-field">
         <label>Security Token</label>
-        <input id="abm-security-token" type="password" placeholder="Ghostfolio security token" />
+        <input id="abm-security-token" type="password" placeholder="Ghostfolio security token" autocomplete="off" />
       </div>
       <div class="abm-field" id="abm-cred-apitoken-field" style="display:none;">
         <label>API Token</label>
-        <input id="abm-api-token" type="password" placeholder="Invest Insight API token (from /auth/tokens)" />
+        <input id="abm-api-token" type="password" placeholder="Invest Insight API token (from /auth/tokens)" autocomplete="off" />
       </div>
       <div class="abm-field" id="abm-cred-user-field" style="display:none;">
         <label>Username</label>
@@ -3949,7 +3949,7 @@
       </div>
       <div class="abm-field" id="abm-cred-pass-field" style="display:none;">
         <label>Password</label>
-        <input id="abm-password" type="password" placeholder="Rotki password" />
+        <input id="abm-password" type="password" placeholder="Rotki password" autocomplete="off" />
       </div>
       <div class="abm-actions">
         <button class="abm-cancel" onclick="hideAddBackendModal()">Cancel</button>
