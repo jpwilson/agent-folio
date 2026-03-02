@@ -1780,6 +1780,7 @@
         if (!res.ok) return;
         const data = await res.json();
         const backends = data.backends || [];
+        _cachedBackends = backends;
         const container = document.getElementById('pd-backends-list');
         const backendsBadge = document.getElementById('backends-badge');
 
@@ -1808,6 +1809,7 @@
                     title="${b.isActive ? 'Active' : 'Inactive'}"
                     onclick="toggleBackend('${b.id}', ${!b.isActive})"></button>
             <div class="pd-be-actions">
+              <button onclick="editBackend('${b.id}')" title="Edit connection">&#9998;</button>
               <button onclick="testBackend('${b.id}')" title="Test connection">&#9889;</button>
               <button onclick="deleteBackend('${b.id}')" title="Remove">&#10005;</button>
             </div>
@@ -1853,12 +1855,39 @@
       } catch {}
     }
 
+    let _editingBackendId = null;
+    let _cachedBackends = [];
+
+    function editBackend(id) {
+      const b = _cachedBackends.find(x => x.id === id);
+      if (!b) { alert('Backend not found'); return; }
+      _editingBackendId = id;
+      document.getElementById('abm-provider').value = b.provider;
+      document.getElementById('abm-provider').disabled = true;
+      document.getElementById('abm-label').value = b.label || '';
+      document.getElementById('abm-url').value = b.baseUrl || '';
+      document.getElementById('abm-security-token').value = '';
+      document.getElementById('abm-api-token').value = '';
+      document.getElementById('abm-username').value = '';
+      document.getElementById('abm-password').value = '';
+      onProviderChange();
+      document.getElementById('abm-modal-title').textContent = 'Edit Backend Connection';
+      document.getElementById('abm-save-btn').textContent = 'Save';
+      document.getElementById('add-backend-modal').classList.add('visible');
+    }
+
     function showAddBackendModal() {
+      _editingBackendId = null;
+      document.getElementById('abm-provider').disabled = false;
+      document.getElementById('abm-modal-title').textContent = 'Add Backend Connection';
+      document.getElementById('abm-save-btn').textContent = 'Add';
       document.getElementById('add-backend-modal').classList.add('visible');
       onProviderChange();
     }
 
     function hideAddBackendModal() {
+      _editingBackendId = null;
+      document.getElementById('abm-provider').disabled = false;
       document.getElementById('add-backend-modal').classList.remove('visible');
       document.getElementById('abm-label').value = '';
       document.getElementById('abm-url').value = '';
@@ -1887,26 +1916,35 @@
       if (!baseUrl) { alert('URL is required'); return; }
 
       let credentials = {};
+      const isEditing = !!_editingBackendId;
+
       if (provider === 'ghostfolio') {
         const token = document.getElementById('abm-security-token').value;
-        if (!token) { alert('Security token is required'); return; }
-        credentials = { security_token: token };
+        if (!isEditing && !token) { alert('Security token is required'); return; }
+        if (token) credentials.security_token = token;
       } else if (provider === 'invest_insight') {
         const apiToken = document.getElementById('abm-api-token').value;
-        if (!apiToken) { alert('API token is required'); return; }
-        credentials = { api_token: apiToken };
+        if (!isEditing && !apiToken) { alert('API token is required'); return; }
+        if (apiToken) credentials.api_token = apiToken;
       } else {
         const username = document.getElementById('abm-username').value;
         const password = document.getElementById('abm-password').value;
-        if (!username || !password) { alert('Username and password are required'); return; }
-        credentials = { username, password };
+        if (!isEditing && (!username || !password)) { alert('Username and password are required'); return; }
+        if (username) credentials.username = username;
+        if (password) credentials.password = password;
       }
 
       try {
-        const res = await fetch(`${API_BASE}/backends`, {
-          method: 'POST',
+        const url = isEditing ? `${API_BASE}/backends/${_editingBackendId}` : `${API_BASE}/backends`;
+        const method = isEditing ? 'PUT' : 'POST';
+        const body = isEditing
+          ? { label, baseUrl, ...(Object.keys(credentials).length > 0 ? { credentials } : {}) }
+          : { provider, label, baseUrl, credentials };
+
+        const res = await fetch(url, {
+          method,
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
-          body: JSON.stringify({ provider, label, baseUrl, credentials })
+          body: JSON.stringify(body)
         });
         if (res.ok) {
           hideAddBackendModal();
@@ -1914,7 +1952,7 @@
           await loadSettingsBackends();
         } else {
           const data = await res.json();
-          alert(data.detail || 'Failed to add backend');
+          alert(data.detail || `Failed to ${isEditing ? 'update' : 'add'} backend`);
         }
       } catch (e) {
         alert('Error: ' + e.message);
@@ -3880,7 +3918,7 @@
   <!-- Add Backend Modal -->
   <div class="add-backend-modal" id="add-backend-modal">
     <div class="abm-content">
-      <h3>Add Backend Connection</h3>
+      <h3 id="abm-modal-title">Add Backend Connection</h3>
       <div class="abm-field">
         <label>Provider</label>
         <select id="abm-provider" onchange="onProviderChange()">
@@ -3915,7 +3953,7 @@
       </div>
       <div class="abm-actions">
         <button class="abm-cancel" onclick="hideAddBackendModal()">Cancel</button>
-        <button class="abm-save" onclick="saveBackend()">Add</button>
+        <button id="abm-save-btn" class="abm-save" onclick="saveBackend()">Add</button>
       </div>
     </div>
   </div>

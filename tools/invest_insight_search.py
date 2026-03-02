@@ -1,4 +1,4 @@
-from services.invest_insight_client import InvestInsightClient
+from services.providers.invest_insight_provider import InvestInsightProvider
 
 TOOL_DEFINITION = {
     "type": "function",
@@ -28,14 +28,48 @@ TOOL_DEFINITION = {
 }
 
 
+def _get_http_client(client):
+    """Get the httpx client from InvestInsightProvider (direct or via Combined)."""
+    if isinstance(client, InvestInsightProvider):
+        return client._client
+    for p in getattr(client, "_providers", []):
+        if isinstance(p, InvestInsightProvider):
+            return p._client
+    return None
+
+
 async def execute(client, args: dict) -> dict:
     try:
-        ii_client = InvestInsightClient()
-        result = await ii_client.run_analysis(
-            business_type=args["business_type"],
-            location=args["location"],
-            radius_km=args.get("radius_km", 5.0),
-        )
+        http_client = _get_http_client(client)
+
+        if not http_client:
+            # Fall back to standalone client
+            try:
+                from services.invest_insight_client import InvestInsightClient
+
+                ii_client = InvestInsightClient()
+                result = await ii_client.run_analysis(
+                    business_type=args["business_type"],
+                    location=args["location"],
+                    radius_km=args.get("radius_km", 5.0),
+                )
+            except Exception:
+                return {
+                    "success": False,
+                    "error": "No Invest Insight connection configured. Add one in Agent Admin > Backends.",
+                }
+        else:
+            resp = await http_client.post(
+                "/api/v1/analysis",
+                json={
+                    "business_type": args["business_type"],
+                    "location": args["location"],
+                    "radius_km": args.get("radius_km", 5.0),
+                },
+            )
+            resp.raise_for_status()
+            result = resp.json()
+
         return {
             "success": True,
             "business_type": result.get("business_type"),
