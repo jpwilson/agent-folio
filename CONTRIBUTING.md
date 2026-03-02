@@ -6,7 +6,7 @@ Thanks for your interest in contributing! Agent-Folio is an AI portfolio agent t
 
 ```bash
 # Clone
-git clone https://github.com/YOUR_USERNAME/agent-folio.git
+git clone https://github.com/jpwilson/agent-folio.git
 cd agent-folio
 
 # Install dependencies

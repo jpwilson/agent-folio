@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 import config
 from auth import get_raw_token, get_user_id
-from config import ANTHROPIC_API_KEY, GHOSTFOLIO_URL, OPENAI_API_KEY
+from config import GHOSTFOLIO_URL
 from models.schemas import SettingsUpdate
 from services import db
 from services.ghostfolio_client import GhostfolioClient
@@ -37,8 +37,9 @@ async def get_settings():
     return {
         "sdk": settings.get("sdk"),
         "model": settings.get("model"),
-        "hasOpenaiKey": bool(OPENAI_API_KEY),
-        "hasAnthropicKey": bool(ANTHROPIC_API_KEY),
+        "hasOpenaiKey": bool(config.OPENAI_API_KEY),
+        "hasAnthropicKey": bool(config.ANTHROPIC_API_KEY),
+        "hasOpenrouterKey": bool(config.OPENROUTER_API_KEY),
         "sdkOptions": SDK_OPTIONS,
         "modelOptions": MODEL_OPTIONS,
     }
@@ -56,6 +57,8 @@ async def update_settings(body: SettingsUpdate):
         config.OPENAI_API_KEY = body.openai_api_key
     if body.anthropic_api_key is not None:
         config.ANTHROPIC_API_KEY = body.anthropic_api_key
+    if body.openrouter_api_key is not None:
+        config.OPENROUTER_API_KEY = body.openrouter_api_key
 
     await save_settings(settings)
     return {"success": True, "settings": settings}

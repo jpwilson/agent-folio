@@ -62,6 +62,37 @@ MODEL_OPTIONS = [
         "provider": "anthropic",
         "description": "Anthropic's latest model. Excellent reasoning and tool use. ~$3/$15 per 1M tokens.",
     },
+    # OpenRouter models — bring your own key
+    {
+        "id": "openrouter/google/gemini-2.0-flash-001",
+        "name": "Gemini 2.0 Flash (OpenRouter)",
+        "provider": "openrouter",
+        "description": "Google's fast model via OpenRouter. Very cheap. ~$0.10/$0.40 per 1M tokens.",
+    },
+    {
+        "id": "openrouter/meta-llama/llama-3.3-70b-instruct",
+        "name": "Llama 3.3 70B (OpenRouter)",
+        "provider": "openrouter",
+        "description": "Meta's open-source Llama 3.3 via OpenRouter. ~$0.40/$0.40 per 1M tokens.",
+    },
+    {
+        "id": "openrouter/anthropic/claude-sonnet-4",
+        "name": "Claude Sonnet 4 (OpenRouter)",
+        "provider": "openrouter",
+        "description": "Anthropic Claude Sonnet 4 via OpenRouter. ~$3/$15 per 1M tokens.",
+    },
+    {
+        "id": "openrouter/openai/gpt-4o",
+        "name": "GPT-4o (OpenRouter)",
+        "provider": "openrouter",
+        "description": "OpenAI GPT-4o via OpenRouter. ~$2.50/$10 per 1M tokens.",
+    },
+    {
+        "id": "openrouter/deepseek/deepseek-chat-v3-0324",
+        "name": "DeepSeek V3 (OpenRouter)",
+        "provider": "openrouter",
+        "description": "DeepSeek V3 via OpenRouter. Very affordable. ~$0.27/$1.10 per 1M tokens.",
+    },
 ]
 
 

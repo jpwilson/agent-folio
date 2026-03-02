@@ -37,7 +37,7 @@ class TestModelOptions:
 
     def test_providers_are_known(self):
         for opt in MODEL_OPTIONS:
-            assert opt["provider"] in ("openai", "anthropic")
+            assert opt["provider"] in ("openai", "anthropic", "openrouter")
 
 
 class TestGetSDK:

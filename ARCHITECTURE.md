@@ -2,7 +2,7 @@
 
 ## Overview
 
-Agent-Folio is a standalone AI financial assistant that acts as a **sidecar service** to [Ghostfolio](https://ghostfol.io), an open-source wealth management application. It provides natural-language portfolio analysis by connecting to Ghostfolio's REST API and orchestrating LLM-powered tool calls.
+Agent-Folio is a standalone AI financial assistant that acts as a **sidecar service** to [Ghostfolio](https://ghostfol.io) and [Rotki](https://rotki.com). It provides natural-language portfolio analysis by connecting to one or more backend REST APIs and orchestrating LLM-powered tool calls with deterministic verification.
 
 ## System Architecture
 
@@ -22,15 +22,17 @@ Agent-Folio is a standalone AI financial assistant that acts as a **sidecar serv
                              |
                    HTTP (Bearer Token)
                              |
-                    +--------v--------+
-                    |   Ghostfolio    |
-                    |   (NestJS)      |
-                    |   Port 3333     |
-                    +--------+--------+
-                             |
-                    +--------v--------+
-                    | Postgres + Redis|
-                    +-----------------+
+              +-------------+-------------+
+              |                           |
+     +--------v--------+        +--------v--------+
+     |   Ghostfolio    |        |     Rotki       |
+     |   (NestJS)      |        |   (Python)      |
+     |   Port 3333     |        |   Port 8084     |
+     +--------+--------+        +-----------------+
+              |
+     +--------v--------+
+     | Postgres + Redis |
+     +-----------------+
 ```
 
 ## Components
@@ -52,15 +54,18 @@ Agent-Folio is a standalone AI financial assistant that acts as a **sidecar serv
 
 ### 4. SDK Registry (`services/sdk_registry.py`, `sdks/`)
 - Switchable LLM backends: LiteLLM (default), OpenAI, Anthropic, LangChain
+- OpenRouter support: bring your own API key to access Gemini, Llama, DeepSeek, and more via LiteLLM's `openrouter/` prefix
 - Admin UI for real-time SDK/model switching
 - LiteLLM provides unified interface to 100+ models
 
-### 5. Ghostfolio HTTP Client (`services/ghostfolio_client.py`)
-- Async HTTP client (httpx) calling Ghostfolio's REST API
-- Endpoints: portfolio details, performance, orders, symbol lookup, dividends, accounts, X-Ray report, investments timeline
+### 5. Backend Clients
+- **Ghostfolio** (`services/ghostfolio_client.py`): Async httpx client calling Ghostfolio's REST API (portfolio details, performance, orders, symbol lookup, dividends, accounts, X-Ray report, investments timeline)
+- **Rotki** (`services/providers/rotki_client.py`): Async httpx client calling Rotki's REST API (balances, trades, history)
+- **Combined** (`services/providers/combined.py`): Merges data from multiple providers, tagging each holding with `_source`
+- All providers implement `PortfolioProvider` ABC (`services/providers/base.py`)
 
 ### 6. Tools (`tools/`)
-10 tools available to the LLM agent:
+11 tools available to the LLM agent:
 
 | Tool | Purpose | Ghostfolio Endpoint |
 |------|---------|-------------------|
@@ -74,6 +79,7 @@ Agent-Folio is a standalone AI financial assistant that acts as a **sidecar serv
 | `portfolio_report` | X-Ray health check rules | `GET /api/v1/portfolio/report` |
 | `investment_timeline` | Monthly/yearly investment amounts | `GET /api/v1/portfolio/investments` |
 | `account_overview` | Account balances and platforms | `GET /api/v1/account` |
+| `stock_history` | Historical price data for a symbol | `GET /api/v1/symbol/{ds}/{sym}/market-data` |
 
 ### 7. Guardrails (`services/guardrails.py`)
 - **Pre-filter**: Keyword-based topic detection (financial domain only)
@@ -97,10 +103,10 @@ Deterministic checks run after every response:
 | Confidence scoring | Quality metric | Weighted score (0-100) from tool success, check pass rate, response quality, data backing |
 
 ### 9. Eval System (`eval/`)
-- **`golden_data.yaml`**: 55 test cases (22 happy path, 8 tool selection, 10 edge case, 10 adversarial, 5 multi-step)
-- **`eval_snapshot.py`**: Generates snapshots by hitting the live agent API
-- **`eval_check.py`**: Deterministic checker (no LLM calls) with regression detection
-- **`history/`**: Timestamped eval results for tracking quality over time
+- **`golden_data.yaml`**: 75 test cases (22 happy path, 8 tool selection, 10 edge case, 30 adversarial, 5 multi-step)
+- **Snapshot + Check pipeline**: Generate snapshots via live agent API, then run deterministic checks (no LLM calls)
+- Admin panel UI for running evals and viewing historical results
+- Results persisted to Postgres for regression tracking across deploys
 
 ### 10. Observability
 - **Langfuse** integration via LiteLLM callback (automatic tracing of all LLM calls)
@@ -138,7 +144,7 @@ Response to User (with verification metadata)
 - **Railway**: Both Ghostfolio and Agent-Folio run as separate services
 - **Private networking**: Agent-Folio calls Ghostfolio via Railway's internal network
 - **Environment**: Python 3.12, FastAPI, uvicorn
-- **State**: Conversations and feedback stored as JSON/JSONL files
+- **State**: Conversations, feedback, settings, and eval results stored in PostgreSQL
 
 ## Design Decisions
 
@@ -179,7 +185,7 @@ Agent-Folio implements defense-in-depth against prompt injection and jailbreak a
 - **Confidence scoring**: Weighted 0-100 score gives users transparency into response reliability
 
 ### Eval Coverage
-55+ test cases including 10+ adversarial cases covering:
+75 test cases including 30 adversarial cases covering:
 - Prompt injection (basic + encoded + multilingual)
 - DAN/persona/developer mode variants
 - System prompt extraction attempts

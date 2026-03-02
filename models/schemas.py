@@ -18,3 +18,4 @@ class SettingsUpdate(BaseModel):
     model: str | None = None
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
+    openrouter_api_key: str | None = None

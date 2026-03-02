@@ -3,7 +3,7 @@ import os
 
 import litellm
 
-from config import ANTHROPIC_API_KEY, OPENAI_API_KEY
+import config
 from sdks.base import AgentResponse, BaseSDK
 
 # Enable Langfuse callback if keys are present
@@ -23,10 +23,12 @@ class LiteLLMSDK(BaseSDK):
     """
 
     async def chat(self, messages, tools, tool_executor, system_prompt, model):
-        # Set API keys
-        litellm.api_key = OPENAI_API_KEY
-        if ANTHROPIC_API_KEY:
-            litellm.anthropic_key = ANTHROPIC_API_KEY
+        # Set API keys (read from config module for runtime updates)
+        litellm.api_key = config.OPENAI_API_KEY
+        if config.ANTHROPIC_API_KEY:
+            litellm.anthropic_key = config.ANTHROPIC_API_KEY
+        if config.OPENROUTER_API_KEY:
+            os.environ["OPENROUTER_API_KEY"] = config.OPENROUTER_API_KEY
 
         all_tool_calls = []
         full_messages = [{"role": "system", "content": system_prompt}] + messages

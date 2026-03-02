@@ -34,8 +34,10 @@ class TestRotkiPortfolioDetails:
         mock_httpx_client.get.return_value = _mock_response(
             {
                 "result": {
-                    "BTC": {"amount": "1.5", "usd_value": "75000.00"},
-                    "ETH": {"amount": "10.0", "usd_value": "25000.00"},
+                    "balances": [
+                        {"asset": "BTC", "label": "Bitcoin", "amount": "1.5", "value": "75000.00"},
+                        {"asset": "ETH", "label": "Ethereum", "amount": "10.0", "value": "25000.00"},
+                    ]
                 }
             }
         )
@@ -52,8 +54,10 @@ class TestRotkiPortfolioDetails:
         mock_httpx_client.get.return_value = _mock_response(
             {
                 "result": {
-                    "BTC": {"amount": "1.0", "usd_value": "75000.00"},
-                    "ETH": {"amount": "10.0", "usd_value": "25000.00"},
+                    "balances": [
+                        {"asset": "BTC", "label": "Bitcoin", "amount": "1.0", "value": "75000.00"},
+                        {"asset": "ETH", "label": "Ethereum", "amount": "10.0", "value": "25000.00"},
+                    ]
                 }
             }
         )
@@ -76,27 +80,27 @@ class TestRotkiPortfolioDetails:
 
 class TestRotkiOrders:
     async def test_maps_events_to_activities(self, rotki_client, mock_httpx_client):
-        mock_httpx_client.get.return_value = _mock_response(
+        mock_httpx_client.post.return_value = _mock_response(
             {
                 "result": {
                     "entries": [
                         {
-                            "identifier": "tx1",
-                            "event_type": "trade",
-                            "asset": "BTC",
-                            "amount": "0.5",
-                            "rate": "50000",
-                            "fee": "10",
-                            "timestamp": "2025-01-15T10:00:00Z",
+                            "entry": {
+                                "identifier": "tx1",
+                                "event_subtype": "receive",
+                                "asset": "BTC",
+                                "amount": "0.5",
+                                "timestamp": "2025-01-15T10:00:00Z",
+                            }
                         },
                         {
-                            "identifier": "tx2",
-                            "event_type": "sell",
-                            "asset": "ETH",
-                            "amount": "2.0",
-                            "rate": "3000",
-                            "fee": "5",
-                            "timestamp": "2025-02-01T12:00:00Z",
+                            "entry": {
+                                "identifier": "tx2",
+                                "event_subtype": "spend",
+                                "asset": "ETH",
+                                "amount": "2.0",
+                                "timestamp": "2025-02-01T12:00:00Z",
+                            }
                         },
                     ]
                 }
@@ -110,7 +114,7 @@ class TestRotkiOrders:
         assert result["activities"][0]["quantity"] == 0.5
 
     async def test_handles_empty_events(self, rotki_client, mock_httpx_client):
-        mock_httpx_client.get.return_value = _mock_response({"result": {"entries": []}})
+        mock_httpx_client.post.return_value = _mock_response({"result": {"entries": []}})
         result = await rotki_client.get_orders()
         assert result["activities"] == []
 
