@@ -234,6 +234,24 @@ def verify_response(tool_results: list[dict], response_text: str) -> dict:
             }
         )
 
+    # ---- Check: Invest Insight saturation score range ----
+    invest_insight_result = next((r for r in tool_results if r["tool"] == "invest_insight_search"), None)
+    if invest_insight_result and invest_insight_result["result"].get("success"):
+        score = invest_insight_result["result"].get("saturation_score")
+        if score is not None:
+            valid = 0 <= score <= 100
+            checks.append(
+                {
+                    "check": "saturation_score_range",
+                    "passed": valid,
+                    "detail": (
+                        f"Saturation score {score} is within valid range (0-100)"
+                        if valid
+                        else f"Saturation score {score} is outside valid range (0-100)"
+                    ),
+                }
+            )
+
     # ---- New Check 6: Confidence Scoring ----
     confidence = _compute_confidence(tool_results, response_text, checks)
 

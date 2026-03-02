@@ -8,6 +8,8 @@ services:
     environment:
       - GHOSTFOLIO_URL=http://host.docker.internal:3333
       - GHOSTFOLIO_PUBLIC_URL=http://localhost:3333
+      - INVEST_INSIGHT_URL=http://host.docker.internal:8007
+      - INVEST_INSIGHT_TOKEN=${INVEST_INSIGHT_TOKEN:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

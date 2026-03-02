@@ -240,7 +240,7 @@ async def list_backends(request: Request):
 async def add_backend(request: Request, body: BackendConnectionRequest):
     """Add a new backend connection."""
     user_id = get_user_id(request)
-    if body.provider not in ("ghostfolio", "rotki"):
+    if body.provider not in ("ghostfolio", "rotki", "invest_insight"):
         raise HTTPException(status_code=400, detail=f"Unsupported provider: {body.provider}")
     conn_id = await db.add_backend_connection(
         user_id=user_id,

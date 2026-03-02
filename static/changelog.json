@@ -1,6 +1,83 @@
 {
   "entries": [
     {
+      "date": "2026-03-01",
+      "title": "Pass _source field through all tools to prevent backend hallucination",
+      "desc": "Pass _source field through all tools to prevent backend hallucination",
+      "commit": "89aff9e",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Make agent multi-backend aware",
+      "desc": "Make agent multi-backend aware",
+      "commit": "e68f66d",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Handle Rotki 409 conflict and add crypto keywords to guardrails",
+      "desc": "Handle Rotki 409 conflict and add crypto keywords to guardrails",
+      "commit": "cfce57b",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Fix ruff format violations in 6 files",
+      "desc": "Fix ruff format violations in 6 files",
+      "commit": "f00265d",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Fix Rotki client API endpoints",
+      "desc": "Fix Rotki client API endpoints",
+      "commit": "b1d1780",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Fix CombinedProvider crash: handle dict-style holdings from Ghostfolio",
+      "desc": "Fix CombinedProvider crash: handle dict-style holdings from Ghostfolio",
+      "commit": "6597bfe",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Add seed data files for portfolio import testing",
+      "desc": "Add seed data files for portfolio import testing",
+      "commit": "d8d85a9",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Add diagnostic logging for Rotki provider debugging",
+      "desc": "Add diagnostic logging for Rotki provider debugging",
+      "commit": "3fd0bbd",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Add debug/portfolio endpoint to diagnose tool failures",
+      "desc": "Add debug/portfolio endpoint to diagnose tool failures",
+      "commit": "a13337d",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Add commit hash to health endpoint for deploy verification",
+      "desc": "Add commit hash to health endpoint for deploy verification",
+      "commit": "8112503",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Add OpenRouter support, fix Rotki tests, polish docs for open source",
+      "desc": "Add OpenRouter support, fix Rotki tests, polish docs for open source",
+      "commit": "c825a28",
+      "repo": "agent-folio"
+    },
+    {
       "date": "2026-02-28",
       "title": "Username display names",
       "desc": "Users can set a display name from the profile area. Usernames appear in the chat header and are stored in Postgres via agent_user_profiles table.",
@@ -107,6 +184,13 @@
     },
     {
       "date": "2026-02-28",
+      "title": "Fix badge crash + auto-register backend for grader login",
+      "desc": "Fix badge crash + auto-register backend for grader login",
+      "commit": "197dd3e",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
       "title": "Fix account badge: show first, populate later",
       "desc": "Fix account badge: show first, populate later",
       "commit": "af4e918",
@@ -117,6 +201,13 @@
       "title": "Fix account badge + stabilize changelog CI",
       "desc": "Fix account badge + stabilize changelog CI",
       "commit": "e7b0ca0",
+      "repo": "agent-folio"
+    },
+    {
+      "date": "2026-02-28",
+      "title": "Fix 3 bugs: temporal dead zone, missing authHeaders, username save",
+      "desc": "Fix 3 bugs: temporal dead zone, missing authHeaders, username save",
+      "commit": "4f9c35f",
       "repo": "agent-folio"
     },
     {

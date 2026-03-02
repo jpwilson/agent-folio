@@ -96,7 +96,7 @@ CREATE INDEX IF NOT EXISTS idx_agent_imports_hash ON agent_portfolio_imports(fil
 CREATE TABLE IF NOT EXISTS agent_backend_connections (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
-    provider TEXT NOT NULL CHECK (provider IN ('ghostfolio', 'rotki')),
+    provider TEXT NOT NULL CHECK (provider IN ('ghostfolio', 'rotki', 'invest_insight')),
     label TEXT NOT NULL DEFAULT '',
     base_url TEXT NOT NULL,
     credentials JSONB NOT NULL DEFAULT '{}',
@@ -104,6 +104,15 @@ CREATE TABLE IF NOT EXISTS agent_backend_connections (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_agent_backends_user ON agent_backend_connections(user_id);
+
+-- Migration: update provider CHECK constraint to include invest_insight
+DO $$
+BEGIN
+    ALTER TABLE agent_backend_connections DROP CONSTRAINT IF EXISTS agent_backend_connections_provider_check;
+    ALTER TABLE agent_backend_connections ADD CONSTRAINT agent_backend_connections_provider_check
+        CHECK (provider IN ('ghostfolio', 'rotki', 'invest_insight'));
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 """
 
 

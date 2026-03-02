@@ -1863,6 +1863,7 @@
       document.getElementById('abm-label').value = '';
       document.getElementById('abm-url').value = '';
       document.getElementById('abm-security-token').value = '';
+      document.getElementById('abm-api-token').value = '';
       document.getElementById('abm-username').value = '';
       document.getElementById('abm-password').value = '';
     }
@@ -1870,10 +1871,13 @@
     function onProviderChange() {
       const provider = document.getElementById('abm-provider').value;
       const isGF = provider === 'ghostfolio';
+      const isII = provider === 'invest_insight';
+      const isRotki = provider === 'rotki';
       document.getElementById('abm-cred-token-field').style.display = isGF ? 'block' : 'none';
-      document.getElementById('abm-cred-user-field').style.display = isGF ? 'none' : 'block';
-      document.getElementById('abm-cred-pass-field').style.display = isGF ? 'none' : 'block';
-      document.getElementById('abm-url').placeholder = isGF ? 'http://localhost:3333' : 'http://localhost:4242';
+      document.getElementById('abm-cred-apitoken-field').style.display = isII ? 'block' : 'none';
+      document.getElementById('abm-cred-user-field').style.display = isRotki ? 'block' : 'none';
+      document.getElementById('abm-cred-pass-field').style.display = isRotki ? 'block' : 'none';
+      document.getElementById('abm-url').placeholder = isGF ? 'http://localhost:3333' : isII ? 'http://localhost:8007' : 'http://localhost:4242';
     }
 
     async function saveBackend() {
@@ -1887,6 +1891,10 @@
         const token = document.getElementById('abm-security-token').value;
         if (!token) { alert('Security token is required'); return; }
         credentials = { security_token: token };
+      } else if (provider === 'invest_insight') {
+        const apiToken = document.getElementById('abm-api-token').value;
+        if (!apiToken) { alert('API token is required'); return; }
+        credentials = { api_token: apiToken };
       } else {
         const username = document.getElementById('abm-username').value;
         const password = document.getElementById('abm-password').value;
@@ -3878,6 +3886,7 @@
         <select id="abm-provider" onchange="onProviderChange()">
           <option value="ghostfolio">Ghostfolio</option>
           <option value="rotki">Rotki</option>
+          <option value="invest_insight">Invest Insight</option>
         </select>
       </div>
       <div class="abm-field">
@@ -3891,6 +3900,10 @@
       <div class="abm-field" id="abm-cred-token-field">
         <label>Security Token</label>
         <input id="abm-security-token" type="password" placeholder="Ghostfolio security token" />
+      </div>
+      <div class="abm-field" id="abm-cred-apitoken-field" style="display:none;">
+        <label>API Token</label>
+        <input id="abm-api-token" type="password" placeholder="Invest Insight API token (from /auth/tokens)" />
       </div>
       <div class="abm-field" id="abm-cred-user-field" style="display:none;">
         <label>Username</label>

@@ -146,12 +146,12 @@ class TestToolNamesMatchRegistry:
     def test_all_tools_registered(self):
         from tools import ALL_TOOLS
 
-        assert len(ALL_TOOLS) == 11, f"Expected 11 tools, got {len(ALL_TOOLS)}"
+        assert len(ALL_TOOLS) == 14, f"Expected 14 tools, got {len(ALL_TOOLS)}"
 
     def test_tool_definitions_list(self):
         from tools import TOOL_DEFINITIONS
 
-        assert len(TOOL_DEFINITIONS) == 11, f"Expected 11 definitions, got {len(TOOL_DEFINITIONS)}"
+        assert len(TOOL_DEFINITIONS) == 14, f"Expected 14 definitions, got {len(TOOL_DEFINITIONS)}"
 
     def test_names_are_unique(self):
         from tools import TOOL_DEFINITIONS

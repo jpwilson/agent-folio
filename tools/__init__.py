@@ -1,6 +1,9 @@
 from tools import (
     account_overview,
     dividend_history,
+    invest_insight_demographics,
+    invest_insight_properties,
+    invest_insight_search,
     investment_timeline,
     market_data,
     performance,
@@ -24,6 +27,9 @@ ALL_TOOLS = {
     "portfolio_report": portfolio_report,
     "investment_timeline": investment_timeline,
     "account_overview": account_overview,
+    "invest_insight_search": invest_insight_search,
+    "invest_insight_properties": invest_insight_properties,
+    "invest_insight_demographics": invest_insight_demographics,
 }
 
 TOOL_DEFINITIONS = [mod.TOOL_DEFINITION for mod in ALL_TOOLS.values()]

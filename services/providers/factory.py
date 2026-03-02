@@ -22,6 +22,8 @@ async def build_provider(connection: dict) -> PortfolioProvider:
         return await _build_ghostfolio(base_url, creds)
     elif provider_type == "rotki":
         return await _build_rotki(base_url, creds)
+    elif provider_type == "invest_insight":
+        return _build_invest_insight(base_url, creds)
     else:
         raise ValueError(f"Unknown provider type: {provider_type}")
 
@@ -51,3 +53,11 @@ async def _build_rotki(base_url: str, creds: dict) -> PortfolioProvider:
     from services.providers.rotki_client import RotkiClient
 
     return await RotkiClient.create(base_url, creds)
+
+
+def _build_invest_insight(base_url: str, creds: dict) -> PortfolioProvider:
+    """Create an InvestInsightProvider with API token auth."""
+    from services.providers.invest_insight_provider import InvestInsightProvider
+
+    api_token = creds.get("api_token", "")
+    return InvestInsightProvider(base_url, api_token)

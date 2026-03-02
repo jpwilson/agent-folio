@@ -168,6 +168,19 @@ FINANCIAL_KEYWORDS = {
     "binance",
     "coinbase",
     "kraken",
+    # Invest Insight / real estate keywords
+    "property",
+    "real estate",
+    "saturation",
+    "demographics",
+    "market analysis",
+    "business opportunity",
+    "rental",
+    "commercial",
+    "small business",
+    "zip code",
+    "population",
+    "median income",
 }
 
 # ============================================
