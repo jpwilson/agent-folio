@@ -80,7 +80,7 @@ async def grader_login():
                 json={"accessToken": GRADER_TOKEN},
             )
             if res.status_code == 403:
-                raise HTTPException(status_code=401, detail="Grader token is invalid")
+                raise HTTPException(status_code=401, detail="Demo token is invalid")
             res.raise_for_status()
             data = res.json()
             auth_token = data.get("authToken")
@@ -108,7 +108,7 @@ async def grader_login():
 
             return {"authToken": auth_token}
     except httpx.HTTPStatusError:
-        raise HTTPException(status_code=401, detail="Grader authentication failed") from None
+        raise HTTPException(status_code=401, detail="Demo authentication failed") from None
     except httpx.ConnectError:
         raise HTTPException(status_code=502, detail="Cannot reach Ghostfolio") from None
 
